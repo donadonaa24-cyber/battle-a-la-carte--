@@ -35,6 +35,7 @@ async function execute(request) {
     let actor = request.role || 'host';
     if (request.kind === 'init') {
         initGame();
+        GameState.currentTurn = request.firstRole === 'guest' ? 'cpu' : 'player';
         // Original sequential IDs identify card names; replace IDs, not cards or rules.
         for (const zone of [GameState.deck, ...Object.values(GameState.players).flatMap(p => [p.hand, p.set, p.events])]) {
             for (const card of zone) card.id = crypto.randomUUID();

@@ -8,8 +8,13 @@ const { chromium } = require(process.env.BALC_PLAYWRIGHT_PATH || 'C:/Users/donad
 const root = path.resolve(__dirname,'..');
 function mockClient(user) {
     window.__channels=[]; window.__presence={};
-    window.__createClient=()=>({
-        auth:{ onAuthStateChange(cb){queueMicrotask(()=>cb('INITIAL_SESSION',{user}));}, getSession:async()=>({data:{session:{user}}}) },
+    window.__createClient=(_url,_key,options)=>{
+      const isGuest=!!options?.auth?.storageKey;
+      let current=isGuest&&localStorage.getItem('__mock_guest')?{...user,is_anonymous:true}:null; const listeners=[];
+      return {
+        auth:{ onAuthStateChange(cb){listeners.push(cb);queueMicrotask(()=>cb('INITIAL_SESSION',null));},
+          getSession:async()=>({data:{session:current?{user:current}:null}}),
+          signInAnonymously:async()=>{current={...user,is_anonymous:true};localStorage.setItem('__mock_guest','1');for(const cb of listeners)cb('SIGNED_IN',{user:current});return {data:{user:current}};} },
         rpc: (name,args)=>window.__bridge({op:'rpc',name,args}),
         from(table){
             const filters={}; let single=false;
@@ -26,7 +31,8 @@ function mockClient(user) {
             window.__channels.push(ch);return ch;
         },
         async removeChannel(ch){window.__channels=window.__channels.filter(x=>x!==ch);await window.__bridge({op:'untrack'});}
-    });
+      };
+    };
 }
 test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, disconnect/reload', {timeout:60000}, async()=>{
     const server=http.createServer((req,res)=>{
@@ -40,7 +46,7 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
     let browser;
     try { browser=await chromium.launch({headless:true,channel:'msedge'}); }
     catch(error){ server.close(); throw error; }
-    const pages=[], present=new Set(), db={room:null,checkpoint:null,views:[],actions:[]};
+    const pages=[], present=new Set(), db={room:null,checkpoint:null,views:[],actions:[],chat:[]};
     const errors=[];
     const notify=()=>setTimeout(()=>{
         const presence=Object.fromEntries([...present].map(id=>[id,[{online:true}]]));
@@ -60,7 +66,7 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
                     if(r.op==='track'||r.op==='untrack'){r.op==='track'?present.add(user.id):present.delete(user.id);notify();return {};}
                     if(r.op==='select'){
                         let rows=r.table==='battle_rooms'?[db.room]:r.table==='battle_views'?db.views.filter(x=>x.user_id===user.id):
-                            r.table==='battle_checkpoints'?(user.id==='host'?[db.checkpoint]:[]):db.actions.filter(x=>user.id==='host'||x.user_id===user.id);
+                            r.table==='battle_chat_messages'?db.chat:r.table==='battle_checkpoints'?(user.id==='host'?[db.checkpoint]:[]):db.actions.filter(x=>user.id==='host'||x.user_id===user.id);
                         rows=rows.filter(Boolean).filter(row=>Object.entries(r.filters).every(([k,v])=>row[k]===v));
                         return {data:r.single?(rows[0]||null):rows};
                     }
@@ -86,6 +92,11 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
                         data=db.room.revision;
                     }
                     if(r.name==='balc_leave_room'){db.room.status='closed';data=null;}
+                    if(r.name==='balc_send_chat'){
+                        let item=db.chat.find(x=>x.request_id===a.p_request);
+                        if(!item){item={room_id:a.p_room,request_id:a.p_request,user_id:user.id,phrase:a.p_phrase,created_at:new Date().toISOString()};db.chat.push(item);}
+                        data=item;
+                    }
                     notify();return {data};
                 }catch(error){return {error:{message:error.message}};}
             });
@@ -98,8 +109,14 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
         const [host,guest]=pages;
         await host.locator('#friend-create-button').click();
         await host.waitForFunction(()=>document.getElementById('online-status').textContent.includes('482731'));
+        assert.match(await host.locator('#online-account').innerText(),/ゲスト/);
+        await host.locator('#online-chat-toggle').click();
+        await host.getByRole('button',{name:'こんにちは！'}).click();
+        await host.waitForFunction(()=>document.querySelector('#online-chat-history')?.textContent.includes('こんにちは'));
         await guest.locator('#friend-passphrase-input').fill('482731');
         await guest.locator('#friend-join-button').click();
+        await guest.locator('#online-chat-toggle').click();
+        await guest.waitForFunction(()=>document.querySelector('#online-chat-history')?.textContent.includes('相手：こんにちは'));
         for(const page of pages)await page.waitForFunction(()=>document.getElementById('start-overlay').classList.contains('hidden'));
         assert.equal(await guest.evaluate(()=>GameState.currentTurn),'cpu');
         assert.equal(await guest.evaluate(()=>GameState.players.cpu.hand.every(c=>!c.name&&!c.type)),true);

@@ -168,3 +168,15 @@ test('next human chooses Battle Mode discard pickup after turn handoff', async (
     assert.ok(r.snapshot.players.cpu.hand.some(card=>card.id===id));
     assert.equal(r.snapshot.selectionMode,null);assert.equal(total(r.snapshot),54);
 });
+
+test('server-selected GUEST first is projected correctly without changing CPU initialization', async () => {
+    const c=runtime();
+    const r=await c.execute({kind:'init', firstRole:'guest'});
+    assert.equal(r.snapshot.currentTurn,'cpu');
+    assert.equal(r.views.host.state.currentTurn,'cpu');
+    assert.equal(r.views.guest.state.currentTurn,'player');
+    assert.equal(total(r.snapshot),54);
+    await assert.rejects(action(c,r.snapshot,'playerEndTurn'),/NOT_YOUR_TURN/);
+    await action(c,r.snapshot,'playerEndTurn',[],'guest');
+    c.initGame(); assert.equal(c.GameState.currentTurn,'player');
+});

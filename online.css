@@ -13,3 +13,14 @@
     pointer-events: none;
 }
 @media (max-width: 600px) { #online-bar { font-size: 12px; bottom: 2px; padding: 6px 10px; } }
+
+#online-chat-panel[hidden] { display: none; }
+#online-chat-panel { position: absolute; bottom: calc(100% + 6px); right: 0; width: min(360px, 96vw); box-sizing: border-box; max-height: 65dvh; overflow: auto; padding: 12px; background: #091c3e; border: 1px solid #5777ab; border-radius: 12px; }
+#online-chat-history { max-height: 20dvh; overflow: auto; overflow-wrap: anywhere; }
+.online-chat-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#online-bar button:disabled { opacity: .45; cursor: default; }
+@media (max-width: 600px) {
+    #online-bar { gap: 4px; padding: 5px; }
+    #online-bar button { padding: 5px 7px; }
+    #online-status { font-size: 11px; }
+}

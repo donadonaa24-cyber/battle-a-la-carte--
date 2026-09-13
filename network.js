@@ -2,7 +2,7 @@
     'use strict';
     const base = new URL('.', document.currentScript.src);
     const protocol = window.BattleProtocol;
-    let client, clientPromise, user, room, channel, worker, workerSequence = 0;
+    let client, accountClient, guestClient, clientPromise, user, room, channel, worker, workerSequence = 0;
     let revision = 0, started = false, busy = false, connected = false, peerPresent = false;
     let syncing = false, syncAgain = false, stopped = false, pending = null, deadline, generation = 0;
     const workerRequests = new Map();
@@ -10,6 +10,7 @@
     const pendingKey = 'aniani:battle:pending:v1';
     const errors = {
         LOGIN_REQUIRED: 'あにあに共通アカウントでログインしてください。',
+        'Anonymous sign-ins are disabled': 'Supabaseでゲスト接続の許可が必要です。管理者向け手順書の「匿名ログイン」を確認してください。',
         ROOM_NOT_FOUND: '参加できる部屋が見つかりません。合言葉と有効期限を確認してください。',
         ROOM_ALREADY_ACTIVE: '参加中の部屋があります。「前の部屋を再開」を押してください。',
         RATE_LIMIT: '作成・参加の試行回数が多いため、10分ほど待ってください。',
@@ -29,10 +30,10 @@
     }
     const active = () => !!room;
     function controls() {
-        const available = !!user && !busy && !room;
+        const available = !busy && !room;
         for (const id of ['friend-create-button', 'friend-join-button']) if ($(id)) $(id).disabled = !available;
-        if ($('online-account')) $('online-account').textContent = user ? `ログイン中: ${user.email || '共通アカウント'}` : '未ログイン';
-        if ($('online-login-form')) $('online-login-form').hidden = !!user;
+        if ($('online-account')) $('online-account').textContent = user && !user.is_anonymous ? `ログイン中: ${user.email || '共通アカウント'}` : 'ゲスト対戦OK（メールアドレス・パスワード不要）';
+        if ($('online-login-form')) $('online-login-form').hidden = !!room || !!user && !user.is_anonymous;
         if ($('online-resume')) $('online-resume').disabled = !user || busy || !!room;
         if ($('online-bar')) $('online-bar').hidden = !room;
         document.body?.classList.toggle('online-session', !!room);
@@ -60,11 +61,16 @@
             const config = window.SUPABASE_CONFIG;
             if (!config?.SUPABASE_URL || !config.SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_')) throw new Error('CONFIG_REQUIRED');
             const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.57.4');
-            // Same project and default storage key as the portal; no separate anonymous account.
-            client = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY,
-                { global: { fetch: (url, options) => fetch(url, { ...options, signal: options?.signal || AbortSignal.timeout(20000) }) } });
-            client.auth.onAuthStateChange((_event, session) => {
-                const next = session?.user && !session.user.is_anonymous ? session.user : null;
+            const options = { global: { fetch: (url, options) => fetch(url, { ...options, signal: options?.signal || AbortSignal.timeout(20000) }) } };
+            accountClient = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY, options);
+            guestClient = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY,
+                { ...options, auth: { storageKey: 'aniani:battle:guest:auth:v1', detectSessionInUrl: false } });
+            const account = await accountClient.auth.getSession();
+            if (account.error) throw account.error;
+            client = account.data.session?.user && !account.data.session.user.is_anonymous ? accountClient : guestClient;
+            for (const source of [accountClient, guestClient]) source.auth.onAuthStateChange((_event, session) => {
+                if (source !== client) return;
+                const next = session?.user || null;
                 if (room && next?.id !== user?.id) { stopped = true; connected = false; detach(); }
                 user = next;
                 controls();
@@ -72,19 +78,25 @@
             });
             const { data, error } = await client.auth.getSession();
             if (error) throw error;
-            user = data.session?.user && !data.session.user.is_anonymous ? data.session.user : null;
+            user = data.session?.user || null;
             return client;
         })();
         try { return await clientPromise; } finally { clientPromise = null; }
     }
     async function refreshLogin() {
         try {
-            const c = await getClient();
+            await getClient();
+            if (!room) {
+                const account = await accountClient.auth.getSession();
+                if (account.error) throw account.error;
+                client = account.data.session?.user && !account.data.session.user.is_anonymous ? accountClient : guestClient;
+            }
+            const c = client;
             const { data, error } = await c.auth.getSession();
             if (error) throw error;
-            user = data.session?.user && !data.session.user.is_anonymous ? data.session.user : null;
+            user = data.session?.user || null;
             controls();
-            if (!room) message(user ? '部屋を作ると6桁の合言葉が発行されます。' : errors.LOGIN_REQUIRED);
+            if (!room) message('ログインせず、そのまま「部屋を作る」「部屋に参加」を押せます。先攻は参加時にランダムで決まります。');
         } catch (error) { fail(error); }
     }
     async function rpc(name, args) {
@@ -113,7 +125,11 @@
         busy = true; controls();
         try {
             await getClient();
-            if (!user) throw new Error('LOGIN_REQUIRED');
+            if (!user) {
+                const { data, error } = await client.auth.signInAnonymously();
+                if (error) throw error;
+                user = data.user;
+            }
             const info = profileInfo(options);
             const result = kind === 'host' ? await rpc('balc_create_room', { p_info: info }) :
                 await rpc('balc_join_room', { p_code: String(options.passphrase || $('friend-passphrase-input').value).trim(), p_info: info });
@@ -122,7 +138,7 @@
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20260912', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20260913', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;
@@ -189,7 +205,8 @@
                 if (room.status === 'playing' && room.host_id === user.id && peerPresent && connected) {
                     let result, action = null;
                     if (room.revision === 0) {
-                        result = await engine({ kind: 'init', host: room.host_info, guest: room.guest_info });
+                        result = await engine({ kind: 'init', host: room.host_info, guest: room.guest_info,
+                            firstRole: room.first_user === room.guest_id ? 'guest' : 'host' });
                     } else {
                         const actions = await select('battle_match_actions', { room_id: currentId, processed: false, base_revision: room.revision });
                         action = actions[0];
@@ -246,6 +263,7 @@
         pending = remembered?.room === room.id && remembered.user === user.id ? remembered : null;
         channel = client.channel(`balc:${room.id}`, { config: { private: true, presence: { key: user.id } } });
         channel.on('presence', { event: 'sync' }, peerSync);
+        window.BattleChat?.attach({ client, room, user, channel });
         for (const table of ['battle_rooms', 'battle_views', 'battle_match_actions']) {
             channel.on('postgres_changes', { event: '*', schema: 'public', table,
                 filter: `${table === 'battle_rooms' ? 'id' : 'room_id'}=eq.${room.id}` }, () => sync());
@@ -256,6 +274,7 @@
             status();
             if (connected) {
                 await channel.track({ online: true });
+                window.BattleChat?.refresh();
                 await sync();
                 peerSync();
                 if (pending) resend();
@@ -308,6 +327,7 @@
         if (room) await rpc('balc_leave_room', { p_room: room.id });
         stopped = true; await detach();
         room = null; pending = null; started = false; revision = 0;
+        window.BattleChat?.detach();
         worker?.terminate(); worker = null; clearTimeout(deadline);
         sessionStorage.removeItem(sessionRoomKey); sessionStorage.removeItem(pendingKey);
         controls();
@@ -317,6 +337,7 @@
         const auth = document.createElement('div');
         auth.className = 'online-account-box';
         auth.innerHTML = `<p id="online-account">ログイン状態を確認してください</p>
+          <p>登録なしで通信対戦を試せます。メダル・コレクションをアカウントで保存し、別の端末でも利用するにはメールアドレスとパスワードで登録してください。通信対戦のコイン報酬は現在ありません。ゲストデータのアカウントへの自動移行はありません。</p>
           <form id="online-login-form"><label>メールアドレス<input id="online-email" type="email" autocomplete="username" required></label>
           <label>パスワード<input id="online-password" type="password" autocomplete="current-password" required></label>
           <button type="submit" class="start-sub-button">共通アカウントでログイン</button></form>
@@ -327,14 +348,16 @@
         bar.id = 'online-bar'; bar.hidden = true;
         bar.innerHTML = '<span id="online-status" role="status" aria-live="polite"></span><button id="online-reconnect">接続を確認</button><button id="online-leave">退出</button>';
         document.body.appendChild(bar);
+        window.BattleChat?.mount(bar);
         $('online-login-form').addEventListener('submit', async event => {
-            event.preventDefault(); if (busy) return; busy = true; controls();
+            event.preventDefault(); if (busy || room) return; busy = true; controls();
             try {
-                const c = await getClient();
+                await getClient();
+                const c = accountClient;
                 const { data, error } = await c.auth.signInWithPassword({ email: $('online-email').value.trim(), password: $('online-password').value });
                 $('online-password').value = '';
                 if (error) throw error;
-                user = data.user; message('ログインしました。部屋を作成または参加してください。');
+                client = accountClient; user = data.user; message('ログインしました。部屋を作成または参加してください。');
             } catch (error) { fail(error); } finally { busy = false; controls(); }
         });
         $('online-resume').onclick = resume;
