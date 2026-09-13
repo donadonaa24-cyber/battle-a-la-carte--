@@ -255,6 +255,8 @@
     async function attach(value) {
         const sameRoom = room?.id === value.id;
         await detach();
+        // Private Realtime channels must receive the session created moments earlier.
+        await client.realtime.setAuth();
         const epoch = generation;
         room = value; stopped = false;
         if (!sameRoom) revision = 0;

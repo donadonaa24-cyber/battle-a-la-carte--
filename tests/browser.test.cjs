@@ -12,6 +12,7 @@ function mockClient(user) {
       const isGuest=!!options?.auth?.storageKey;
       let current=isGuest&&localStorage.getItem('__mock_guest')?{...user,is_anonymous:true}:null; const listeners=[];
       return {
+        realtime:{setAuth:async()=>{}},
         auth:{ onAuthStateChange(cb){listeners.push(cb);queueMicrotask(()=>cb('INITIAL_SESSION',null));},
           getSession:async()=>({data:{session:current?{user:current}:null}}),
           signInAnonymously:async()=>{current={...user,is_anonymous:true};localStorage.setItem('__mock_guest','1');for(const cb of listeners)cb('SIGNED_IN',{user:current});return {data:{user:current}};} },
