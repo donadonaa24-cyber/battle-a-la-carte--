@@ -1,0 +1,64 @@
+(function (root) {
+    'use strict';
+    const actions = Object.freeze([
+        'playerSetCard', 'confirmSetCard', 'cancelSetCard', 'viewSetCard', 'closeSetCardView',
+        'openIngredientAction', 'closeIngredientAction', 'showIngredientCombinations',
+        'backIngredientAction', 'confirmIngredientSetFromAction', 'playerShowRecipeCandidates',
+        'playerCancelRecipeCandidates', 'playerCookSelectedRecipe', 'playerUseEvent',
+        'playerUseSkill', 'confirmSkillActivation', 'cancelSkillActivation', 'confirmEventCard',
+        'cancelEventCard', 'playerBuyPack', 'confirmPackPurchase', 'cancelPackPurchase',
+        'playerEndTurn', 'confirmEndTurn', 'cancelEndTurn', 'toggleDiscardSelection',
+        'confirmDiscardSelection', 'toggleEventTargetSelection', 'confirmEventSelection', 'cancelEventSelection'
+    ]);
+    const localFields = ['selectionMode', 'discardNeedCount', 'selectedCardIds', 'candidateRecipes',
+        'pendingEventContext', 'pendingSkillContext', 'pendingSkillConfirm', 'selectedTargetIds',
+        'pendingSetCardId', 'pendingEventCardId', 'pendingViewSetCardId', 'pendingPackKey',
+        'pendingIngredientAction', 'pendingKnifeOptions'];
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const side = value => value === 'player' ? 'cpu' : value === 'cpu' ? 'player' : value;
+    function swap(input) {
+        const result = clone(input);
+        for (const key of ['players', 'characterIds', 'characterNames', 'characterSides']) {
+            if (result[key]) result[key] = { player: result[key].cpu, cpu: result[key].player };
+        }
+        for (const key of ['currentTurn', 'winner', 'openDishHistoryFor']) result[key] = side(result[key]);
+        for (const key of ['pendingEventContext', 'pendingSkillContext', 'pendingSkillConfirm']) {
+            if (!result[key]) continue;
+            for (const field of ['actor', 'ownerKey', 'selfPlayerKey', 'enemyPlayerKey']) {
+                if (field in result[key]) result[key][field] = side(result[key][field]);
+            }
+        }
+        for (const p of Object.values(result.players)) {
+            for (const zone of ['hand', 'set', 'events']) {
+                for (const card of p[zone]) if (card.trapOwner) card.trapOwner = side(card.trapOwner);
+            }
+        }
+        return result;
+    }
+    function view(snapshot, role) {
+        const result = role === 'host' ? clone(snapshot) : swap(snapshot);
+        // Hidden cards carry neither their original IDs nor their type/name.
+        const backs = (count, zone) => Array.from({ length: count }, (_, i) => ({ id: `${zone}-${i}`, hidden: true }));
+        result.deck = backs(result.deck.length, 'deck');
+        const foe = result.players.cpu;
+        foe.hand = backs(foe.hand.length + foe.events.length, 'opponent');
+        foe.events = [];
+        foe.set = foe.set.map((card, i) => card.trapLocked || card.blockedByTrap
+            ? card : { id: `set-${i}`, hidden: true });
+        if (result.currentTurn !== 'player') {
+            for (const key of localFields) {
+                result[key] = Array.isArray(result[key]) ? [] : key === 'discardNeedCount' ? 0 : null;
+            }
+        }
+        delete result.settings;
+        delete result.ui;
+        delete result.openDishHistoryFor;
+        return result;
+    }
+    function validAction(action) {
+        return action && actions.includes(action.name) && Array.isArray(action.args) && action.args.length <= 2 &&
+            action.args.every(arg => (typeof arg === 'string' && arg.length <= 160) ||
+                (typeof arg === 'number' && Number.isSafeInteger(arg)));
+    }
+    root.BattleProtocol = Object.freeze({ version: 1, actions, clone, swap, view, validAction });
+})(typeof window === 'undefined' ? globalThis : window);

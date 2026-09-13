@@ -490,15 +490,7 @@ function setFriendRoomMessage(text) {
 }
 
 function getFriendSetupHintMessage() {
-    const canUseFirebaseFriend = !!(
-        window.FriendBattle &&
-        typeof window.FriendBattle.isAvailable === 'function' &&
-        window.FriendBattle.isAvailable()
-    );
-    if (canUseFirebaseFriend) {
-        return 'Firebase対戦が有効です。合言葉でルームを作成/参加してください。';
-    }
-    return 'Firebase未設定です。現在は同一端末向けの簡易ロビー（ローカル保存）でのみ動作します。';
+    return 'あにあに共通アカウントでログインし、部屋を作成または参加してください。';
 }
 
 function setUserStageMessage(text) {
@@ -1621,14 +1613,15 @@ function setupStartOverlay() {
         menuFriendButton.addEventListener('click', () => {
             if (typeof unlockAudio === 'function') unlockAudio();
             setStartMenuMessage('');
-            setFriendRoomMessage(getFriendSetupHintMessage());
+            window.FriendBattle.refreshLogin();
             showStartStage('start-friend-stage');
         });
     }
 
     if (menuOnlineButton) {
         menuOnlineButton.addEventListener('click', () => {
-            notifyPlannedFeature('オンライン対戦');
+            showStartStage('start-friend-stage');
+            window.FriendBattle.refreshLogin();
         });
     }
 
@@ -1699,7 +1692,8 @@ function setupStartOverlay() {
     }
 
     if (friendBackButton) {
-        friendBackButton.addEventListener('click', () => {
+        friendBackButton.addEventListener('click', async () => {
+            try { await window.FriendBattle.leaveRoom(); } catch { setFriendRoomMessage('退出を確認できませんでした。通信を確認して再度お試しください。'); return; }
             openMenuStage();
         });
     }
@@ -1716,86 +1710,8 @@ function setupStartOverlay() {
         });
     }
 
-    if (friendCreateButton) {
-        friendCreateButton.addEventListener('click', async () => {
-            const passphrase = normalizeFriendPassphrase(friendPassphraseInput?.value || '');
-            if (!passphrase) {
-                setFriendRoomMessage('合言葉を入力してください。');
-                return;
-            }
-
-            const canUseFirebaseFriend = !!(
-                window.FriendBattle &&
-                typeof window.FriendBattle.createRoom === 'function' &&
-                typeof window.FriendBattle.isAvailable === 'function' &&
-                window.FriendBattle.isAvailable()
-            );
-            if (canUseFirebaseFriend) {
-                try {
-                    const profile = typeof getUserProfile === 'function' ? getUserProfile() : null;
-                    const result = await window.FriendBattle.createRoom({
-                        passphrase,
-                        userName: profile?.name || 'プレイヤー',
-                        favoriteCharacterId: getPreferredStartCharacterId()
-                    });
-                    setFriendRoomMessage(result?.message || 'ルームを作成しました。');
-                } catch (e) {
-                    console.error('friend room create failed', e);
-                    const detail = e && e.message ? ` (${e.message})` : '';
-                    setFriendRoomMessage(`Firebaseルーム作成に失敗しました。設定を確認してください。${detail}`);
-                }
-                return;
-            }
-
-            const room = createFriendRoom(passphrase);
-            if (!room) {
-                setFriendRoomMessage('ルーム作成に失敗しました。');
-                return;
-            }
-            setFriendRoomMessage(`【ローカル検証】ルームを作成しました。合言葉「${passphrase}」をフレンドに伝えてください。`);
-        });
-    }
-
-    if (friendJoinButton) {
-        friendJoinButton.addEventListener('click', async () => {
-            const passphrase = normalizeFriendPassphrase(friendPassphraseInput?.value || '');
-            if (!passphrase) {
-                setFriendRoomMessage('合言葉を入力してください。');
-                return;
-            }
-
-            const canUseFirebaseFriend = !!(
-                window.FriendBattle &&
-                typeof window.FriendBattle.joinRoom === 'function' &&
-                typeof window.FriendBattle.isAvailable === 'function' &&
-                window.FriendBattle.isAvailable()
-            );
-            if (canUseFirebaseFriend) {
-                try {
-                    const profile = typeof getUserProfile === 'function' ? getUserProfile() : null;
-                    const result = await window.FriendBattle.joinRoom({
-                        passphrase,
-                        userName: profile?.name || 'プレイヤー',
-                        favoriteCharacterId: getPreferredStartCharacterId()
-                    });
-                    setFriendRoomMessage(result?.message || 'ルームに参加しました。');
-                } catch (e) {
-                    console.error('friend room join failed', e);
-                    const detail = e && e.message ? ` (${e.message})` : '';
-                    setFriendRoomMessage(`Firebaseルーム参加に失敗しました。設定を確認してください。${detail}`);
-                }
-                return;
-            }
-
-            const room = findFriendRoom(passphrase);
-            if (!room) {
-                setFriendRoomMessage('同じ合言葉のルームが見つかりません。');
-                return;
-            }
-            const hostName = room.hostName || 'ホスト';
-            setFriendRoomMessage(`【ローカル検証】合言葉一致: ${hostName} のルームを検出しました。`);
-        });
-    }
+    if (friendCreateButton) friendCreateButton.addEventListener('click', () => window.FriendBattle.createRoom());
+    if (friendJoinButton) friendJoinButton.addEventListener('click', () => window.FriendBattle.joinRoom({ passphrase: friendPassphraseInput?.value || '' }));
 
     if (userSaveButton) {
         userSaveButton.addEventListener('click', () => {

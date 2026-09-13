@@ -1,0 +1,15 @@
+#online-bar[hidden], .online-account-box [hidden] { display: none !important; }
+#online-bar { position: fixed; z-index: 100000; bottom: 8px; left: 50%; transform: translateX(-50%); width: min(720px, 96vw); box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid #5777ab; border-radius: 12px; background: #091c3e; color: #fff; box-shadow: 0 3px 16px #0004; font-size: 14px; }
+#online-status { flex: 1 1 120px; min-width: 0; }
+#online-bar button { min-height: 44px; flex-shrink: 0; border: 1px solid #5777ab; border-radius: 8px; background: #123263; padding: 6px 10px; color: #fff; cursor: pointer; }
+.online-session #game-container.mobile-field-ui { height: calc(100dvh - 66px); }
+.online-account-box { text-align: left; padding: 12px; border: 1px solid #c99750; border-radius: 10px; margin: 12px 0; }
+.online-account-box form { display: grid; gap: 10px; }
+.online-account-box label { display: grid; gap: 4px; }
+.online-account-box input { font: inherit; min-height: 44px; width: 100%; box-sizing: border-box; }
+.online-account-box a { color: inherit; text-decoration: underline; }
+.online-operation-locked #player-hand-mixed, .online-operation-locked #player-set,
+.online-operation-locked #candidate-recipes, .online-operation-locked #selection-panel {
+    pointer-events: none;
+}
+@media (max-width: 600px) { #online-bar { font-size: 12px; bottom: 2px; padding: 6px 10px; } }

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Battle a la carte - Smartphone Field UI</title>
     <link rel="stylesheet" href="style-sp.css?v=20260419d">
+    <link rel="stylesheet" href="../online.css?v=20260912">
 </head>
 <body>
     <div id="game-container" class="mobile-field-ui">
@@ -354,8 +355,7 @@
                         <button id="menu-cpu-button" class="start-main-button">料理開始！CPU戦</button>
                         <button id="menu-resume-button" class="start-main-button hidden">続きから対戦</button>
                         <button id="menu-story-button" class="start-main-button">ストーリーモード（チュートリアル）</button>
-                        <button id="menu-friend-button" class="start-menu-button">料理開始（フレンド戦）</button>
-                        <button id="menu-online-button" class="start-menu-button">オンライン対戦</button>
+                        <button id="menu-friend-button" class="start-menu-button">オンライン対戦（合言葉）</button>
                         <button id="menu-coin-button" class="start-menu-button">コイン交換所</button>
                         <button id="menu-rules-button" class="start-menu-button">ルールページ</button>
                         <button id="menu-gallery-button" class="start-menu-button">ギャラリーページ</button>
@@ -488,23 +488,23 @@
             </div>
 
             <div id="start-friend-stage" class="start-stage hidden">
-                <h2 class="start-section-title">フレンド戦セットアップ</h2>
+                <h2 class="start-section-title">オンライン対戦</h2>
                 <p class="start-subtitle">合言葉を使ってルームを作成/参加します</p>
 
                 <div class="start-user-form">
                     <label class="start-field-label" for="friend-passphrase-input">合言葉</label>
-                    <input id="friend-passphrase-input" class="start-text-input" type="text" maxlength="40" placeholder="例: dinner-2026">
+                    <input id="friend-passphrase-input" class="start-text-input" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" placeholder="参加する場合：例 482731">
                 </div>
 
                 <div class="start-setup-actions">
-                    <button id="friend-create-button" class="start-main-button">ルーム作成</button>
-                    <button id="friend-join-button" class="start-sub-button">ルーム参加</button>
+                    <button id="friend-create-button" class="start-main-button">部屋を作る</button>
+                    <button id="friend-join-button" class="start-sub-button">部屋に参加</button>
                 </div>
 
                 <p id="friend-room-message" class="start-menu-message"></p>
                 <div class="start-rule-box">
                     <h3>接続メモ</h3>
-                    <p>Firebase設定済みならリアルタイム対戦、未設定ならローカル検証モードで動作します、</p>
+                    <p>あにあに共通アカウントでログインして遊べます。HOSTが先攻です。通信対戦の共通コイン報酬は現在ありません。</p>
                 </div>
                 <button id="start-friend-back-button" class="start-sub-button wide">メニューへ戻る</button>
             </div>
@@ -581,12 +581,10 @@
     <script src="cpu-sp.js?v=20260419d"></script>
     <script src="render-sp.js?v=20260419d"></script>
     <script src="audio-sp.js?v=20260419d"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-    <script src="../firebase-config.js?v=20260419d"></script>
-    <script src="../friend-battle-firebase.js?v=20260419d"></script>
-    <script src="main-sp.js?v=20260503a"></script>
+    <script src="../supabase-config.js?v=20260912"></script>
+    <script src="../battle-protocol.js?v=20260912"></script>
+    <script src="../network.js?v=20260912"></script>
+    <script src="main-sp.js?v=20260912"></script>
     <script src="../story-mode.js?v=20260419d"></script>
 </body>
 </html>

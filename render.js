@@ -1141,7 +1141,7 @@ function renderCpuMixedHand() {
     container.innerHTML = '';
 
     if (total === 0) { container.textContent = 'なし'; return; }
-    for (let i = 0; i < total; i++) container.appendChild(createBackCard('CPU', '手札'));
+    for (let i = 0; i < total; i++) container.appendChild(createBackCard(window.getOpponentLabelText?.() || 'CPU', '手札'));
 }
 
 function renderCpuSet() {
@@ -1167,7 +1167,7 @@ function renderCpuSet() {
             container.appendChild(trapCard);
             return;
         }
-        container.appendChild(createBackCard('CPU', 'セット'));
+        container.appendChild(createBackCard(window.getOpponentLabelText?.() || 'CPU', 'セット'));
     });
 }
 
