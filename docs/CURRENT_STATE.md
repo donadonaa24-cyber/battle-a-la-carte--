@@ -6,7 +6,7 @@
 
 - 正式なセマンティックバージョン: 未定義
 - GitHub公開用ブランチ: `main`
-- 確認した最新公開コミット: `ef9bc44` (`Refresh Realtime auth before joining private rooms`)
+- 最後にゲーム動作を確認した実装コミット: `ef9bc44` (`Refresh Realtime auth before joining private rooms`)
 - HTMLのキャッシュ識別子はファイルごとに異なり、製品バージョンではありません。
 
 ## 技術状態
