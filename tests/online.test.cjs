@@ -13,6 +13,24 @@ function runtime() {
     return context;
 }
 async function initial(c) { return c.execute({ kind: 'init', host: { character: 'takumi', skill: 'lastOrder' }, guest: { character: 'akatsuki', skill: 'foodTrap' } }); }
+
+test('every online character/skill choice stays with its participant through projection', async () => {
+    const c = runtime();
+    const chars = ['chizuru','mai','takumi','akatsuki'];
+    for (const [i, character] of chars.entries()) for (const [j, skill] of c.getSkillDefinitions().entries()) {
+        const otherCharacter = chars[(i + 1) % chars.length];
+        const otherSkill = c.getSkillDefinitions()[(j + 1) % 6].key;
+        const result = await c.execute({ kind: 'init', host: {character, skill: skill.key}, guest: {character: otherCharacter, skill: otherSkill} });
+        const restored = await c.execute({kind:'project', snapshot:result.snapshot});
+        for (const [role, ownChar, ownSkill, opponentChar, opponentSkill] of [
+            ['host',character,skill.key,otherCharacter,otherSkill], ['guest',otherCharacter,otherSkill,character,skill.key]]) {
+            assert.equal(restored[role].state.characterIds.player, ownChar);
+            assert.equal(restored[role].state.players.player.selectedSkillKey, ownSkill);
+            assert.equal(restored[role].state.characterIds.cpu, opponentChar);
+            assert.equal(restored[role].state.players.cpu.selectedSkillKey, opponentSkill);
+        }
+    }
+});
 async function action(c, state, name, args = [], role = 'host') {
     return c.execute({ kind: 'action', role, snapshot: clone(state), action: { name, args } });
 }

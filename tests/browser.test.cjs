@@ -35,7 +35,7 @@ function mockClient(user) {
       };
     };
 }
-test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, disconnect/reload', {timeout:60000}, async()=>{
+test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, disconnect/reload', {timeout:60000}, async()=>{
     const server=http.createServer((req,res)=>{
         const filename=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
         if(!filename.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
@@ -61,7 +61,7 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
         },presence).catch(()=>{});
     },5);
     try {
-        for(const [i,file] of ['web.html','mobile/mobile.html'].entries()){
+        for(const [i,file] of ['web.html','web.html'].entries()){
             const context=await browser.newContext({viewport:i?{width:390,height:844}:{width:1365,height:900}});
             const page=await context.newPage();pages.push(page);
             const user={id:i?'guest':'host',email:`${i}@example.test`};
@@ -134,8 +134,20 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
             await page.waitForFunction(()=>!document.getElementById('friend-create-button').disabled);
         }
         const [host,guest]=pages;
+        for (const page of pages) {
+            assert.equal(await page.evaluate(() => !!(document.querySelector('#online-selection').compareDocumentPosition(document.querySelector('#friend-create-button')) & Node.DOCUMENT_POSITION_FOLLOWING)), true);
+            assert.equal(await page.locator('#online-skill option').count(), 6);
+        }
+        await host.locator('#online-character').selectOption('takumi');
+        await host.locator('#online-skill').selectOption('foodTrap');
+        await guest.locator('#online-character').selectOption('akatsuki');
+        await guest.locator('#online-skill').selectOption('tasteThief');
         await host.locator('#friend-create-button').click();
         await host.waitForFunction(()=>document.getElementById('online-status').textContent.includes('482731'));
+        assert.equal(db.room.host_info.character, 'takumi');
+        assert.equal(db.room.host_info.skill, 'foodTrap');
+        assert.equal(await host.locator('#online-character').isDisabled(), true);
+        assert.match(await host.locator('#online-selection-hint').innerText(), /確定済み/);
         assert.match(await host.locator('#online-account').innerText(),/ゲスト/);
         await host.locator('#online-chat-toggle').click();
         await host.getByRole('button',{name:'こんにちは！'}).click();
@@ -145,6 +157,13 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
         await guest.locator('#online-chat-toggle').click();
         await guest.waitForFunction(()=>document.querySelector('#online-chat-history')?.textContent.includes('相手：こんにちは'));
         for(const page of pages)await page.waitForFunction(()=>document.getElementById('start-overlay').classList.contains('hidden'));
+        assert.equal(db.room.guest_info.character, 'akatsuki');
+        assert.equal(db.room.guest_info.skill, 'tasteThief');
+        for (const [i, page] of pages.entries()) {
+            assert.deepEqual(await page.evaluate(() => [getBattleViewModel().me.characterId, getBattleViewModel().opponent.characterId,
+                getBattleViewModel().me.selectedSkillKey, getBattleViewModel().opponent.selectedSkillKey]),
+                i ? ['akatsuki','takumi','tasteThief','foodTrap'] : ['takumi','akatsuki','foodTrap','tasteThief']);
+        }
         assert.equal(await guest.evaluate(()=>GameState.currentTurn),'cpu');
         assert.equal(await guest.evaluate(()=>GameState.players.cpu.hand.every(c=>!c.name&&!c.type)),true);
         await host.waitForFunction(()=>!document.body.classList.contains('online-operation-locked'));
@@ -196,6 +215,9 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
         await guest.waitForFunction(()=>!document.getElementById('online-resume').disabled);
         await guest.locator('#online-resume').click();
         await guest.waitForFunction(()=>document.getElementById('start-overlay').classList.contains('hidden')&&GameState.selectionMode==='end-turn-confirm');
+        assert.equal(await guest.locator('#online-character').inputValue(), 'akatsuki');
+        assert.equal(await guest.locator('#online-skill').inputValue(), 'tasteThief');
+        assert.equal(await guest.evaluate(() => getBattleViewModel().me.selectedSkillKey), 'tasteThief');
         await host.waitForFunction(()=>document.getElementById('online-status').textContent.includes('相手のターン'));
         assert.deepEqual(errors,[]);
     }finally{

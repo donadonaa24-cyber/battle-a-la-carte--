@@ -30,7 +30,8 @@ test('live Supabase Broadcast: two views, latency, legal match and reconnect',
             await page.goto(`http://127.0.0.1:${server.address().port}/${file}`);
             await page.locator('#menu-friend-button').click();
             await page.locator('#online-character').selectOption(i ? 'akatsuki' : 'takumi');
-            await page.locator('#online-skill').selectOption('foodTrap');
+            await page.locator('#online-skill').selectOption(i ? 'tasteThief' : 'foodTrap');
+            await page.locator('#online-selection').screenshot({path: path.join(os.tmpdir(), i ? 'balc-selection-mobile.png' : 'balc-selection-web.png')});
         }
         const [host, guest] = pages;
         await host.locator('#friend-create-button').click();
@@ -41,6 +42,12 @@ test('live Supabase Broadcast: two views, latency, legal match and reconnect',
         for (const page of pages) assert.equal(await page.evaluate(() => FriendBattle.isFastMode()), true);
         assert.equal(await host.evaluate(() => getBattleViewModel().me.characterId), 'takumi');
         assert.equal(await guest.evaluate(() => getBattleViewModel().me.characterId), 'akatsuki');
+        const verifySelections = async () => {
+            for (const [i, page] of pages.entries()) assert.deepEqual(await page.evaluate(() => [getBattleViewModel().me.characterId,
+                getBattleViewModel().opponent.characterId, getBattleViewModel().me.selectedSkillKey, getBattleViewModel().opponent.selectedSkillKey]),
+                i ? ['akatsuki','takumi','tasteThief','foodTrap'] : ['takumi','akatsuki','foodTrap','tasteThief']);
+        };
+        await verifySelections();
         report.checks.push('create/join/character/skill/private views');
         const ready = page => page.waitForFunction(() => !document.body.classList.contains('online-operation-locked'), null, { timeout: 15000 });
         const call = async (page, name, args = []) => {
@@ -101,16 +108,25 @@ test('live Supabase Broadcast: two views, latency, legal match and reconnect',
             }
         };
         let packed = false, cooked = false, set = false, skilled = false;
+        const skilledRoles = new Set();
         for (let turn = 0; turn < 100 && !await host.evaluate(() => GameState.gameEnded); turn++) {
             actor = await host.evaluate(() => getBattleViewModel().turn === 'me') ? host : guest;
             await ready(actor); await resolveSelection(actor);
-            if (!skilled && await actor.evaluate(() => getSkillActivationStatusForSide('player').ok)) {
+            const role = actor === host ? 'HOST' : 'GUEST';
+            if (!skilledRoles.has(role) && await actor.evaluate(() => getSkillActivationStatusForSide('player').ok)) {
                 await call(actor, 'playerUseSkill'); await call(actor, 'confirmSkillActivation');
-                await resolveSelection(actor); skilled = true;
+                await resolveSelection(actor); skilled = true; skilledRoles.add(role);
+                const selected = actor === host ? 'foodTrap' : 'tasteThief';
+                await actor.waitForFunction(key => getBattleViewModel().me.skillUseCounts[key] > 0, selected);
+                await (actor === host ? guest : host).waitForFunction(key => getBattleViewModel().opponent.skillUseCounts[key] > 0, selected);
+                assert.equal(await actor.evaluate(key => getBattleViewModel().me.skillUseCounts[key] || 0,
+                    actor === host ? 'tasteThief' : 'foodTrap'), 0);
             }
             const id = await actor.evaluate(() => GameState.players.player.set.length < getSetLimit(GameState.players.player) ? GameState.players.player.hand.find(c => !c.trapLocked)?.id : null);
             if (id) { await call(actor, 'playerSetCard', [id]); await call(actor, 'confirmSetCard'); set = true; }
             for (let dishes = 0; dishes < 6; dishes++) {
+                // Keep GUEST at zero until its selected Taste Thief can legally be tested.
+                if (actor === guest && !skilledRoles.has('GUEST')) break;
                 if (await actor.evaluate(() => GameState.gameEnded)) break;
                 const recipe = await actor.evaluate(() => findPossibleRecipesForPlayer(GameState.players.player).sort((a,b) => b.recipe.points - a.recipe.points)[0]?.recipe.name);
                 if (!recipe) break;
@@ -129,6 +145,9 @@ test('live Supabase Broadcast: two views, latency, legal match and reconnect',
         }
         report.match = { set, cooked, packed, skilled, ended: await host.evaluate(() => GameState.gameEnded) };
         assert.equal(report.match.ended, true);
+        assert.deepEqual([...skilledRoles].sort(), ['GUEST','HOST']);
+        report.checks.push('distinct HOST/GUEST skills used legally');
+        await verifySelections();
         await guest.waitForFunction(() => GameState.gameEnded);
         await host.screenshot({ path: path.join(os.tmpdir(), 'balc-fast-web.png'), fullPage: true });
         await guest.screenshot({ path: path.join(os.tmpdir(), 'balc-fast-mobile.png'), fullPage: true });
@@ -136,6 +155,8 @@ test('live Supabase Broadcast: two views, latency, legal match and reconnect',
         await host.locator('#online-rematch').click(); await guest.locator('#online-rematch').click();
         await host.waitForFunction(() => !GameState.gameEnded, null, { timeout: 20000 });
         await guest.waitForFunction(() => !GameState.gameEnded);
+        await verifySelections();
+        for (const page of pages) assert.deepEqual(await page.evaluate(() => getBattleViewModel().me.skillUseCounts), {});
         report.checks.push('win/rematch');
         // Closing the tab terminates the actual WebSocket; CDP offline emulation may keep it alive.
         await guest.close();
@@ -145,7 +166,20 @@ test('live Supabase Broadcast: two views, latency, legal match and reconnect',
         await restored.goto(`http://127.0.0.1:${server.address().port}/mobile/mobile.html`);
         await restored.locator('#menu-friend-button').click(); await restored.locator('#online-resume').click();
         await restored.waitForFunction(() => document.querySelector('#start-overlay').classList.contains('hidden'), null, { timeout: 30000 });
+        await verifySelections();
+        assert.equal(await restored.locator('#online-character').inputValue(), 'akatsuki');
+        assert.equal(await restored.locator('#online-skill').inputValue(), 'tasteThief');
         report.checks.push('WebSocket disconnect/new tab/resume');
+        await host.waitForFunction(() => !sessionStorage.getItem('aniani:battle:checkpoint:v2'));
+        await host.reload();
+        await host.locator('#menu-friend-button').click();
+        await host.locator('#online-resume').click();
+        await host.waitForFunction(() => document.querySelector('#start-overlay').classList.contains('hidden'), null, { timeout: 30000 });
+        await verifySelections();
+        assert.equal(await host.locator('#online-character').inputValue(), 'takumi');
+        assert.equal(await host.locator('#online-skill').inputValue(), 'foodTrap');
+        await restored.waitForFunction(() => !document.querySelector('#online-status').textContent.includes('接続が切れました'));
+        report.checks.push('HOST reload/resume preserves both selections');
         assert.deepEqual(errors, []);
     } finally {
         console.log('Live performance report:', JSON.stringify(report));
