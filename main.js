@@ -755,7 +755,7 @@ function escapeHtmlText(text) {
 }
 
 function getStartMenuFloatImagePool() {
-    const pool = ['assets/images/card-back.png'];
+    const pool = ['assets/battle-images/card-back.webp'];
 
     if (Array.isArray(window.ingredientDefinitions) && typeof window.getIngredientImagePath === 'function') {
         window.ingredientDefinitions.forEach(def => {
@@ -848,7 +848,7 @@ function getGalleryItemsByType(type) {
         return defs.map(def => ({
             title: def.name,
             meta: '材料カード',
-            imagePath: typeof window.getIngredientImagePath === 'function' ? window.getIngredientImagePath(def.name) : null
+            imagePath: typeof window.getIngredientImagePath === 'function' ? BattleImages.originalPath(window.getIngredientImagePath(def.name)) : null
         }));
     }
 
@@ -857,7 +857,7 @@ function getGalleryItemsByType(type) {
         return defs.map(def => ({
             title: def.name,
             meta: def.description || 'イベントカード',
-            imagePath: typeof window.getEventImagePath === 'function' ? window.getEventImagePath(def.name) : null
+            imagePath: typeof window.getEventImagePath === 'function' ? BattleImages.originalPath(window.getEventImagePath(def.name)) : null
         }));
     }
 
@@ -866,7 +866,7 @@ function getGalleryItemsByType(type) {
         return defs.map(def => ({
             title: def.name,
             meta: `${def.points}点 / ${def.required.join(' + ')}`,
-            imagePath: typeof window.getRecipeImagePath === 'function' ? window.getRecipeImagePath(def.name) : null
+            imagePath: typeof window.getRecipeImagePath === 'function' ? BattleImages.originalPath(window.getRecipeImagePath(def.name)) : null
         }));
     }
 
@@ -900,7 +900,7 @@ function renderStartGallery(type) {
             : 'start-gallery-art start-gallery-card-art';
         const artHtml = item.characterClass
             ? `<div class="start-gallery-art character-art"><span class="start-char-portrait ${escapeHtmlText(item.characterClass)}"></span></div>`
-            : `<div class="${staticArtClass}" style="background-image:url('${escapeHtmlText(item.imagePath || 'assets/images/card-back.png')}')"></div>`;
+            : `<div class="${staticArtClass}" style="background-image:url('${escapeHtmlText(item.imagePath || 'assets/battle-images/card-back.webp')}')"></div>`;
 
         return `
             <article class="start-gallery-card">
@@ -1893,12 +1893,12 @@ function getCharacterNameForSide(side) {
 
 function getSkillCutinImagePathForSide(side) {
     const characterId = getCharacterIdForSide(side);
-    return SKILL_CUTIN_IMAGE_PATHS[characterId] || SKILL_CUTIN_IMAGE_PATHS.chizuru;
+    return BattleImages.lightPath(SKILL_CUTIN_IMAGE_PATHS[characterId] || SKILL_CUTIN_IMAGE_PATHS.chizuru);
 }
 
 function getBattleModeCutinImagePathForSide(side) {
     const characterId = getCharacterIdForSide(side);
-    return BATTLE_MODE_CUTIN_IMAGE_PATHS[characterId] || BATTLE_MODE_CUTIN_IMAGE_PATHS.chizuru;
+    return BattleImages.lightPath(BATTLE_MODE_CUTIN_IMAGE_PATHS[characterId] || BATTLE_MODE_CUTIN_IMAGE_PATHS.chizuru);
 }
 
 function resolveSpotlightDisplayMs(durationMs) {

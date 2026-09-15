@@ -113,5 +113,38 @@ test('PostgreSQL migration, room membership, private state, atomic actions and r
         await db.query('select public.balc_leave_room($1)',[guestRoom.id]);
         await assert.rejects(db.query("select public.balc_send_chat($1,$2,'hello')",[guestRoom.id,'20000000-0000-4000-8000-000000000006']),/ROOM_NOT_FOUND/);
 
+        await db.exec('reset role');
+        const broadcast=fs.readFileSync(path.join(__dirname,'../supabase/battle-broadcast.sql'),'utf8');
+        await db.exec(broadcast); await db.exec(broadcast);
+        await as(0);
+        const fast=(await one("select public.balc_create_room('{}') as r")).r;
+        await as(1);
+        const fastJoined=(await one("select public.balc_join_room($1,'{}') as r",[fast.code])).r;
+        const hostTopic=`balc:${fast.id}:user:${ids[0]}`, guestTopic=`balc:${fast.id}:user:${ids[1]}`;
+        await db.query("select set_config('test.topic',$1,false)",[hostTopic]);
+        await assert.rejects(db.query("insert into realtime.messages values('broadcast')"),/row-level security/);
+        await db.query("select set_config('test.topic',$1,false)",[guestTopic]);
+        await db.query("insert into realtime.messages values('broadcast')");
+        assert.deepEqual((await one('select public.balc_broadcast_capabilities() as r')).r,{version:2});
+        await assert.rejects(db.query('select public.balc_save_checkpoint($1,0,1,$2,$3,$4,$5)',[fast.id,{}, {}, {}, []]),/HOST_REQUIRED/);
+        await as(2);
+        assert.equal((await db.query("select * from realtime.messages where extension='broadcast'")).rows.length,0);
+        await assert.rejects(db.query("insert into realtime.messages values('broadcast')"),/row-level security/);
+        await as(0);
+        const start={currentTurn:fastJoined.first_user===ids[0]?'player':'cpu',gameEnded:false};
+        await db.query('select public.balc_save_checkpoint($1,0,1,$2,$3,$4,$5)',[fast.id,start,{state:{own:'host'}},{state:{own:'guest'}},[]]);
+        const history=[{request_id:'30000000-0000-4000-8000-000000000001',user_id:ids[0],base_revision:1,action}];
+        const finished={currentTurn:null,gameEnded:true};
+        await db.query('select public.balc_save_checkpoint($1,1,2,$2,$3,$4,$5)',[fast.id,finished,{state:{}},{state:{}},history]);
+        await db.query('select public.balc_save_checkpoint($1,1,2,$2,$3,$4,$5)',[fast.id,finished,{state:{}},{state:{}},history]);
+        assert.equal((await one('select revision from public.battle_rooms where id=$1',[fast.id])).revision,2);
+        assert.equal((await db.query('select * from public.battle_match_actions where room_id=$1',[fast.id])).rows.length,1);
+        await assert.rejects(db.query('select public.balc_save_checkpoint($1,1,3,$2,$3,$4,$5)',[fast.id,finished,{},{},[]]),/STALE_REVISION/);
+        const rematch=(await one('select public.balc_rematch($1) as r',[fast.id])).r;
+        assert.equal(rematch.status,'playing'); assert.ok(ids.slice(0,2).includes(rematch.first_user));
+        await as(1);
+        assert.equal((await db.query('select * from public.battle_checkpoints where room_id=$1',[fast.id])).rows.length,0);
+        await assert.rejects(db.query('select public.balc_rematch($1)',[fast.id]),/HOST_REQUIRED/);
+
     } finally { await db.close(); }
 });

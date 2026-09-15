@@ -750,7 +750,7 @@ body.web-battle-fixed .discard-banner {
 }
 
 .card-back {
-    background-image: url("assets/images/card-back.png");
+    background-image: url("assets/battle-images/card-back.webp");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -874,7 +874,7 @@ button:disabled {
 }
 
 .deck-pile {
-    background-image: url("assets/images/card-back.png");
+    background-image: url("assets/battle-images/card-back.webp");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -1411,25 +1411,25 @@ button:disabled {
 
 .character-icon.char-chizuru,
 .start-char-portrait.char-chizuru {
-    background-image: url("assets/images/character-icons/chizuru-icons.png");
+    background-image: url("assets/battle-images/character-icons/chizuru-icons.webp");
     background-size: 380% auto;
 }
 
 .character-icon.char-mai,
 .start-char-portrait.char-mai {
-    background-image: url("assets/images/character-icons/mai-icons.png");
+    background-image: url("assets/battle-images/character-icons/mai-icons.webp");
     background-size: 380% auto;
 }
 
 .character-icon.char-takumi,
 .start-char-portrait.char-takumi {
-    background-image: url("assets/images/character-icons/takumi-icons.png");
+    background-image: url("assets/battle-images/character-icons/takumi-icons.webp");
     background-size: 380% auto;
 }
 
 .character-icon.char-akatsuki,
 .start-char-portrait.char-akatsuki {
-    background-image: url("assets/images/character-icons/akatsuki-icons.png");
+    background-image: url("assets/battle-images/character-icons/akatsuki-icons.webp");
     background-size: 380% auto;
 }
 
@@ -1454,25 +1454,25 @@ button:disabled {
 .character-icon.char-akatsuki.face-worried { background-position: calc(100% - 2px) 32%; }
 
 .character-icon.battle-mode-chef.char-chizuru {
-    background-image: url("assets/images/battle-mode-icons/chizuru-battle-mode-icon.png");
+    background-image: url("assets/battle-images/battle-mode-icons/chizuru-battle-mode-icon.webp");
     background-size: 368% auto;
     background-position: 50% 16%;
 }
 
 .character-icon.battle-mode-chef.char-mai {
-    background-image: url("assets/images/battle-mode-icons/mai-battle-mode-icon.png");
+    background-image: url("assets/battle-images/battle-mode-icons/mai-battle-mode-icon.webp");
     background-size: 368% auto;
     background-position: 50% 16%;
 }
 
 .character-icon.battle-mode-chef.char-takumi {
-    background-image: url("assets/images/battle-mode-icons/takumi-battle-mode-icon.png");
+    background-image: url("assets/battle-images/battle-mode-icons/takumi-battle-mode-icon.webp");
     background-size: 384% auto;
     background-position: 50% 15%;
 }
 
 .character-icon.battle-mode-chef.char-akatsuki {
-    background-image: url("assets/images/battle-mode-icons/akatsuki-battle-mode-icon.png");
+    background-image: url("assets/battle-images/battle-mode-icons/akatsuki-battle-mode-icon.webp");
     background-size: 384% auto;
     background-position: 50% 15%;
 }
@@ -2044,7 +2044,7 @@ button:disabled {
     border: 2px solid rgba(228, 239, 255, 0.4);
     background-image:
         linear-gradient(180deg, rgba(2, 13, 40, 0.18) 0%, rgba(2, 8, 25, 0.58) 100%),
-        url("assets/images/card-back.png");
+        url("assets/battle-images/card-back.webp");
     background-size: cover;
     background-position: center;
     box-shadow: 0 6px 16px rgba(0,0,0,0.34);
@@ -2057,7 +2057,7 @@ button:disabled {
 .start-turn-card.revealed {
     background-image:
         linear-gradient(180deg, rgba(54, 186, 255, 0.42) 0%, rgba(28, 102, 200, 0.58) 100%),
-        url("assets/images/card-back.png");
+        url("assets/battle-images/card-back.webp");
     border-color: rgba(196, 233, 255, 0.82);
 }
 
@@ -2853,3 +2853,11 @@ button:disabled {
     padding-top: 6px;
     background: linear-gradient(180deg, rgba(255, 243, 221, 0) 0%, rgba(255, 243, 221, 0.96) 36%, rgba(255, 243, 221, 1) 100%);
 }
+
+#start-gallery-list .char-chizuru { background-image: url("assets/images/character-icons/chizuru-icons.png"); }
+
+#start-gallery-list .char-mai { background-image: url("assets/images/character-icons/mai-icons.png"); }
+
+#start-gallery-list .char-takumi { background-image: url("assets/images/character-icons/takumi-icons.png"); }
+
+#start-gallery-list .char-akatsuki { background-image: url("assets/images/character-icons/akatsuki-icons.png"); }

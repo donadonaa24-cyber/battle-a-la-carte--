@@ -4,6 +4,30 @@
 
 ## 2026-09-15
 
+### 高速化実装: 追加・変更・修正
+
+- `network.js` に宛先別Private Broadcast、即時UI予測、HOST Worker処理、非同期checkpoint保存・再送・復帰を追加。表示からDB保存待ちと操作ごとのREST再取得を除去。
+- `battle-view-model.js` に共通 `me/opponent` 変換を追加。Web/スマホ描画を変換モデルへ移し、オンラインCPU見出し・ログ・CPU設定表示を整理。
+- オンラインキャラ/スキル選択、双方承認の同室再戦、ランダム先攻と切断後の再開を整備。
+- `battle-metrics.js` に地点別性能計測、`battle-images.js` に軽量/原本パス変換を追加。
+- 対戦用WebP65枚と生成ツール/manifestを追加。旧56枚と同じ集合を141.93MiBから2.98MiBへ削減。全件初期プリロードを廃止し、デコード済み画像を保持。
+- ギャラリー原本PNGを維持。既存ルール、CPU処理、原本画像は変更・削除なし。
+- 修正前の対象ファイルをローカルZIPへバックアップ。バックアップはGit対象外。
+- 標準文書・Supabase手順を更新し、`docs/ONLINE_PERFORMANCE_RESULTS.md` に詳細結果・制約を追加。
+
+### 高速化実装: 設定変更
+
+- 承認を受け共通Supabaseへ `supabase/battle-broadcast.sql` を適用。参加者限定Broadcast権限、HOST限定checkpoint保存・再戦RPCを追加。既存データ削除、コイン/アカウント設定変更なし。
+- 変更したHTML/JS/CSSのキャッシュ識別子を更新。
+
+### 高速化実装: テスト
+
+- online/sql/browser/images回帰16件成功。checkpoint保存失敗→再送→新状態保存も成功。
+- 実Supabase試験1件成功。PC幅/スマホ幅で部屋作成、参加、キャラ/スキル選択、セット、料理、加工、スキル、ターン、勝敗、再戦、実タブ切断/再開を確認。
+- HOST40回: 平均93.25ms、中央値86.35ms、84.80〜143.10ms。GUEST20回: 平均84.19ms、中央値84.15ms、83.00〜85.60ms。入力から相手DOM完了まで、60回加重平均90.23ms。
+- 起動〜対戦開始の画像取得は今回Web635,814 bytes、スマホ幅194,614 bytes、原本PNG取得0。
+- 実機Android/iPhone・物理断線・全ストーリー手動回帰は未確認。詳細と測定範囲は結果文書を参照。
+
 ### 追加
 
 - `docs/ONLINE_PERFORMANCE_AUDIT.md` にSupabase通信、HOST/GUEST表示、画像容量の調査結果を追加。

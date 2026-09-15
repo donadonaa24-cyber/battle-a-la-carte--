@@ -47,6 +47,8 @@ async function execute(request) {
             GameState.characterNames[key] = names[id];
             setPlayerSelectedSkill(GameState.players[key], info.skill);
         }
+    } else if (request.kind === 'project') {
+        loadSnapshot(request.snapshot);
     } else {
         loadSnapshot(request.snapshot);
         if (GameState.gameEnded) throw new Error('MATCH_ENDED');
@@ -70,7 +72,7 @@ async function execute(request) {
         views[role] = { state: projected, effects: adapted,
             logs: role === actor ? logs : (request.kind === 'init' ? [] : ['相手が操作しました。']) };
     }
-    return { snapshot, views };
+    return request.kind === 'project' ? views : { snapshot, views };
 }
 self.onmessage = async ({ data }) => {
     try { self.postMessage({ id: data.id, result: await execute(data) }); }

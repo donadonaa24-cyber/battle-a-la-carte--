@@ -23,12 +23,12 @@ function mockClient(user) {
                 maybeSingle(){single=true;return q;}, then(ok,no){return window.__bridge({op:'select',table,filters,single}).then(ok,no);} };
             return q;
         },
-        channel(){
+        channel(topic){
             const callbacks=[];
-            const ch={on(kind,config,cb){callbacks.push({kind,cb});return ch;},
+            const ch={topic,on(kind,config,cb){callbacks.push({kind,config,cb});return ch;},
                 subscribe(cb){queueMicrotask(()=>cb('SUBSCRIBED'));return ch;},
                 presenceState:()=>window.__presence,
-                track:()=>window.__bridge({op:'track'}), callbacks};
+                track:()=>window.__bridge({op:'track'}), send:m=>window.__bridge({op:'broadcast',topic,message:m}), callbacks};
             window.__channels.push(ch);return ch;
         },
         async removeChannel(ch){window.__channels=window.__channels.filter(x=>x!==ch);await window.__bridge({op:'untrack'});}
@@ -40,7 +40,7 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
         const filename=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
         if(!filename.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
         fs.readFile(filename,(error,data)=>{if(error){res.writeHead(404);res.end();return;}
-            const types={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.mp3':'audio/mpeg'};
+            const types={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.webp':'image/webp','.mp3':'audio/mpeg'};
             res.setHeader('Content-Type',types[path.extname(filename)]||'application/octet-stream');res.end(data);});
     });
     await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -49,11 +49,15 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
     catch(error){ server.close(); throw error; }
     const pages=[], present=new Set(), db={room:null,checkpoint:null,views:[],actions:[],chat:[]};
     const errors=[];
+    let failFirstCheckpoint=true;
     const notify=()=>setTimeout(()=>{
         const presence=Object.fromEntries([...present].map(id=>[id,[{online:true}]]));
         for(const page of pages) if(!page.isClosed()) page.evaluate(p=>{
             window.__presence=p;
-            for(const ch of window.__channels||[]) for(const {cb} of ch.callbacks) cb();
+            for(const ch of window.__channels||[]) for(const {kind,cb} of ch.callbacks) {
+                if(kind==='presence') cb();
+                if(kind==='postgres_changes') cb({new:window.__roomEvent});
+            }
         },presence).catch(()=>{});
     },5);
     try {
@@ -65,6 +69,13 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
             await page.exposeFunction('__bridge',async r=>{
                 try{
                     if(r.op==='track'||r.op==='untrack'){r.op==='track'?present.add(user.id):present.delete(user.id);notify();return {};}
+                    if(r.op==='broadcast') {
+                        for(const target of pages) if(target!==page&&!target.isClosed()) await target.evaluate(r=>{
+                            for(const ch of window.__channels||[]) if(ch.topic===r.topic)
+                                for(const {kind,config,cb} of ch.callbacks) if(kind==='broadcast'&&config.event===r.message.event) cb({payload:r.message.payload});
+                        },r);
+                        return 'ok';
+                    }
                     if(r.op==='select'){
                         let rows=r.table==='battle_rooms'?[db.room]:r.table==='battle_views'?db.views.filter(x=>x.user_id===user.id):
                             r.table==='battle_chat_messages'?db.chat:r.table==='battle_checkpoints'?(user.id==='host'?[db.checkpoint]:[]):db.actions.filter(x=>user.id==='host'||x.user_id===user.id);
@@ -73,8 +84,19 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
                     }
                     const a=r.args;
                     let data;
+                    if(r.name==='balc_broadcast_capabilities') data={version:2};
                     if(r.name==='balc_create_room') data=db.room={id:'room1',host_id:'host',guest_id:null,code:'482731',host_info:a.p_info,revision:0,status:'waiting'};
-                    if(r.name==='balc_join_room') {db.room={...db.room,guest_id:'guest',guest_info:a.p_info,status:'playing',turn_user:'host'};data=db.room;}
+                    if(r.name==='balc_join_room') {db.room={...db.room,guest_id:'guest',guest_info:a.p_info,status:'playing',turn_user:'host',first_user:'host'};data=db.room;}
+                    if(r.name==='balc_save_checkpoint') {
+                        if(failFirstCheckpoint){failFirstCheckpoint=false;throw Error('SIMULATED_SAVE_FAILURE');}
+                        await new Promise(resolve=>setTimeout(resolve,150));
+                        if(db.room.revision!==a.p_base)throw Error('STALE_REVISION');
+                        db.checkpoint={room_id:a.p_room,snapshot:a.p_snapshot};
+                        db.room={...db.room,revision:a.p_revision,turn_user:a.p_snapshot.currentTurn==='player'?'host':'guest',status:a.p_snapshot.gameEnded?'finished':'playing'};
+                        db.views=[{room_id:a.p_room,user_id:'host',revision:db.room.revision,payload:a.p_host_view},{room_id:a.p_room,user_id:'guest',revision:db.room.revision,payload:a.p_guest_view}];
+                        for(const act of a.p_actions) if(!db.actions.some(x=>x.request_id===act.request_id)) db.actions.push({...act,room_id:a.p_room,processed:true});
+                        data=a.p_revision;
+                    }
                     if(r.name==='balc_submit_action'){
                         let existing=db.actions.find(x=>x.request_id===a.p_request);
                         if(!existing){
@@ -98,12 +120,16 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
                         if(!item){item={room_id:a.p_room,request_id:a.p_request,user_id:user.id,phrase:a.p_phrase,created_at:new Date().toISOString()};db.chat.push(item);}
                         data=item;
                     }
+                    for(const target of pages) if(!target.isClosed()) await target.evaluate(r=>window.__roomEvent=r,db.room);
                     notify();return {data};
                 }catch(error){return {error:{message:error.message}};}
             });
             await page.addInitScript(mockClient,user);
             await page.route('https://esm.sh/**',route=>route.fulfill({contentType:'text/javascript',body:'export const createClient = window.__createClient;'}));
             await page.goto(`http://127.0.0.1:${server.address().port}/${file}`);
+            await page.evaluate(()=>{initGame();updateUI(true);});
+            assert.equal(await page.evaluate(()=>getBattleViewModel().online),false);
+            assert.ok((await page.locator('[data-online-label]').first().innerText()).includes('CPU'));
             await page.locator('#menu-friend-button').click();
             await page.waitForFunction(()=>!document.getElementById('friend-create-button').disabled);
         }
@@ -122,6 +148,28 @@ test('real Web/mobile UIs and HOST worker: create/join, turns, hidden cards, dis
         assert.equal(await guest.evaluate(()=>GameState.currentTurn),'cpu');
         assert.equal(await guest.evaluate(()=>GameState.players.cpu.hand.every(c=>!c.name&&!c.type)),true);
         await host.waitForFunction(()=>!document.body.classList.contains('online-operation-locked'));
+        assert.equal(await host.evaluate(()=>FriendBattle.isFastMode()),true);
+        for(const page of pages) {
+            assert.equal(await page.evaluate(()=>getBattleViewModel().online),true);
+            assert.ok((await page.evaluate(()=>getGalleryItemsByType('ingredients'))).every(x=>x.imagePath.endsWith('.png')));
+            await page.evaluate(()=>openInfoOverlay('settings'));
+            assert.equal(await page.locator('[data-cpu-only]').first().isVisible(),false);
+            await page.evaluate(()=>{closeInfoOverlay();GameState.openDishHistoryFor='cpu';updateUI(true);GameState.openDishHistoryFor=null;updateUI(true);});
+            assert.equal(await page.locator('[data-online-label]').first().innerText().then(t=>t.includes('CPU')),false);
+            await page.evaluate(()=>BattleMetrics.clear());
+        }
+        const cardId=await host.evaluate(()=>GameState.players.player.hand[0].id);
+        for(let n=0;n<20;n++) {
+            await host.waitForFunction(()=>!document.body.classList.contains('online-operation-locked'));
+            await host.evaluate(id=>openIngredientAction(id,'hand'),cardId);
+            await host.waitForFunction(()=>!document.body.classList.contains('online-operation-locked')&&GameState.selectionMode==='ingredient-action');
+            await host.evaluate(()=>closeIngredientAction());
+            await host.waitForFunction(()=>!document.body.classList.contains('online-operation-locked')&&!GameState.selectionMode);
+        }
+        console.log('Mock Broadcast benchmark (not internet latency):',await guest.evaluate(()=>BattleMetrics.summary()));
+        assert.ok((await guest.evaluate(()=>BattleMetrics.summary())).count>=40);
+        await host.waitForFunction(()=>!sessionStorage.getItem('aniani:battle:checkpoint:v2'),null,{timeout:10000});
+        assert.ok(db.room.revision>1,'initial failed checkpoint and newer buffered states were saved');
         const old=JSON.stringify(db.checkpoint);
         await guest.evaluate(()=>playerEndTurn());
         assert.equal(JSON.stringify(db.checkpoint),old);

@@ -1,0 +1,522 @@
+[
+  {
+    "original": "assets/images/battle-mode-cutins/akatsuki-battle-mode-cutin.png",
+    "battle": "assets/battle-images/battle-mode-cutins/akatsuki-battle-mode-cutin.webp",
+    "originalBytes": 2461032,
+    "bytes": 157516,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/battle-mode-cutins/chizuru-battle-mode-cutin.png",
+    "battle": "assets/battle-images/battle-mode-cutins/chizuru-battle-mode-cutin.webp",
+    "originalBytes": 2578891,
+    "bytes": 160808,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/battle-mode-cutins/mai-battle-mode-cutin.png",
+    "battle": "assets/battle-images/battle-mode-cutins/mai-battle-mode-cutin.webp",
+    "originalBytes": 2546828,
+    "bytes": 171966,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/battle-mode-cutins/takumi-battle-mode-cutin.png",
+    "battle": "assets/battle-images/battle-mode-cutins/takumi-battle-mode-cutin.webp",
+    "originalBytes": 2568864,
+    "bytes": 164598,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/battle-mode-icons/akatsuki-battle-mode-icon.png",
+    "battle": "assets/battle-images/battle-mode-icons/akatsuki-battle-mode-icon.webp",
+    "originalBytes": 2416556,
+    "bytes": 55588,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/battle-mode-icons/chizuru-battle-mode-icon.png",
+    "battle": "assets/battle-images/battle-mode-icons/chizuru-battle-mode-icon.webp",
+    "originalBytes": 2388903,
+    "bytes": 54024,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/battle-mode-icons/mai-battle-mode-icon.png",
+    "battle": "assets/battle-images/battle-mode-icons/mai-battle-mode-icon.webp",
+    "originalBytes": 2461293,
+    "bytes": 69792,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/battle-mode-icons/takumi-battle-mode-icon.png",
+    "battle": "assets/battle-images/battle-mode-icons/takumi-battle-mode-icon.webp",
+    "originalBytes": 2425187,
+    "bytes": 57766,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/card-back.png",
+    "battle": "assets/battle-images/card-back.webp",
+    "originalBytes": 3565357,
+    "bytes": 39316,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/banana.png",
+    "battle": "assets/battle-images/cards/banana.webp",
+    "originalBytes": 2364731,
+    "bytes": 29702,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/beef.png",
+    "battle": "assets/battle-images/cards/beef.webp",
+    "originalBytes": 2787486,
+    "bytes": 38102,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/cabbage.png",
+    "battle": "assets/battle-images/cards/cabbage.webp",
+    "originalBytes": 2551304,
+    "bytes": 35252,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/carrot.png",
+    "battle": "assets/battle-images/cards/carrot.webp",
+    "originalBytes": 2531725,
+    "bytes": 34114,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/chicken.png",
+    "battle": "assets/battle-images/cards/chicken.webp",
+    "originalBytes": 3393773,
+    "bytes": 44614,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/curry.png",
+    "battle": "assets/battle-images/cards/curry.webp",
+    "originalBytes": 2783309,
+    "bytes": 36764,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/daikon.png",
+    "battle": "assets/battle-images/cards/daikon.webp",
+    "originalBytes": 2670186,
+    "bytes": 33010,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/egg.png",
+    "battle": "assets/battle-images/cards/egg.webp",
+    "originalBytes": 2576133,
+    "bytes": 32222,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/fish.png",
+    "battle": "assets/battle-images/cards/fish.webp",
+    "originalBytes": 2527068,
+    "bytes": 34230,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/milk.png",
+    "battle": "assets/battle-images/cards/milk.webp",
+    "originalBytes": 2389924,
+    "bytes": 32108,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/nori.png",
+    "battle": "assets/battle-images/cards/nori.webp",
+    "originalBytes": 2631107,
+    "bytes": 33884,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/onion.png",
+    "battle": "assets/battle-images/cards/onion.webp",
+    "originalBytes": 2710889,
+    "bytes": 33988,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/pork.png",
+    "battle": "assets/battle-images/cards/pork.webp",
+    "originalBytes": 2534919,
+    "bytes": 34358,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/potato.png",
+    "battle": "assets/battle-images/cards/potato.webp",
+    "originalBytes": 2537218,
+    "bytes": 32512,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/cards/rice.png",
+    "battle": "assets/battle-images/cards/rice.webp",
+    "originalBytes": 2587368,
+    "bytes": 35168,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/character-icons/akatsuki-icons.png",
+    "battle": "assets/battle-images/character-icons/akatsuki-icons.webp",
+    "originalBytes": 2477501,
+    "bytes": 84196,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/character-icons/chizuru-icons.png",
+    "battle": "assets/battle-images/character-icons/chizuru-icons.webp",
+    "originalBytes": 2465286,
+    "bytes": 75954,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/character-icons/mai-icons.png",
+    "battle": "assets/battle-images/character-icons/mai-icons.webp",
+    "originalBytes": 2490040,
+    "bytes": 79344,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/character-icons/takumi-icons.png",
+    "battle": "assets/battle-images/character-icons/takumi-icons.webp",
+    "originalBytes": 2526311,
+    "bytes": 110730,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/events/bakugai.png",
+    "battle": "assets/battle-images/events/bakugai.webp",
+    "originalBytes": 2507022,
+    "bytes": 34770,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/events/gomi-shushu-sha.png",
+    "battle": "assets/battle-images/events/gomi-shushu-sha.webp",
+    "originalBytes": 4066651,
+    "bytes": 44062,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/events/kinkyu-chori.png",
+    "battle": "assets/battle-images/events/kinkyu-chori.webp",
+    "originalBytes": 2508043,
+    "bytes": 32248,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/events/monomono-kokan.png",
+    "battle": "assets/battle-images/events/monomono-kokan.webp",
+    "originalBytes": 3098458,
+    "bytes": 35380,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/events/osouji.png",
+    "battle": "assets/battle-images/events/osouji.webp",
+    "originalBytes": 3062215,
+    "bytes": 42524,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/events/shokuzai-tansaku.png",
+    "battle": "assets/battle-images/events/shokuzai-tansaku.webp",
+    "originalBytes": 2585110,
+    "bytes": 32824,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/events/sousaku-ryouri.png",
+    "battle": "assets/battle-images/events/sousaku-ryouri.webp",
+    "originalBytes": 2460326,
+    "bytes": 35468,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/events/yappa-yameta.png",
+    "battle": "assets/battle-images/events/yappa-yameta.webp",
+    "originalBytes": 2818176,
+    "bytes": 33456,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/events/yarinaoshi.png",
+    "battle": "assets/battle-images/events/yarinaoshi.webp",
+    "originalBytes": 2660348,
+    "bytes": 33882,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/packs/board-girl.png",
+    "battle": "assets/battle-images/packs/board-girl.webp",
+    "originalBytes": 2578667,
+    "bytes": 35338,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/packs/eco-bag-boy.png",
+    "battle": "assets/battle-images/packs/eco-bag-boy.webp",
+    "originalBytes": 2933302,
+    "bytes": 35120,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/packs/fridge-girl.png",
+    "battle": "assets/battle-images/packs/fridge-girl.webp",
+    "originalBytes": 2396015,
+    "bytes": 27616,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/packs/knife-boy.png",
+    "battle": "assets/battle-images/packs/knife-boy.webp",
+    "originalBytes": 2560481,
+    "bytes": 29206,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/bakudan-onigiri.png",
+    "battle": "assets/battle-images/recipes/bakudan-onigiri.webp",
+    "originalBytes": 3191667,
+    "bytes": 45702,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/banana-juice.png",
+    "battle": "assets/battle-images/recipes/banana-juice.webp",
+    "originalBytes": 2513614,
+    "bytes": 27312,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/buri-daikon.png",
+    "battle": "assets/battle-images/recipes/buri-daikon.webp",
+    "originalBytes": 2610295,
+    "bytes": 28108,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/butabara-daikon.png",
+    "battle": "assets/battle-images/recipes/butabara-daikon.webp",
+    "originalBytes": 2606976,
+    "bytes": 27324,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/chahan.png",
+    "battle": "assets/battle-images/recipes/chahan.webp",
+    "originalBytes": 2568630,
+    "bytes": 30048,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/cream-stew.png",
+    "battle": "assets/battle-images/recipes/cream-stew.webp",
+    "originalBytes": 2806806,
+    "bytes": 39882,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/curry-rice.png",
+    "battle": "assets/battle-images/recipes/curry-rice.webp",
+    "originalBytes": 2717919,
+    "bytes": 35964,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/gorgeous-chahan.png",
+    "battle": "assets/battle-images/recipes/gorgeous-chahan.webp",
+    "originalBytes": 2556574,
+    "bytes": 32798,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/hamburg-steak.png",
+    "battle": "assets/battle-images/recipes/hamburg-steak.webp",
+    "originalBytes": 2461808,
+    "bytes": 29700,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/keema-curry.png",
+    "battle": "assets/battle-images/recipes/keema-curry.webp",
+    "originalBytes": 2623219,
+    "bytes": 33302,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/kinkyu-ryouri-special.png",
+    "battle": "assets/battle-images/recipes/kinkyu-ryouri-special.webp",
+    "originalBytes": 2124426,
+    "bytes": 26488,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/manpuku-curry.png",
+    "battle": "assets/battle-images/recipes/manpuku-curry.webp",
+    "originalBytes": 2942681,
+    "bytes": 41606,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/nikujaga.png",
+    "battle": "assets/battle-images/recipes/nikujaga.webp",
+    "originalBytes": 2457349,
+    "bytes": 29738,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/omurice.png",
+    "battle": "assets/battle-images/recipes/omurice.webp",
+    "originalBytes": 2474811,
+    "bytes": 30608,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/onigiri.png",
+    "battle": "assets/battle-images/recipes/onigiri.webp",
+    "originalBytes": 401948,
+    "bytes": 27784,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/roll-cabbage.png",
+    "battle": "assets/battle-images/recipes/roll-cabbage.webp",
+    "originalBytes": 2607348,
+    "bytes": 27518,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/sake-onigiri.png",
+    "battle": "assets/battle-images/recipes/sake-onigiri.webp",
+    "originalBytes": 2568208,
+    "bytes": 28010,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/sousaku-ryouri-special.png",
+    "battle": "assets/battle-images/recipes/sousaku-ryouri-special.webp",
+    "originalBytes": 2180514,
+    "bytes": 26190,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/tamago-kake-gohan.png",
+    "battle": "assets/battle-images/recipes/tamago-kake-gohan.webp",
+    "originalBytes": 2563686,
+    "bytes": 29184,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/recipes/yasai-itame.png",
+    "battle": "assets/battle-images/recipes/yasai-itame.webp",
+    "originalBytes": 2623922,
+    "bytes": 30302,
+    "width": 256,
+    "height": 384
+  },
+  {
+    "original": "assets/images/skill-cutins/akatsuki-skill-cutin.png",
+    "battle": "assets/battle-images/skill-cutins/akatsuki-skill-cutin.webp",
+    "originalBytes": 2851700,
+    "bytes": 185196,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/skill-cutins/chizuru-skill-cutin.png",
+    "battle": "assets/battle-images/skill-cutins/chizuru-skill-cutin.webp",
+    "originalBytes": 2776994,
+    "bytes": 171832,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/skill-cutins/mai-skill-cutin.png",
+    "battle": "assets/battle-images/skill-cutins/mai-skill-cutin.webp",
+    "originalBytes": 3760666,
+    "bytes": 328278,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/skill-cutins/takumi-skill-cutin.png",
+    "battle": "assets/battle-images/skill-cutins/takumi-skill-cutin.webp",
+    "originalBytes": 2855165,
+    "bytes": 176432,
+    "width": 1024,
+    "height": 683
+  }
+]

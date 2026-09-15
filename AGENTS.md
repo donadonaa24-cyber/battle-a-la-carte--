@@ -25,6 +25,8 @@
 - 技術構成: `docs/ARCHITECTURE.md`
 - Supabase導入手順: `SUPABASE_ONLINE_SETUP.md`
 - 共通基盤との統合方針: `ANIANI_INTEGRATION.md`
+- 通信性能の変更前調査: `docs/ONLINE_PERFORMANCE_AUDIT.md`
+- 高速化後の結果: `docs/ONLINE_PERFORMANCE_RESULTS.md`
 
 次の5文書はソースコードと一緒にGit管理し、GitHubへ保存します。
 
@@ -46,6 +48,8 @@
 - PC向け表示/起動: `render.js`, `audio.js`, `main.js`
 - スマホ向け表示/起動: `mobile/*-sp.js`
 - オンライン通信: `network.js`, `battle-protocol.js`, `battle-engine-worker.js`, `battle-chat.js`
+- 描画モデル/性能計測: `battle-view-model.js`, `battle-metrics.js`
+- 軽量対戦画像: `assets/battle-images/`, `battle-images.js`（原本は `assets/images/`）
 - 公開用DB SQL: `supabase/`
 - 自動テスト: `tests/`
 
@@ -71,13 +75,15 @@
 - 通信処理はゲームルールから分離し、既存ルールを `battle-engine-worker.js` から再利用します。
 - オンライン戦では、自分のターンだけ操作できる制約と更新リビジョンを維持します。
 - HTMLはファイル直開きではなくHTTPサーバー経由で確認します。WorkerやSupabase通信は `file://` で正しく動きません。
-- 公開対象は静的ファイルです。ビルド工程やnpm依存はありません。
+- 公開対象は静的ファイルです。実行時のビルド工程やnpm依存はありません。画像を再生成する開発作業だけSharpを使います。
 
 ## テスト方針
 
 - 小規模修正では、変更箇所に関連するテストだけを実行します。
 - 通信ロジック変更: `node --test tests/online.test.cjs tests/sql.test.cjs`
 - HTML読込やブラウザ統合変更: `node --test tests/browser.test.cjs`
+- 画像変更: `node --test tests/images.test.cjs`
+- 実通信テスト: `tests/live-online.test.cjs`。`BALC_LIVE=1` の明示指定時だけ匿名の実部屋を作ります。
 - UI変更は対象のPC版またはスマホ版をブラウザで目視確認します。
 - 大規模更新、共通ルール変更、公開前だけフル回帰テストを行います。
 - フル回帰ではCPU戦、Web対Web、Web対スマホ、スマホ対スマホ、切断・再接続を確認します。

@@ -1,6 +1,6 @@
 # 技術構成
 
-最終確認日: 2026-09-14
+最終確認日: 2026-09-15
 
 ## 全体構成
 
@@ -32,6 +32,8 @@ GitHub Pages上の想定URL:
 ## 主要フォルダ
 
 - `assets/images/`: 材料、イベント、キャラクター、背景、カットイン等の画像
+- `assets/battle-images/`: 対戦用WebP65枚と容量・サイズのmanifest。原本PNGは変更しません。
+- `tools/build-battle-images.cjs`: 開発時だけ使うSharp画像変換スクリプト
 - `assets/audio/`: BGMと効果音
 - `mobile/`: スマホ固有のHTML/CSS/JS
 - `supabase/`: Supabase SQL
@@ -76,6 +78,9 @@ GitHub Pages上の想定URL:
 - `battle-engine-worker.js`: HOST側で既存ゲームファイルを読み込み、初期状態作成と操作適用を行うWeb Worker
 - `battle-chat.js`: 定型チャット表示、送信、5秒クールダウン、再送ID保持
 - `online.css`: PC/スマホ共通のオンラインUI
+- `battle-view-model.js`: 従来ルールの視点状態を描画用 `me/opponent` に変換。両renderで共通利用
+- `battle-metrics.js`: `performance.now()` とtimeOriginで入力・描画等を記録。`BattleMetrics.records()` / `summary()` で取得
+- `battle-images.js`: 対戦WebPとギャラリー原本PNGのパス変換
 
 ### 通信フロー
 
@@ -83,9 +88,14 @@ GitHub Pages上の想定URL:
 2. HOSTがRPCで部屋を作り、GUESTが6桁コードで参加します。
 3. DBがランダムに `first_user` を決定します。
 4. 両者は部屋専用Private Channelへ参加し、Presenceで接続状態を共有します。
-5. GUESTを含む操作側は、許可済み操作名と引数を `battle_match_actions` へRPC送信します。
-6. HOSTはWorkerで操作を既存ルールへ適用し、チェックポイントと参加者別ViewをRPCで確定します。
-7. 各クライアントは自分の `battle_views` だけを取得し、DOMへ反映します。
+5. 参加者別Private Channel `balc:<room>:user:<user>` を追加します。本人とHOSTだけがアクセス可能です。HOSTは操作要求の送信者をチャンネルの宛先IDから決め、payloadのuser値を信用しません。
+6. 安全に予測可能なUIは即時表示。GUESTの操作要求は自分のチャンネルからBroadcastでHOSTへ送り、HOST自身の操作はローカルの同じ処理キューへ渡します。
+7. HOSTがメモリ内snapshotをWorkerへ渡し、リビジョンを進めて自分のDOMへ即時適用。GUESTにはマスク済みGUEST ViewだけをBroadcastします。Broadcast ACK待ちは次操作をブロックしません。
+8. `balc_save_checkpoint` はその後非同期でcheckpoint、2 View、room、処理済みaction履歴を保存します。保存中の新状態は最新へ集約し、失敗した保存は同じ内容で再送します。初回保存を飛ばしません。
+9. HOSTは保存待ちのsnapshotとaction履歴をsessionStorageに保持し、再読込時はDBリビジョンと比較します。GUESTは自分のDB ViewとHOSTへのrequest-stateで復帰します。部屋専用PresenceとPostgres Changesは接続・ライフサイクルに利用します。
+10. `balc_broadcast_capabilities` が利用できない旧DBでは従来通信へフォールバックします。
+
+描画DOMの `player-*` / `cpu-*` IDは既存CSS・操作互換のため維持しています。状態参照は両renderとも `getBattleViewModel().me/opponent` です。既存ルール/Worker内部のplayer/cpuは変更していません。
 
 ### 非公開情報
 
@@ -118,6 +128,7 @@ GitHub Pages上の想定URL:
 
 - `supabase/battle-online.sql`: 初回導入用。既存オブジェクトがある環境での再実行は前提ではありません。
 - `supabase/battle-guest-chat.sql`: 匿名ゲスト、ランダム先攻、定型チャットを追加する更新SQL。
+- `supabase/battle-broadcast.sql`: 参加者別Broadcast RLS、非同期保存、同じ部屋での再戦。既存SQLの後に実行。再実行可能です。
 
 ## 旧Firebase構成
 
@@ -149,12 +160,14 @@ GitHub Pages上の想定URL:
 - Web Worker: ブラウザ標準API
 - Web Audio/HTMLAudio: ブラウザ標準API
 - localStorage/sessionStorage: ブラウザ標準API
-- Node.js: テスト実行時のみ使用
+- Node.js: テスト実行/画像再生成時のみ使用
+- Sharp: 軽量画像を再生成するときだけ必要。`BALC_SHARP_PATH` でパッケージ位置を指定できます。
 - npm package / bundler / framework: なし
 
 ## ビルドと公開
 
 - トランスパイル、バンドル、生成工程はありません。
+- 通常の公開にビルドは不要です。画像原本を変更した場合だけ `node tools/build-battle-images.cjs` でWebPを再生成します。
 - 静的ファイルをそのままGitHub Pagesへ公開します。
 - 主ブランチは `main` です。
 - `AGENTS.md` と `docs/PROJECT_SPEC.md`, `CURRENT_STATE.md`, `CHANGELOG.md`, `ARCHITECTURE.md` はGit管理対象です。
@@ -181,6 +194,8 @@ GitHub Pages上の想定URL:
 - `tests/online.test.cjs`: プロトコル、状態マスク、Worker/ネットワーク関連の単体確認
 - `tests/sql.test.cjs`: SQLのRLS、権限、RPC、Realtime構成の静的確認
 - `tests/browser.test.cjs`: Web/スマホHTMLの読込とブラウザ統合確認
+- `tests/images.test.cjs`: 原本維持、WebP容量・Pixel、描画モデル使用とgalleryパスを確認
+- `tests/live-online.test.cjs`: `BALC_LIVE=1` の時だけ実Supabaseで匿名部屋、両方向60操作計測、勝敗・再戦・切断復帰を検証。認証情報は既存クライアント設定を実行時に利用し、結果へ出力しません。
 - UIの視覚崩れ、音声、実ネットワーク、実機タッチ操作は自動テストだけでは保証しません。
 
 ## 変更時の注意点

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Battle a la carte - Web UI</title>
-    <link rel="stylesheet" href="style.css?v=20260419d">
-    <link rel="stylesheet" href="online.css?v=20260913">
+    <link rel="stylesheet" href="style.css?v=20260915">
+    <link rel="stylesheet" href="online.css?v=20260915">
 </head>
 <body>
     <div id="game-container">
@@ -112,7 +112,7 @@
                     </div>
 
                     <div class="panel-box dish-summary-panel">
-                        <h3>CPUの料理</h3>
+                        <h3 data-online-label="相手の料理">CPUの料理</h3>
                         <div id="cpu-latest-dish" class="latest-dish-slot"></div>
                     </div>
                 </div>
@@ -225,7 +225,7 @@
             </section>
 
             <section class="side-panel">
-                <h2>CPU</h2>
+                <h2 data-online-label="相手">CPU</h2>
 
                 <div class="character-panel">
                     <div class="character-icon cpu-icon char-mai face-normal"></div>
@@ -238,12 +238,12 @@
                 </div>
 
                 <div class="panel-box">
-                    <h3>CPU手札（非公開）</h3>
+                    <h3 data-online-label="相手手札（非公開）">CPU手札（非公開）</h3>
                     <div id="cpu-hand-mixed" class="card-row compact-row"></div>
                 </div>
 
                 <div class="panel-box">
-                    <h3>CPUセット（非公開）</h3>
+                    <h3 data-online-label="相手セット（非公開）">CPUセット（非公開）</h3>
                     <div id="cpu-set" class="card-row compact-row"></div>
                 </div>
 
@@ -529,13 +529,16 @@
     <script src="rules.js?v=20260419d"></script>
     <script src="player.js?v=20260419d"></script>
     <script src="cpu.js?v=20260419d"></script>
-    <script src="render.js?v=20260419d"></script>
+    <script src="battle-view-model.js?v=20260915"></script>
+    <script src="battle-images.js?v=20260915"></script>
+    <script src="render.js?v=20260915"></script>
     <script src="audio.js?v=20260419d"></script>
     <script src="supabase-config.js?v=20260912"></script>
-    <script src="battle-protocol.js?v=20260912"></script>
+    <script src="battle-protocol.js?v=20260915"></script>
     <script src="battle-chat.js?v=20260914"></script>
-    <script src="network.js?v=20260914"></script>
-    <script src="main.js?v=20260912"></script>
+    <script src="battle-metrics.js?v=20260915"></script>
+    <script src="network.js?v=20260915"></script>
+    <script src="main.js?v=20260915"></script>
     <script src="story-mode.js?v=20260419d"></script>
 </body>
 </html>

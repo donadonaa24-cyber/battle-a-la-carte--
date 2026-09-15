@@ -138,6 +138,18 @@ Web版: https://donadonaa24-cyber.github.io/battle-a-la-carte--/web.html
 
 ## MVPの範囲と制約
 
+### 高速化用の追加SQL（2026-09-15）
+
+現在の共通Supabaseには適用済みです。別環境へ導入する場合は次の順番です。
+
+1. Supabaseで対象プロジェクトを開き、左の **SQL Editor** を押します。
+2. 初期SQL、ゲスト・チャットSQLを適用した後、新しいクエリに `supabase/battle-broadcast.sql` の全文を貼ります。
+3. 右上の **Run** を押します。自動翻訳で「逃げろ」と表示される場合がありますが、これは「実行」です。「Save/セーブ」はクエリ文の保存で、SQL実行ではありません。
+4. 警告が出る場合は内容を確認します。この更新SQLは今回のポリシーを置き換えますが、既存テーブル・試合データ・コインは削除しません。
+5. エラーがないことを確認し、Web/スマホ側の更新ファイルを公開します。ゲームで「従来通信（高速化SQL未適用）」が出る場合は、接続先とSQL適用を確認します。
+
+対戦操作はPrivate Broadcast、DBは非同期checkpoint/view/action履歴保存です。一般のクライアントに両者の非公開snapshotを配信しません。切断から戻るときは同じブラウザで「前の部屋を再開」を押します。HOSTの交代はできません。
+
 - HOSTの専用Workerが既存のcards.js/state.js/rules.js/player.jsを読み込み、両者の操作を実行します。
 - GUESTは操作要求だけを送り、HOSTの確定状態を受け取ります。
 - 通常の受信データは相手手札・伏せセット・山札の中身を隠します。カードIDも名前を推測できないランダム値です。
@@ -157,7 +169,7 @@ Web版: https://donadonaa24-cyber.github.io/battle-a-la-carte--/web.html
 - tests/online.test.cjs: 実際の既存ルールを読み込む回帰テスト。料理、イベント9種、ターン、伏せ札、特殊勝利、CPU進行等。
 - tests/sql.test.cjs: 一時PostgreSQL（PGlite）でSQLの適用とRLS、参加制限、二重送信、古い更新拒否を確認。Supabase本番の設定確認ではありません。
 - tests/browser.test.cjs: 実際のWeb版・スマホ版とHOST WorkerをEdgeで起動し、テスト用通信を通して参加・ターン交代・切断・再読み込み復帰を確認。
-- 実SupabaseのRealtime、実アカウントでのログイン、別々の実端末間の通信は未検証です。
+- 実Supabaseの匿名2クライアントでBroadcast、料理・加工・スキル、勝敗、再戦、タブを閉じた後の再開を確認済みです。登録アカウントの最新回帰と、別々の実機スマホは未確認です。詳細は `docs/ONLINE_PERFORMANCE_RESULTS.md`。
 
 開発者向け: node --test tests/online.test.cjs
 
@@ -167,4 +179,5 @@ SQLテストには @electric-sql/pglite、画面テストにはPlaywrightとEdge
 公式資料:
 https://supabase.com/docs/guides/realtime/authorization
 https://supabase.com/docs/guides/realtime/postgres-changes
+https://supabase.com/docs/guides/realtime/broadcast
 https://supabase.com/docs/reference/javascript/auth

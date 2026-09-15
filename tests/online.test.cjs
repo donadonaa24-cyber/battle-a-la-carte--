@@ -180,3 +180,38 @@ test('server-selected GUEST first is projected correctly without changing CPU in
     await action(c,r.snapshot,'playerEndTurn',[],'guest');
     c.initGame(); assert.equal(c.GameState.currentTurn,'player');
 });
+
+test('shared ViewModel uses me/opponent for either online role and preserves CPU labels', async () => {
+    const c=runtime(), r=await initial(c);
+    c.importScripts('battle-view-model.js');
+    for(const role of ['host','guest']) {
+        const v=c.BattleViewModel.fromState(r.views[role].state,true);
+        assert.equal(v.me.characterId,role==='host'?'takumi':'akatsuki');
+        assert.equal(v.opponentLabel,'相手');
+        assert.equal(v.turn,role==='host'?'me':'opponent');
+        assert.ok(v.opponent.hand.every(card=>card.hidden));
+    }
+    assert.equal(c.BattleViewModel.fromState(r.views.host.state,false).opponentLabel,'CPU');
+    const projected=await c.execute({kind:'project',snapshot:r.snapshot});
+    assert.equal(projected.guest.state.characterIds.player,'akatsuki');
+});
+
+test('GUEST cooking, pack and skill use the same rules and winner perspective', async () => {
+    const c=runtime(); let s=fixture(c,(await initial(c)).snapshot,['ごはん','のり']);
+    s=c.BattleProtocol.swap(s);
+    s.players.cpu.score=3;
+    let r=await action(c,s,'playerBuyPack',['board'],'guest');
+    r=await action(c,r.snapshot,'confirmPackPurchase',[],'guest');
+    assert.equal(r.views.guest.state.players.player.packs[0].key,'board');
+    r.snapshot.players.cpu.selectedSkillKey='foodTrap';
+    r=await action(c,r.snapshot,'playerUseSkill',[],'guest');
+    r=await action(c,r.snapshot,'confirmSkillActivation',[],'guest');
+    const id=r.views.guest.state.pendingSkillContext.options[0].id;
+    r=await action(c,r.snapshot,'toggleEventTargetSelection',[id],'guest');
+    r=await action(c,r.snapshot,'confirmEventSelection',[],'guest');
+    assert.ok(r.views.host.state.players.player.set.some(card=>card.trapLocked));
+    s=fixture(c,s,['ごはん','のり']); s=c.BattleProtocol.swap(s); s.players.cpu.score=9;
+    r=await action(c,s,'playerShowRecipeCandidates',[],'guest');
+    r=await action(c,r.snapshot,'playerCookSelectedRecipe',['おにぎり'],'guest');
+    assert.equal(r.snapshot.winner,'cpu'); assert.equal(r.views.guest.state.winner,'player');
+});

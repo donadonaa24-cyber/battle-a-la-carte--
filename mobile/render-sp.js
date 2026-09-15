@@ -85,23 +85,23 @@ function shouldSkipSectionRender(sectionKey, signature) {
 
 function getIngredientImagePath(cardName) {
     const fileName = INGREDIENT_IMAGE_MAP[cardName];
-    return fileName ? `../assets/images/cards/${fileName}` : null;
+    return fileName ? BattleImages.lightPath(`../assets/images/cards/${fileName}`) : null;
 }
 
 function getRecipeImagePath(recipeName) {
     const fileName = RECIPE_IMAGE_MAP[recipeName];
-    return fileName ? `../assets/images/recipes/${fileName}` : null;
+    return fileName ? BattleImages.lightPath(`../assets/images/recipes/${fileName}`) : null;
 }
 
 function getEventImagePath(eventName) {
     const fileName = EVENT_IMAGE_MAP[eventName];
-    return fileName ? `../assets/images/events/${fileName}` : null;
+    return fileName ? BattleImages.lightPath(`../assets/images/events/${fileName}`) : null;
 }
 
 function getPackImagePath(packKey) {
     const def = packDefinitions.find(item => item.key === packKey);
     const fileName = def?.imageFile;
-    return fileName ? `../assets/images/packs/${fileName}` : null;
+    return fileName ? BattleImages.lightPath(`../assets/images/packs/${fileName}`) : null;
 }
 
 function ensureImageCacheEntry(path) {
@@ -119,7 +119,10 @@ function ensureImageCacheEntry(path) {
     const img = new Image();
     try { img.decoding = 'async'; } catch (_) {}
 
-    img.onload = () => {
+    entry.image = img;
+    img.onload = async () => {
+        try { await img.decode(); } catch (_) {}
+        entry.decodedAt = performance.now();
         entry.status = 'loaded';
         const listeners = entry.listeners.splice(0);
         listeners.forEach(listener => {
@@ -162,58 +165,10 @@ function onImageLoadSettled(path, listener) {
 }
 
 function scheduleGameplayImagePreload() {
-    if (gameplayImagePreloadStarted) return;
-    gameplayImagePreloadStarted = true;
-
-    const ingredientPaths = Object.keys(INGREDIENT_IMAGE_MAP)
-        .map(name => getIngredientImagePath(name))
-        .filter(Boolean);
-    const eventPaths = Object.keys(EVENT_IMAGE_MAP)
-        .map(name => getEventImagePath(name))
-        .filter(Boolean);
-    const recipePaths = Object.keys(RECIPE_IMAGE_MAP)
-        .map(name => getRecipeImagePath(name))
-        .filter(Boolean);
-    const packPaths = (Array.isArray(packDefinitions) ? packDefinitions : [])
-        .map(def => getPackImagePath(def?.key))
-        .filter(Boolean);
-    const skillCutinPaths = ['chizuru', 'mai', 'takumi', 'akatsuki']
-        .map(id => `../assets/images/skill-cutins/${id}-skill-cutin.png`);
-    const battleModeCutinPaths = ['chizuru', 'mai', 'takumi', 'akatsuki']
-        .map(id => `../assets/images/battle-mode-cutins/${id}-battle-mode-cutin.png`);
-
-    const queue = Array.from(new Set([
-        '../assets/images/card-back.png',
-        ...ingredientPaths,
-        ...eventPaths,
-        ...recipePaths,
-        ...packPaths,
-        ...skillCutinPaths,
-        ...battleModeCutinPaths
-    ]));
-
-    let index = 0;
-    const preloadChunk = () => {
-        let loadedInThisChunk = 0;
-        while (index < queue.length && loadedInThisChunk < 2) {
-            ensureImageCacheEntry(queue[index]);
-            index += 1;
-            loadedInThisChunk += 1;
-        }
-        if (index >= queue.length) return;
-
-        if (typeof window.requestIdleCallback === 'function') {
-            window.requestIdleCallback(preloadChunk, { timeout: 500 });
-        } else {
-            setTimeout(preloadChunk, 180);
-        }
-    };
-
-    if (typeof window.requestIdleCallback === 'function') {
-        window.requestIdleCallback(preloadChunk, { timeout: 300 });
-    } else {
-        setTimeout(preloadChunk, 120);
-    }
+    const model = getBattleViewModel();
+    const cards = [...model.me.hand, ...model.me.events, ...model.me.set, ...model.opponent.set.filter(c => !c.hidden)];
+    const paths = cards.map(c => c.type === 'ingredient' ? getIngredientImagePath(c.name) : getEventImagePath(c.name));
+    for (const path of new Set(['../assets/battle-images/card-back.webp', ...paths].filter(Boolean))) ensureImageCacheEntry(path);
 }
 
 function getBackgroundDesignCatalogSafe() {
@@ -858,13 +813,13 @@ function renderInfoOverlay() {
         title.textContent = '設定';
         content.innerHTML = `
             <div class="settings-group">
-                <div class="reference-item">
+                <div class="reference-item" data-cpu-only>
                     <div class="reference-title">リセット</div>
                     <button id="settings-reset-button" class="settings-reset-button">ゲームをリセット</button>
                     <div class="settings-note">ゲーム状態を初期化して最初からやり直します。</div>
                 </div>
 
-                <div class="reference-item">
+                <div class="reference-item" data-cpu-only>
                     <div class="reference-title">CPU設定</div>
                     <label class="settings-label" for="settings-cpu-personality">CPUキャラの性格</label>
                     <select id="settings-cpu-personality" class="settings-select">${personalityOptions}</select>
@@ -934,8 +889,8 @@ function updateCharacterFaces() {
     p.classList.remove('face-normal', 'face-happy', 'face-worried');
     c.classList.remove('face-normal', 'face-happy', 'face-worried');
 
-    const ps = GameState.players.player.score;
-    const cs = GameState.players.cpu.score;
+    const ps = getBattleViewModel().me.score;
+    const cs = getBattleViewModel().opponent.score;
     const diff = ps - cs;
 
     let pf = 'face-normal';
@@ -961,17 +916,17 @@ function applyCharacterSkins() {
     const cpuIcon = document.querySelector('.cpu-icon');
     if (!playerIcon || !cpuIcon) return;
 
-    const ids = GameState.characterIds || { player: 'chizuru', cpu: 'mai' };
+    const model = getBattleViewModel();
     const classes = ['char-chizuru', 'char-mai', 'char-takumi', 'char-akatsuki'];
 
     playerIcon.classList.remove(...classes);
     cpuIcon.classList.remove(...classes);
 
-    playerIcon.classList.add(`char-${ids.player || 'chizuru'}`);
-    cpuIcon.classList.add(`char-${ids.cpu || 'mai'}`);
+    playerIcon.classList.add(`char-${model.me.characterId || 'chizuru'}`);
+    cpuIcon.classList.add(`char-${model.opponent.characterId || 'mai'}`);
 
-    const playerModeOn = !!GameState?.players?.player?.battleALaCarteModeActive;
-    const cpuModeOn = !!GameState?.players?.cpu?.battleALaCarteModeActive;
+    const playerModeOn = !!model.me.battleALaCarteModeActive;
+    const cpuModeOn = !!model.opponent.battleALaCarteModeActive;
     playerIcon.classList.toggle('battle-mode-chef', playerModeOn);
     cpuIcon.classList.toggle('battle-mode-chef', cpuModeOn);
 }
@@ -1063,7 +1018,7 @@ function renderPlayerMixedHand() {
     const container = byId('player-hand-mixed');
     if (!container) return;
 
-    const player = GameState.players.player;
+    const player = getBattleViewModel().me;
     const cards = [
         ...player.hand.map(card => ({ ...card, zoneType: 'ingredient' })),
         ...player.events.map(card => ({ ...card, zoneType: 'event' }))
@@ -1072,7 +1027,7 @@ function renderPlayerMixedHand() {
         cards.map(card => `${card.id}:${card.type}:${card.name}`).join('|'),
         GameState.selectionMode || '',
         (GameState.selectedCardIds || []).join(','),
-        GameState.currentTurn || '',
+        getBattleViewModel().turn || '',
         GameState.gameEnded ? '1' : '0'
     ].join('::');
     if (shouldSkipSectionRender('player-hand-mixed', signature)) return;
@@ -1087,7 +1042,7 @@ function renderPlayerMixedHand() {
 
         if (GameState.selectionMode === 'discard' && GameState.selectedCardIds.includes(card.id)) el.classList.add('selected-card');
 
-        if (GameState.currentTurn === 'player' && !GameState.gameEnded) {
+        if (getBattleViewModel().turn === 'me' && !GameState.gameEnded) {
             el.addEventListener('click', () => {
                 if (GameState.selectionMode === 'discard') toggleDiscardSelection(card.id);
                 else if (!GameState.selectionMode && card.type === 'ingredient') openIngredientAction(card.id, 'hand');
@@ -1103,7 +1058,7 @@ function renderPlayerSet() {
     const container = byId('player-set');
     if (!container) return;
 
-    const player = GameState.players.player;
+    const player = getBattleViewModel().me;
     const signature = [
         player.set.map(card => `${card.id}:${card.name}:${card.trapLocked === true ? 1 : 0}:${card.blockedByTrap === true ? 1 : 0}`).join('|'),
         GameState.selectionMode || '',
@@ -1129,11 +1084,11 @@ function renderPlayerSet() {
     });
 }
 
-function renderCpuMixedHand() {
+function renderOpponentMixedHand() {
     const container = byId('cpu-hand-mixed');
     if (!container) return;
 
-    const cpu = GameState.players.cpu;
+    const cpu = getBattleViewModel().opponent;
     const total = cpu.hand.length + cpu.events.length;
     const signature = `${cpu.hand.length}:${cpu.events.length}`;
     if (shouldSkipSectionRender('cpu-hand-mixed', signature)) return;
@@ -1141,14 +1096,14 @@ function renderCpuMixedHand() {
     container.innerHTML = '';
 
     if (total === 0) { container.textContent = 'なし'; return; }
-    for (let i = 0; i < total; i++) container.appendChild(createBackCard(window.getOpponentLabelText?.() || 'CPU', '手札'));
+    for (let i = 0; i < total; i++) container.appendChild(createBackCard(getBattleViewModel().opponentLabel, '手札'));
 }
 
-function renderCpuSet() {
+function renderOpponentSet() {
     const container = byId('cpu-set');
     if (!container) return;
 
-    const cpu = GameState.players.cpu;
+    const cpu = getBattleViewModel().opponent;
     const signature = cpu.set
         .map(card => `${card.id}:${card.name}:${card.trapLocked === true ? 1 : 0}:${card.blockedByTrap === true ? 1 : 0}`)
         .join('|');
@@ -1167,7 +1122,7 @@ function renderCpuSet() {
             container.appendChild(trapCard);
             return;
         }
-        container.appendChild(createBackCard(window.getOpponentLabelText?.() || 'CPU', 'セット'));
+        container.appendChild(createBackCard(getBattleViewModel().opponentLabel, 'セット'));
     });
 }
 
@@ -1246,7 +1201,7 @@ function renderLatestDishFor(ownerKey) {
     const container = byId(ownerKey === 'player' ? 'player-latest-dish' : 'cpu-latest-dish');
     if (!container) return;
 
-    const p = GameState.players[ownerKey];
+    const p = getBattleViewModel().forSide(ownerKey);
     const latest = Array.isArray(p.cookedRecipes) && p.cookedRecipes.length > 0 ? p.cookedRecipes[0] : null;
     const signature = latest
         ? `${latest.name}:${latest.points}:${latest.id || ''}`
@@ -1279,8 +1234,8 @@ function renderDishHistoryPanel() {
     if (!GameState.openDishHistoryFor) { panel.classList.add('hidden'); list.innerHTML = ''; return; }
 
     const ownerKey = GameState.openDishHistoryFor;
-    const p = GameState.players[ownerKey];
-    const label = ownerKey === 'player' ? 'プレイヤー' : 'CPU';
+    const p = getBattleViewModel().forSide(ownerKey);
+    const label = ownerKey === 'player' ? (getBattleViewModel().online ? 'あなた' : 'プレイヤー') : getBattleViewModel().opponentLabel;
 
     panel.classList.remove('hidden');
     title.textContent = `${label}の料理履歴`;
@@ -1420,7 +1375,7 @@ function renderSetConfirmPanel() {
 
     if (GameState.selectionMode !== 'set-confirm' || !GameState.pendingSetCardId) { panel.classList.add('hidden'); desc.textContent = ''; return; }
 
-    const card = GameState.players.player.hand.find(item => item.id === GameState.pendingSetCardId);
+    const card = getBattleViewModel().me.hand.find(item => item.id === GameState.pendingSetCardId);
     if (!card) { panel.classList.add('hidden'); desc.textContent = ''; return; }
 
     panel.classList.remove('hidden');
@@ -1438,7 +1393,7 @@ function renderPackConfirmPanel() {
         return;
     }
 
-    const player = GameState.players.player;
+    const player = getBattleViewModel().me;
     const def = getPackDefinition(GameState.pendingPackKey);
     if (!def) {
         panel.classList.add('hidden');
@@ -1459,8 +1414,8 @@ function renderPackConfirmPanel() {
 function getPlayerEventConditionWarning(eventCard) {
     if (!eventCard) return '';
 
-    const player = GameState.players.player;
-    const cpu = GameState.players.cpu;
+    const player = getBattleViewModel().me;
+    const cpu = getBattleViewModel().opponent;
     const selectableIngredientCount = player.hand.length + player.set.length;
 
     switch (eventCard.name) {
@@ -1472,7 +1427,7 @@ function getPlayerEventConditionWarning(eventCard) {
         case '物々交換':
             return (player.hand.length > 0 && cpu.hand.length > 0)
                 ? ''
-                : 'あなたまたはCPUの手札材料が不足しています。';
+                : `あなたまたは${getBattleViewModel().opponentLabel}の手札材料が不足しています。`;
 
         case 'やっぱやめた':
             return player.set.length > 0
@@ -1487,7 +1442,7 @@ function getPlayerEventConditionWarning(eventCard) {
         case '大掃除':
             return (cpu.hand.length + cpu.events.length + cpu.set.length) > 0
                 ? ''
-                : 'CPUに捨てさせるカードがありません。';
+                : `${getBattleViewModel().opponentLabel}に捨てさせるカードがありません。`;
 
         case '緊急料理':
             if (player.score > 3) return '点数が4以上です。';
@@ -1513,7 +1468,7 @@ function renderEventConfirmPanel() {
 
     if (GameState.selectionMode !== 'event-confirm' || !GameState.pendingEventCardId) { panel.classList.add('hidden'); desc.innerHTML = ''; return; }
 
-    const card = GameState.players.player.events.find(item => item.id === GameState.pendingEventCardId);
+    const card = getBattleViewModel().me.events.find(item => item.id === GameState.pendingEventCardId);
     if (!card) { panel.classList.add('hidden'); desc.innerHTML = ''; return; }
 
     const effectText = getDetailedEventEffectText(card.name);
@@ -1532,7 +1487,7 @@ function renderSetViewPanel() {
 
     if (GameState.selectionMode !== 'set-view' || !GameState.pendingViewSetCardId) { panel.classList.add('hidden'); desc.textContent = ''; return; }
 
-    const card = GameState.players.player.set.find(item => item.id === GameState.pendingViewSetCardId);
+    const card = getBattleViewModel().me.set.find(item => item.id === GameState.pendingViewSetCardId);
     if (!card) { panel.classList.add('hidden'); desc.textContent = ''; return; }
 
     panel.classList.remove('hidden');
@@ -1543,7 +1498,7 @@ function getPendingIngredientCard() {
     const context = GameState.pendingIngredientAction;
     if (!context) return null;
 
-    const player = GameState.players.player;
+    const player = getBattleViewModel().me;
     const source = context.sourceZone === 'set' ? player.set : player.hand;
     const card = source.find(item => item.id === context.cardId && item.type === 'ingredient');
     if (!card) return null;
@@ -1563,7 +1518,7 @@ function formatIngredientCounts(names) {
 }
 
 function buildMissingIngredientsForSelectedCard(recipe, selectedCard) {
-    const player = GameState.players.player;
+    const player = getBattleViewModel().me;
     const allCards = [...player.hand, ...player.set];
     const restCards = [];
     let removed = false;
@@ -1747,7 +1702,7 @@ function renderCandidateRecipes() {
 
         const button = document.createElement('button');
         button.textContent = '作る';
-        button.disabled = GameState.currentTurn !== 'player' || !!GameState.selectionMode || GameState.gameEnded;
+        button.disabled = getBattleViewModel().turn !== 'me' || !!GameState.selectionMode || GameState.gameEnded;
         button.addEventListener('click', () => playerCookSelectedRecipe(plan.recipe.name));
 
         row.appendChild(meta);
@@ -1761,7 +1716,7 @@ function renderCandidateRecipes() {
     const cancelButton = document.createElement('button');
     cancelButton.className = 'recipe-cancel-button';
     cancelButton.textContent = '今はやめとく';
-    cancelButton.disabled = GameState.currentTurn !== 'player' || !!GameState.selectionMode || GameState.gameEnded;
+    cancelButton.disabled = getBattleViewModel().turn !== 'me' || !!GameState.selectionMode || GameState.gameEnded;
     cancelButton.addEventListener('click', () => {
         if (typeof playerCancelRecipeCandidates === 'function') {
             playerCancelRecipeCandidates();
@@ -1788,7 +1743,7 @@ function renderSkillHud() {
     const playerSkill = typeof getSelectedSkillDefinitionForSide === 'function'
         ? getSelectedSkillDefinitionForSide('player')
         : null;
-    const playerState = GameState.players.player;
+    const playerState = getBattleViewModel().me;
 
     safeSetText('player-skill-name', playerSkill ? `スキル: ${playerSkill.name}` : 'スキル: 未選択');
     safeSetText('cpu-skill-name', 'スキル: ？？？');
@@ -1806,7 +1761,7 @@ function renderSkillHud() {
     const canOpenDetail = !!playerSkill && !GameState.gameEnded && !blockedBySelection;
     const canUseNow = !!playerSkill &&
         !GameState.gameEnded &&
-        GameState.currentTurn === 'player' &&
+        getBattleViewModel().turn === 'me' &&
         !blockedBySelection &&
         status.ok;
 
@@ -1818,7 +1773,7 @@ function renderSkillHud() {
         button.title = 'スキルが未設定です。';
     } else if (canUseNow) {
         button.title = `${playerSkill.name}を発動できます。`;
-    } else if (GameState.currentTurn !== 'player') {
+    } else if (getBattleViewModel().turn !== 'me') {
         button.title = `${playerSkill.name}の詳細を確認できます（発動は自分のターン中のみ）。`;
     } else {
         button.title = status.reason || `${playerSkill.name}の詳細を確認できます。`;
@@ -1847,7 +1802,7 @@ function renderSkillConfirmPanel() {
     const status = typeof getSkillActivationStatusForSide === 'function'
         ? getSkillActivationStatusForSide('player')
         : { ok: false, reason: 'スキル未対応' };
-    const player = GameState.players.player;
+    const player = getBattleViewModel().me;
 
     if (!skill) {
         nameEl.textContent = 'スキル未選択';
@@ -1864,7 +1819,7 @@ function renderSkillConfirmPanel() {
         ? getPlayerSkillUseCount(player, skill.key)
         : Math.max(0, Number(player?.skillUseCounts?.[skill.key] || 0));
 
-    const turnBlocked = GameState.currentTurn !== 'player';
+    const turnBlocked = getBattleViewModel().turn !== 'me';
     const gameEnded = !!GameState.gameEnded;
     const canActivate = !turnBlocked && !gameEnded && status.ok;
 
@@ -1889,8 +1844,8 @@ function renderSkillConfirmPanel() {
 }
 
 function renderShopButtons() {
-    const player = GameState.players.player;
-    const disabled = GameState.currentTurn !== 'player' || !!GameState.selectionMode || GameState.gameEnded;
+    const player = getBattleViewModel().me;
+    const disabled = getBattleViewModel().turn !== 'me' || !!GameState.selectionMode || GameState.gameEnded;
     const hasEcoBagPack = hasPack(player, 'ecoBag');
 
     const knifeBtn = byId('buy-knife-button');
@@ -1910,7 +1865,7 @@ function renderShopButtons() {
         const canCookNow = !disabled && !player.lockedCookingThisTurn && findPossibleRecipesForPlayer(player).length > 0;
         cookBtn.classList.toggle('has-recipe-alert', canCookNow);
     }
-    if (endBtn) endBtn.disabled = GameState.currentTurn !== 'player' || GameState.gameEnded;
+    if (endBtn) endBtn.disabled = getBattleViewModel().turn !== 'me' || GameState.gameEnded;
 }
 
 function renderDiscardButton() {
@@ -2010,6 +1965,10 @@ function performUIRender() {
     uiRenderInProgress = true;
 
     try {
+        for (const label of document.querySelectorAll('[data-online-label]')) {
+            label.dataset.cpuLabel ??= label.textContent;
+            label.textContent = getBattleViewModel().online ? label.dataset.onlineLabel : label.dataset.cpuLabel;
+        }
         scheduleGameplayImagePreload();
         ensureUiState();
         ensureGameSettings();
@@ -2017,21 +1976,19 @@ function performUIRender() {
         applyBackgroundDesign(GameState.settings.backgroundDesign);
         bindRenderEventsOnce();
 
-        const names = GameState.characterNames || { player: '千鶴', cpu: '舞依' };
-        safeSetText('player-hud-name', names.player || '千鶴');
-        safeSetText('cpu-hud-name', names.cpu || '舞依');
+        const model = getBattleViewModel();
+        safeSetText('player-hud-name', model.me.characterName || '千鶴');
+        safeSetText('cpu-hud-name', model.opponent.characterName || '舞依');
 
-        safeSetText('player-side-score', String(GameState.players.player.score));
-        safeSetText('cpu-side-score', String(GameState.players.cpu.score));
+        safeSetText('player-side-score', String(getBattleViewModel().me.score));
+        safeSetText('cpu-side-score', String(getBattleViewModel().opponent.score));
         safeSetText('deck-count', String(GameState.deck.length));
         safeSetText('discard-count', String(GameState.discard.length));
 
-        const opponentLabel = typeof window.getOpponentLabelText === 'function'
-            ? window.getOpponentLabelText()
-            : 'CPU';
+        const opponentLabel = getBattleViewModel().opponentLabel;
         safeSetText('turn-indicator', 'ターン: ' + (
-            GameState.currentTurn === 'player' ? 'プレイヤー' :
-            GameState.currentTurn === 'cpu' ? opponentLabel :
+            getBattleViewModel().turn === 'me' ? 'プレイヤー' :
+            getBattleViewModel().turn === 'opponent' ? opponentLabel :
             'ゲーム終了'
         ));
 
@@ -2041,10 +1998,10 @@ function performUIRender() {
         updateCharacterFaces();
         renderPlayerMixedHand();
         renderPlayerSet();
-        renderCpuMixedHand();
-        renderCpuSet();
-        renderPacks(GameState.players.player, byId('player-packs'));
-        renderPacks(GameState.players.cpu, byId('cpu-packs'));
+        renderOpponentMixedHand();
+        renderOpponentSet();
+        renderPacks(getBattleViewModel().me, byId('player-packs'));
+        renderPacks(getBattleViewModel().opponent, byId('cpu-packs'));
         renderCandidateRecipes();
         renderSkillHud();
         renderShopButtons();
