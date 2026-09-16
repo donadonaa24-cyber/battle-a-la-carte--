@@ -9,7 +9,12 @@ test('populated online mobile zones do not overlap at phone viewport sizes', {ti
     const {chromium} = require(process.env.BALC_PLAYWRIGHT_PATH || 'playwright');
     const root = path.resolve(__dirname, '..');
     const server = http.createServer((req, res) => {
-        const file = path.resolve(root, '.' + decodeURIComponent(new URL(req.url, 'http://localhost').pathname));
+        const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+        if (pathname === '/network.js') {
+            res.setHeader('Content-Type','text/javascript');
+            return res.end("window.FriendBattle={isActive:()=>false,refreshLogin:()=>Promise.resolve(),leaveRoom:()=>Promise.resolve(),createRoom:()=>Promise.resolve(),joinRoom:()=>Promise.resolve(),dispatch:()=>{}};");
+        }
+        const file = path.resolve(root, '.' + pathname);
         if (!file.startsWith(root + path.sep)) { res.writeHead(403); return res.end(); }
         fs.readFile(file, (error, data) => {
             if (error) { res.writeHead(404); return res.end(); }
@@ -21,11 +26,13 @@ test('populated online mobile zones do not overlap at phone viewport sizes', {ti
     let browser;
     try {
         browser = await chromium.launch({headless:true,channel:'msedge'});
-        const page = await browser.newPage(); const errors = [];
-        page.on('pageerror', error => errors.push(error.message));
+        const errors = [];
         for (const [width,height] of [[390,670],[375,667],[320,568],[390,844]]) {
-            await page.setViewportSize({width,height});
-            await page.goto(`http://127.0.0.1:${server.address().port}/mobile/mobile.html`);
+            const page = await browser.newPage({viewport:{width,height}});
+            page.on('dialog', dialog => dialog.accept());
+            page.on('pageerror', error => errors.push(error.message));
+            await page.goto(`http://127.0.0.1:${server.address().port}/mobile/mobile.html`, {waitUntil:'domcontentloaded',timeout:15000});
+            await page.waitForFunction(() => typeof initGame === 'function' && typeof updateUI === 'function');
             await page.evaluate(() => {
                 FriendBattle.isActive = () => true;
                 window.__onGameStateUpdated = () => {};
@@ -36,7 +43,7 @@ test('populated online mobile zones do not overlap at phone viewport sizes', {ti
                 GameState.players.player.hand = ingredients.slice(0,3);
                 GameState.players.player.events = events.slice(0,2);
                 GameState.players.player.set = ingredients.slice(3,6);
-                GameState.players.cpu.hand = [{id:'back-1',hidden:true},{id:'back-2',hidden:true}];
+                GameState.players.cpu.hand = Array.from({length:6},(_,index)=>({id:`back-${index+1}`,hidden:true}));
                 GameState.players.cpu.events = [];
                 GameState.players.cpu.set = ingredients.slice(6,9);
                 for (const player of Object.values(GameState.players)) {
@@ -59,16 +66,41 @@ test('populated online mobile zones do not overlap at phone viewport sizes', {ti
                     assert.ok(overlapX<=1 || overlapY<=1, `${width}x${height}: ${JSON.stringify(a)} overlaps ${JSON.stringify(b)}`);
                 }
                 assert.ok(boxes.every(b => b.left>=-1 && b.right<=width+1));
+                assert.ok(boxes.every(b => b.top>=-1 && b.bottom<=height+1), 'all battle zones must fit the fixed screen');
+                const verticalOverflow = await page.evaluate(() => [
+                    '.cpu-top-row','.cpu-hand-zone','.cpu-set-zone','.cpu-pack-zone',
+                    '.deck-discard-cluster','.field-center-actions','.center-dish-panels',
+                    '.player-pack-zone','.player-set-zone','.player-hand-zone','.player-bottom-row'
+                ].flatMap(selector => {
+                    const element = document.querySelector(selector);
+                    return element.scrollHeight > element.clientHeight + 1
+                        ? [{selector,clientHeight:element.clientHeight,scrollHeight:element.scrollHeight,
+                            children:[...element.children].map(child=>({className:child.className,clientHeight:child.clientHeight,scrollHeight:child.scrollHeight,top:child.getBoundingClientRect().top,bottom:child.getBoundingClientRect().bottom}))}]
+                        : [];
+                }));
+                assert.deepEqual(verticalOverflow,[],`${width}x${height}: content must not be clipped vertically`);
+                assert.equal(await page.evaluate(() => {
+                    const field = document.getElementById('game-container');
+                    return getComputedStyle(field).overflowY === 'hidden' && field.scrollTop === 0;
+                }), true, 'the battle screen must not scroll vertically');
             };
             await checkZones();
             assert.equal(await page.locator('#player-set .card').count(),3);
             await page.evaluate(() => { GameState.candidateRecipes = findPossibleRecipesForPlayer(GameState.players.player); updateUI(true); });
             await checkZones();
-            await page.locator('.player-set-zone').scrollIntoViewIfNeeded();
-            await page.locator('.player-pack-zone').scrollIntoViewIfNeeded();
+            const candidatePanel = page.locator('.candidate-recipes-panel');
+            if (await candidatePanel.isVisible()) {
+                const candidateBox = await candidatePanel.boundingBox();
+                assert.ok(candidateBox && candidateBox.y >= 0 && candidateBox.y + candidateBox.height <= height + 1);
+                assert.equal(await candidatePanel.evaluate(element => getComputedStyle(element).position),'fixed');
+            }
+            await page.evaluate(() => { GameState.candidateRecipes = []; updateUI(true); });
             if(width===390 && height===670) await page.screenshot({path:path.join(os.tmpdir(),'balc-mobile-zones-fixed.png')});
-            await page.evaluate(() => {openInfoOverlay('settings');});
+            if(width===320 && height===568) await page.screenshot({path:path.join(os.tmpdir(),'balc-mobile-zones-small.png')});
+            await page.locator('#open-settings-tab').click();
+            await page.locator('#info-overlay').waitFor({state:'visible'});
             assert.equal(await page.locator('#info-overlay').isVisible(),true);
+            await page.close({runBeforeUnload:false});
         }
         assert.deepEqual(errors,[]);
     } finally {

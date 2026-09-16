@@ -1,6 +1,6 @@
 # 技術構成
 
-最終確認日: 2026-09-16
+最終確認日: 2026-09-17
 
 ## 全体構成
 
@@ -159,7 +159,7 @@ GitHub Pages上の想定URL:
 - Supabase JavaScript SDK 2.57.4: `https://esm.sh/@supabase/supabase-js@2.57.4`
 - 上記CDNの読込失敗/10秒超過時は同じ2.57.4のjsDelivr UMD版へ切り替えます。両方失敗した場合は日本語でライブラリ読込エラーを表示します。
 - `network.js` のRESTタイムアウトはAbortControllerで実装。`battle-protocol.js` のUUIDは標準APIがない場合も暗号学的乱数を使用します。
-- `online.css` はオンライン時だけスマホ各領域を通常フローに配置し、高さ不足時はゲーム領域内でスクロールします。CPU戦の専用CSSは変更しません。
+- `online.css` はオンライン時だけスマホ盤面を3段の固定グリッドへ配置します。画面高に応じて相手HUD、カード、山札、文字余白を縮小し、固定画面内で重なりと縦スクロールを防ぎます。料理候補は一時パネルとして重ね、CPU戦の専用CSSは変更しません。
 - `tests/mobile-layout.test.cjs` は通信なしの表示fixtureで、4種のスマホ画面サイズにおけるカード/加工/料理領域の重なりを検査します。
 - Web Worker: ブラウザ標準API
 - Web Audio/HTMLAudio: ブラウザ標準API

@@ -2,28 +2,87 @@
 #online-panel-toggle[hidden] { display: none !important; }
 .mobile-field-ui #online-panel-toggle { position: fixed; right: 8px; bottom: max(8px, env(safe-area-inset-bottom, 0px)); z-index: 200; }
 
-/* Keep the original mobile visuals, but give each zone its own flow space. */
-.online-session #game-container.mobile-field-ui { height: 100dvh; overflow-y: auto; overflow-x: hidden; }
-.online-session .mobile-field-ui .duel-field { position: relative; inset: auto; justify-content: flex-start; gap: 8px; padding: 68px 8px 64px; }
-.online-session .mobile-field-ui .field-side { min-height: 0; min-width: 0; }
+/* Reserve fixed viewport space for every zone; keep player controls largest. */
+.online-session #game-container.mobile-field-ui { height: 100vh; height: 100dvh; overflow: hidden; }
+.online-session .mobile-field-ui .duel-field { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 2.7fr) minmax(0, 1.8fr) minmax(0, 3.5fr); gap: 4px; padding: calc(68px + env(safe-area-inset-top, 0px)) 8px calc(42px + env(safe-area-inset-bottom, 0px)); }
+.online-session .mobile-field-ui .field-side { display: grid; min-height: 0; min-width: 0; gap: 4px; }
+.online-session .mobile-field-ui .cpu-side { grid-template-rows: minmax(0, 1.2fr) minmax(0, .95fr) minmax(0, 1.15fr); }
+.online-session .mobile-field-ui .player-side { grid-template-rows: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.35fr); }
 .online-session .mobile-field-ui .cpu-middle-row,
 .online-session .mobile-field-ui .player-middle-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.online-session .mobile-field-ui .zone-block { min-width: 0; }
-.online-session .mobile-field-ui .center-field { position: relative; inset: auto; display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; pointer-events: auto; }
+.online-session .mobile-field-ui .zone-block { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 3px 5px; }
+.online-session .mobile-field-ui .zone-label { flex-shrink: 0; margin-bottom: 2px; }
+.online-session .mobile-field-ui .card-row,
+.online-session .mobile-field-ui .pack-row { min-height: 0; flex: 1; padding: 0; }
+.online-session .mobile-field-ui .card-row .card,
+.online-session .mobile-field-ui .pack-row .card { height: 100%; max-height: 78px; width: auto; min-width: 0; aspect-ratio: 56 / 78; flex-shrink: 0; padding: 2px; }
+.online-session .mobile-field-ui .cpu-hand-zone .card { max-height: 52px; }
+.online-session .mobile-field-ui .card-name-plate { font-size: 8px; padding: 1px 2px; }
+.online-session .mobile-field-ui .card-back-label { font-size: 8px; }
+.online-session .mobile-field-ui .center-field { position: relative; inset: auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 96px; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 8px; pointer-events: auto; }
 .online-session .mobile-field-ui .deck-discard-cluster { position: static; transform: none; grid-column: 1; grid-row: 1; align-items: center; justify-content: center; }
-.online-session .mobile-field-ui .field-center-actions { position: static; transform: none; grid-column: 2; grid-row: 1 / 3; width: auto; align-self: center; }
+.online-session .mobile-field-ui .pile { height: 100%; max-height: 82px; width: auto; aspect-ratio: 62 / 82; padding: 2px; }
+.online-session .mobile-field-ui .pile-count { font-size: 18px; }
+.online-session .mobile-field-ui .pile-title { margin-bottom: 1px; }
+.online-session .mobile-field-ui .field-center-actions { position: static; transform: none; grid-column: 2; grid-row: 1 / 3; width: auto; min-height: 0; display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.online-session .mobile-field-ui .main-action { min-height: 0; padding: 4px; font-size: 11px; }
 .online-session .mobile-field-ui .candidate-recipes-panel,
-.online-session .mobile-field-ui .candidate-recipes-panel.expanded { position: static; grid-column: 1 / -1; min-height: 0; max-height: 240px; }
+.online-session .mobile-field-ui .candidate-recipes-panel.expanded { position: fixed; inset: calc(70px + env(safe-area-inset-top, 0px)) 8px calc(100px + env(safe-area-inset-bottom, 0px)); z-index: 35; display: block; min-height: 0; max-height: none; overflow-y: auto; background: #091c3e; box-shadow: 0 8px 32px #0009; }
 .online-session .mobile-field-ui .center-dish-panels { position: static; grid-column: 1; grid-row: 2; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.online-session .mobile-field-ui .dish-mini-panel { min-width: 0; }
+.online-session .mobile-field-ui .dish-mini-panel { min-width: 0; min-height: 0; padding: 3px 5px; display: flex; flex-direction: column; }
+.online-session .mobile-field-ui .latest-dish-slot { min-height: 0; flex: 1; }
+.online-session .mobile-field-ui .latest-dish-empty,
+.online-session .mobile-field-ui .compact-dish-card { min-height: 0; flex: 1; padding: 2px; }
+.online-session .mobile-field-ui .dish-mini-title { margin-bottom: 1px; }
 .online-session .mobile-field-ui .info-overlay { position: fixed; }
 .online-session .mobile-field-ui .cpu-top-row { align-items: stretch; }
-.online-session .mobile-field-ui .cpu-hud { max-width: 48%; flex-shrink: 0; }
+.online-session .mobile-field-ui .cpu-hud { max-width: 48%; flex-shrink: 0; align-self: stretch; }
+.online-session .mobile-field-ui .player-hud { padding: 3px 5px; box-sizing: border-box; min-height: 0; }
+.online-session .mobile-field-ui .character-icon { width: clamp(30px, 6vh, 56px); height: clamp(30px, 6vh, 56px); }
 .online-session .mobile-field-ui .realtime-log-panel { max-width: none; }
-.online-session .mobile-field-ui .hud-info { min-width: 0; overflow-wrap: anywhere; }
-.online-session .mobile-field-ui .player-bottom-row { align-items: flex-start; }
-.online-session .mobile-field-ui .player-main-hud { max-width: 56%; }
-.online-session .mobile-field-ui .player-pack-actions { flex: 1; min-width: 0; }
+.online-session .mobile-field-ui .hud-info { min-width: 0; gap: 1px; }
+.online-session .mobile-field-ui .hud-skill-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.online-session .mobile-field-ui .player-bottom-row { align-items: stretch; min-height: 0; }
+.online-session .mobile-field-ui .player-main-hud { max-width: 56%; align-self: stretch; }
+.online-session .mobile-field-ui .player-main-hud .hud-name { font-size: 11px; }
+.online-session .mobile-field-ui .player-main-hud .hud-score { font-size: 10px; }
+.online-session .mobile-field-ui .player-main-hud .hud-skill-name,
+.online-session .mobile-field-ui .player-main-hud .hud-skill-state { font-size: 9px; }
+.online-session .mobile-field-ui .player-main-hud .hud-skill-button { margin-top: 1px; padding: 2px 7px; font-size: 9px; }
+.online-session .mobile-field-ui .player-pack-actions { flex: 1; min-width: 0; align-content: center; gap: 4px; margin-bottom: 0; }
+.online-session .mobile-field-ui .player-pack-actions button { padding: 7px 6px; }
+@media (max-height: 700px) {
+    .online-session .mobile-field-ui .cpu-hud { gap: 3px; padding: 2px 4px; }
+    .online-session .mobile-field-ui .cpu-hud .character-icon { width: 28px; height: 28px; }
+    .online-session .mobile-field-ui .cpu-hud .hud-info { gap: 0; }
+    .online-session .mobile-field-ui .cpu-hud .hud-name,
+    .online-session .mobile-field-ui .cpu-hud .hud-score { font-size: 10px; }
+    .online-session .mobile-field-ui .cpu-hud .hud-skill-name,
+    .online-session .mobile-field-ui .cpu-hud .hud-skill-state { font-size: 9px; }
+    .online-session .mobile-field-ui .realtime-log-panel { padding: 3px 4px; }
+    .online-session .mobile-field-ui .realtime-log-title { margin-bottom: 1px; }
+    .online-session .mobile-field-ui .realtime-log-list { gap: 1px; }
+    .online-session .mobile-field-ui .realtime-log-entry { font-size: 8px; line-height: 1.05; }
+}
+@media (max-height: 600px) {
+    .online-session .mobile-field-ui .duel-field { padding-top: calc(64px + env(safe-area-inset-top, 0px)); padding-bottom: calc(38px + env(safe-area-inset-bottom, 0px)); }
+    .online-session .mobile-field-ui .cpu-hud .character-icon { width: 24px; height: 24px; }
+    .online-session .mobile-field-ui .cpu-hud .hud-name,
+    .online-session .mobile-field-ui .cpu-hud .hud-score { font-size: 9px; line-height: 1; }
+    .online-session .mobile-field-ui .cpu-hud .hud-skill-name,
+    .online-session .mobile-field-ui .cpu-hud .hud-skill-state { font-size: 8px; line-height: 1; }
+    .online-session .mobile-field-ui .pile-title { font-size: 8px; line-height: 1; }
+    .online-session .mobile-field-ui .pile-count { font-size: 14px; line-height: 1; }
+    .online-session .mobile-field-ui .deck-pile .pile-title,
+    .online-session .mobile-field-ui .deck-pile .pile-count { padding: 1px 4px; }
+    .online-session .mobile-field-ui .player-main-hud { gap: 3px; padding: 2px 4px; }
+    .online-session .mobile-field-ui .player-main-hud .character-icon { width: 30px; height: 30px; }
+    .online-session .mobile-field-ui .player-main-hud .hud-name { font-size: 10px; line-height: 1; }
+    .online-session .mobile-field-ui .player-main-hud .hud-score { font-size: 9px; line-height: 1; }
+    .online-session .mobile-field-ui .player-main-hud .hud-skill-name,
+    .online-session .mobile-field-ui .player-main-hud .hud-skill-state { font-size: 8px; line-height: 1; }
+    .online-session .mobile-field-ui .player-main-hud .hud-skill-button { margin-top: 0; padding: 1px 6px; font-size: 8px; line-height: 1; }
+}
 .online-session [data-cpu-only], #online-rematch[hidden] { display: none !important; }
 #online-bar { position: fixed; z-index: 100000; bottom: 8px; left: 50%; transform: translateX(-50%); width: min(720px, 96vw); box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid #5777ab; border-radius: 12px; background: #091c3e; color: #fff; box-shadow: 0 3px 16px #0004; font-size: 14px; }
 #online-status { flex: 1 1 120px; min-width: 0; }
