@@ -16,7 +16,7 @@
     function render() {
         history.replaceChildren();
         for (const row of rows) {
-            if (!Object.hasOwn(phrases, row.phrase)) continue;
+            if (!Object.prototype.hasOwnProperty.call(phrases, row.phrase)) continue;
             const line = document.createElement('p');
             line.textContent = `${row.user_id === context.user.id ? 'あなた' : '相手'}：${phrases[row.phrase]}`;
             history.appendChild(line);
@@ -55,7 +55,7 @@
         const source = context, current = epoch;
         sending = true;
         // Reuse the request ID after uncertain delivery, rather than posting twice.
-        if (!pending) pending = { room: source.room.id, user: source.user.id, id: crypto.randomUUID(), phrase };
+        if (!pending) pending = { room: source.room.id, user: source.user.id, id: window.BattleProtocol.randomUUID(), phrase };
         try {
             sessionStorage.setItem(storageKey, JSON.stringify(pending));
             controls();

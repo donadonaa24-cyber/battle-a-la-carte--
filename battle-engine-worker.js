@@ -38,11 +38,11 @@ async function execute(request) {
         GameState.currentTurn = request.firstRole === 'guest' ? 'cpu' : 'player';
         // Original sequential IDs identify card names; replace IDs, not cards or rules.
         for (const zone of [GameState.deck, ...Object.values(GameState.players).flatMap(p => [p.hand, p.set, p.events])]) {
-            for (const card of zone) card.id = crypto.randomUUID();
+            for (const card of zone) card.id = BattleProtocol.randomUUID();
         }
         for (const [key, role] of [['player', 'host'], ['cpu', 'guest']]) {
             const info = request[role] || {};
-            const id = Object.hasOwn(names, info.character) ? info.character : 'chizuru';
+            const id = Object.prototype.hasOwnProperty.call(names, info.character) ? info.character : 'chizuru';
             GameState.characterIds[key] = id;
             GameState.characterNames[key] = names[id];
             setPlayerSelectedSkill(GameState.players[key], info.skill);

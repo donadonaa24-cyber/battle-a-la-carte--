@@ -35,13 +35,46 @@
         'Email not confirmed': '確認メールのリンクを開いてからログインしてください。'
     };
     const $ = id => document.getElementById(id);
+    let lastConnectionError = null;
+    let connectionPanelOpen = false;
+    const connectionErrors = {
+        CONFIG_REQUIRED: '接続設定を読み込めません。公開版を再読み込みしてください。',
+        FILE_MODE: 'ファイルを直接開くと通信対戦は動きません。ホームページの公開URLからゲームを開いてください。',
+        SDK_LOAD_FAILED: '通信ライブラリを読み込めません。回線・広告ブロック設定を確認して再読み込みしてください。',
+        NETWORK_ERROR: 'サーバーに接続できません。回線を確認して「接続を確認」を押してください。',
+        TIMEOUT: '通信が時間内に完了しませんでした。回線を確認してもう一度お試しください。',
+        SESSION_EXPIRED: 'ログインの有効期限が切れています。再読み込みし、共通アカウントの場合はログインし直してください。',
+        SQL_REQUIRED: '対戦用のデータベース設定が見つかりません。管理者がSupabaseの対戦用SQLを確認する必要があります。',
+        PERMISSION_DENIED: '対戦の接続権限を確認できません。管理者がSupabaseの対戦用RLSを確認する必要があります。',
+        AUTH_RATE_LIMIT: 'ゲスト接続が一時的に制限されています。数分待ってからもう一度お試しください。',
+        BROADCAST_CHANNEL_ERROR: 'リアルタイム接続に失敗しました。「接続を確認」を押してください。繰り返す場合は部屋の通信権限を確認してください。',
+        BROADCAST_SEND_ERROR: '対戦操作を送信できませんでした。「接続を確認」で同じ操作を再送できます。',
+        ENGINE_ERROR: 'ゲーム処理を読み込めません。公開版を再読み込みしてください。古いブラウザの場合は更新してください。',
+        SAVE_PENDING: '試合の保存を再試行しています。保存が完了してから退出・再戦してください。',
+        BROWSER_ERROR: 'ブラウザ内の処理に失敗しました。公開版を再読み込みし、改善しない場合はブラウザを更新してください。'
+    };
+    function connectionErrorCode(error) {
+        if (errors[error?.message]) return error.message;
+        if (connectionErrors[error?.message]) return error.message;
+        const code = error?.code;
+        if (code === 'anonymous_provider_disabled') return 'Anonymous sign-ins are disabled';
+        if (['over_request_rate_limit', 'over_anonymous_users_rate_limit'].includes(code)) return 'AUTH_RATE_LIMIT';
+        if (['refresh_token_not_found', 'refresh_token_already_used', 'session_not_found', 'bad_jwt'].includes(code)) return 'SESSION_EXPIRED';
+        if (['PGRST202', '42P01', '42883'].includes(code)) return 'SQL_REQUIRED';
+        if (code === '42501') return 'PERMISSION_DENIED';
+        if (error?.name === 'AbortError' || error?.name === 'TimeoutError') return 'TIMEOUT';
+        if (/failed to fetch|networkerror|load failed|network request failed/i.test(error?.message || '')) return 'NETWORK_ERROR';
+        return error?.name === 'TypeError' || error?.name === 'ReferenceError' ? 'BROWSER_ERROR' : 'UNKNOWN';
+    }
     function message(text) {
         if ($('friend-room-message')) $('friend-room-message').textContent = text;
         if ($('online-status')) $('online-status').textContent = text;
     }
     function fail(error) {
-        console.error('[Online battle]', error);
-        message(errors[error.message] || '通信または設定を確認できませんでした。「接続を確認」を押してください。初回は設定手順書のSQL実行も必要です。');
+        const code = connectionErrorCode(error);
+        lastConnectionError = { code };
+        console.error('[Online battle]', { code });
+        message(errors[code] || connectionErrors[code] || '接続処理に失敗しました（診断コード: UNKNOWN）。「接続を確認」を押してください。改善しない場合は、この画面の画像を管理者へ送ってください。');
     }
     const active = () => !!room;
     function controls() {
@@ -62,7 +95,11 @@
         if ($('online-account')) $('online-account').textContent = user && !user.is_anonymous ? `ログイン中: ${user.email || '共通アカウント'}` : 'ゲスト対戦OK（メールアドレス・パスワード不要）';
         if ($('online-login-form')) $('online-login-form').hidden = !!room || !!user && !user.is_anonymous;
         if ($('online-resume')) $('online-resume').disabled = !user || busy || !!room;
-        if ($('online-bar')) $('online-bar').hidden = !room;
+        if ($('online-bar')) $('online-bar').hidden = !room || (started && !connectionPanelOpen && connected && peerPresent && !GameState.gameEnded);
+        if ($('online-panel-toggle')) {
+            $('online-panel-toggle').hidden = !room || !started;
+            $('online-panel-toggle').setAttribute('aria-expanded', String(!$('online-bar').hidden));
+        }
         document.body?.classList.toggle('online-session', !!room);
         if (document.body) document.body.classList.toggle('online-operation-locked', !!room &&
             (room.status === 'closed' || !connected || !peerPresent || !!pending || busy || getBattleViewModel().turn !== 'me' || GameState.gameEnded));
@@ -82,13 +119,14 @@
         message(`${room.host_id === user.id ? 'HOST' : 'GUEST'} / ${getBattleViewModel().turn === 'me' ? 'あなたのターン' : '相手のターン'}${retrySaveJob ? ' / 保存を再試行中' : ''}${fastMode ? '' : ' / 従来通信（高速化SQL未適用）'}`);
     }
     async function getClient() {
+        if (location.protocol === 'file:') throw new Error('FILE_MODE');
         if (client) return client;
         if (clientPromise) return clientPromise;
         clientPromise = (async () => {
             const config = window.SUPABASE_CONFIG;
             if (!config?.SUPABASE_URL || !config.SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_')) throw new Error('CONFIG_REQUIRED');
-            const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.57.4');
-            const options = { global: { fetch: (url, options) => fetch(url, { ...options, signal: options?.signal || AbortSignal.timeout(20000) }) } };
+            const { createClient } = await loadSdk();
+            const options = { global: { fetch: timedFetch } };
             accountClient = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY, options);
             guestClient = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY,
                 { ...options, auth: { storageKey: 'aniani:battle:guest:auth:v1', detectSessionInUrl: false } });
@@ -110,6 +148,35 @@
         })();
         try { return await clientPromise; } finally { clientPromise = null; }
     }
+    async function timedFetch(url, options = {}) {
+        if (options.signal) return fetch(url, options);
+        // AbortSignal.timeout is unavailable in some mobile browsers.
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 20000);
+        try { return await fetch(url, { ...options, signal: controller.signal }); }
+        finally { clearTimeout(timer); }
+    }
+    async function loadSdk() {
+        let primaryTimer;
+        try { return await Promise.race([
+            import('https://esm.sh/@supabase/supabase-js@2.57.4'),
+            new Promise((_, reject) => { primaryTimer = setTimeout(() => reject(new Error('SDK_LOAD_FAILED')), 10000); })
+        ]); }
+        catch (_) {
+            if (window.supabase?.createClient) return window.supabase;
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js';
+                const timer = setTimeout(() => { script.remove(); reject(new Error('SDK_LOAD_FAILED')); }, 20000);
+                script.onload = () => { clearTimeout(timer); resolve(); };
+                script.onerror = () => { clearTimeout(timer); script.remove(); reject(new Error('SDK_LOAD_FAILED')); };
+                document.head.appendChild(script);
+            });
+            if (!window.supabase?.createClient) throw new Error('SDK_LOAD_FAILED');
+            return window.supabase;
+        }
+        finally { clearTimeout(primaryTimer); }
+    }
     async function refreshLogin() {
         try {
             await getClient();
@@ -123,7 +190,7 @@
             if (error) throw error;
             user = data.session?.user || null;
             controls();
-            if (!room) message('ログインせず、そのまま「部屋を作る」「部屋に参加」を押せます。先攻は参加時にランダムで決まります。');
+            if (!room && !busy && !lastConnectionError) message('ログインせず、そのまま「部屋を作る」「部屋に参加」を押せます。先攻は参加時にランダムで決まります。');
         } catch (error) { fail(error); }
     }
     async function rpc(name, args) {
@@ -165,11 +232,12 @@
             const result = kind === 'host' ? await rpc('balc_create_room', { p_info: info }) :
                 await rpc('balc_join_room', { p_code: String(options.passphrase || $('friend-passphrase-input').value).trim(), p_info: info });
             await attach(result);
+            lastConnectionError = null;
         } catch (error) { fail(error); } finally { busy = false; controls(); }
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20260915', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20260916', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;
@@ -538,7 +606,7 @@
         if (!room || room.status === 'closed' || stopped || busy || pending || !connected || !peerPresent || GameState.gameEnded || getBattleViewModel().turn !== 'me') return;
         const action = { name, args };
         if (!protocol.validAction(action)) return;
-        pending = { id: crypto.randomUUID(), room: room.id, user: user.id, revision, action };
+        pending = { id: protocol.randomUUID(), room: room.id, user: user.id, revision, action };
         if (fastMode) pending.trace = metrics?.mark(pending.id, 'input') || { id: pending.id };
         try { sessionStorage.setItem(pendingKey, JSON.stringify(pending)); }
         catch (error) { pending = null; fail(error); return; }
@@ -619,7 +687,16 @@
         lobby.insertBefore(auth, $('start-friend-back-button'));
         const bar = document.createElement('aside');
         bar.id = 'online-bar'; bar.hidden = true;
+        const closePanel = document.createElement('button');
+        closePanel.id = 'online-panel-close'; closePanel.textContent = '閉じる';
+        closePanel.onclick = () => { connectionPanelOpen = false; controls(); };
+        const toggle = document.createElement('button');
+        toggle.id = 'online-panel-toggle'; toggle.textContent = '通信'; toggle.hidden = true;
+        toggle.className = 'hud-button'; toggle.setAttribute('aria-controls', 'online-bar');
+        toggle.onclick = () => { connectionPanelOpen = !connectionPanelOpen; controls(); };
+        document.querySelector('.header-actions').appendChild(toggle);
         bar.innerHTML = '<span id="online-status" role="status" aria-live="polite"></span><button id="online-reconnect">接続を確認</button><button id="online-leave">退出</button>';
+        bar.appendChild(closePanel);
         const rematch = document.createElement('button');
         rematch.id = 'online-rematch'; rematch.textContent = '再戦'; rematch.hidden = true;
         rematch.onclick = () => requestRematch().catch(fail);
@@ -638,7 +715,10 @@
             } catch (error) { fail(error); } finally { busy = false; controls(); }
         });
         $('online-resume').onclick = resume;
-        $('online-reconnect').onclick = async () => { if (room) await attach(room); else await resume(); };
+        $('online-reconnect').onclick = async () => {
+            try { if (room) await attach(room); else await resume(); }
+            catch (error) { fail(error); }
+        };
         $('online-leave').onclick = async () => {
             if (!confirm('部屋から退出しますか？ この対戦は終了します。')) return;
             try { await leaveRoom(); location.reload(); } catch (error) { fail(error); }
@@ -668,6 +748,7 @@
     window.FriendBattle = {
         isActive: active, isAvailable: () => !!window.SUPABASE_CONFIG,
         refreshLogin, createRoom: options => enter('host', options), joinRoom: options => enter('guest', options),
+        getConnectionError: () => lastConnectionError ? { ...lastConnectionError } : null,
         leaveRoom, resume, schedulePublish: () => {}, isFastMode: () => fastMode
     };
     document.addEventListener('DOMContentLoaded', mount);

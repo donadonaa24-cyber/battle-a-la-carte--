@@ -14,9 +14,15 @@ function mockClient(user) {
       return {
         realtime:{setAuth:async()=>{}},
         auth:{ onAuthStateChange(cb){listeners.push(cb);queueMicrotask(()=>cb('INITIAL_SESSION',null));},
-          getSession:async()=>({data:{session:current?{user:current}:null}}),
+          getSession:async()=>{await options.global.fetch(location.origin + '/battle-images.js');return {data:{session:current?{user:current}:null}};},
           signInAnonymously:async()=>{current={...user,is_anonymous:true};localStorage.setItem('__mock_guest','1');for(const cb of listeners)cb('SIGNED_IN',{user:current});return {data:{user:current}};} },
-        rpc: (name,args)=>window.__bridge({op:'rpc',name,args}),
+        rpc: (name,args)=> {
+            if (window.__simulateRpcError && name === 'balc_create_room') {
+                const error = window.__simulateRpcError; window.__simulateRpcError = null;
+                return Promise.resolve({error});
+            }
+            return window.__bridge({op:'rpc',name,args});
+        },
         from(table){
             const filters={}; let single=false;
             const q={select(){return q;},eq(k,v){filters[k]=v;return q;},in(){return q;},order(){return q;},limit(){return q;},
@@ -61,7 +67,7 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
         },presence).catch(()=>{});
     },5);
     try {
-        for(const [i,file] of ['web.html','web.html'].entries()){
+        for(const [i,file] of ['web.html', process.env.BALC_BROWSER_GUEST_MOBILE === '1' ? 'mobile/mobile.html' : 'web.html'].entries()){
             const context=await browser.newContext({viewport:i?{width:390,height:844}:{width:1365,height:900}});
             const page=await context.newPage();pages.push(page);
             const user={id:i?'guest':'host',email:`${i}@example.test`};
@@ -125,7 +131,9 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
                 }catch(error){return {error:{message:error.message}};}
             });
             await page.addInitScript(mockClient,user);
-            await page.route('https://esm.sh/**',route=>route.fulfill({contentType:'text/javascript',body:'export const createClient = window.__createClient;'}));
+            await page.addInitScript(() => { AbortSignal.timeout = undefined; crypto.randomUUID = undefined; });
+            await page.route('https://esm.sh/**',route=>i ? route.fulfill({contentType:'text/javascript',body:'export const createClient = window.__createClient;'}) : route.abort());
+            await page.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'text/javascript',body:'window.supabase = {createClient:window.__createClient};'}));
             await page.goto(`http://127.0.0.1:${server.address().port}/${file}`);
             await page.evaluate(()=>{initGame();updateUI(true);});
             assert.equal(await page.evaluate(()=>getBattleViewModel().online),false);
@@ -142,6 +150,11 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
         await host.locator('#online-skill').selectOption('foodTrap');
         await guest.locator('#online-character').selectOption('akatsuki');
         await guest.locator('#online-skill').selectOption('tasteThief');
+        await host.evaluate(() => window.__simulateRpcError = {code:'PGRST202',message:'missing test function'});
+        await host.locator('#friend-create-button').click();
+        await host.waitForFunction(() => FriendBattle.getConnectionError()?.code === 'SQL_REQUIRED');
+        assert.match(await host.locator('#friend-room-message').innerText(), /データベース設定/);
+        assert.equal(db.room, null);
         await host.locator('#friend-create-button').click();
         await host.waitForFunction(()=>document.getElementById('online-status').textContent.includes('482731'));
         assert.equal(db.room.host_info.character, 'takumi');
@@ -154,6 +167,8 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
         await host.waitForFunction(()=>document.querySelector('#online-chat-history')?.textContent.includes('こんにちは'));
         await guest.locator('#friend-passphrase-input').fill('482731');
         await guest.locator('#friend-join-button').click();
+        await guest.waitForFunction(()=>document.getElementById('start-overlay').classList.contains('hidden'));
+        await guest.locator('#online-panel-toggle').click();
         await guest.locator('#online-chat-toggle').click();
         await guest.waitForFunction(()=>document.querySelector('#online-chat-history')?.textContent.includes('相手：こんにちは'));
         for(const page of pages)await page.waitForFunction(()=>document.getElementById('start-overlay').classList.contains('hidden'));
@@ -168,6 +183,18 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
         assert.equal(await guest.evaluate(()=>GameState.players.cpu.hand.every(c=>!c.name&&!c.type)),true);
         await host.waitForFunction(()=>!document.body.classList.contains('online-operation-locked'));
         assert.equal(await host.evaluate(()=>FriendBattle.isFastMode()),true);
+        assert.equal(await host.locator('#online-bar').isVisible(), false);
+        assert.equal(await host.evaluate(()=>FriendBattle.getConnectionError()), null);
+        if (process.env.BALC_BROWSER_GUEST_MOBILE === '1') {
+            await guest.locator('#online-panel-close').click();
+            assert.equal(await guest.locator('#online-bar').isVisible(), false);
+            const boxes = await guest.evaluate(() => ({settings:document.querySelector('#open-settings-tab').getBoundingClientRect().left,
+                tabs:document.querySelector('.info-tabs').getBoundingClientRect().right,
+                height:document.querySelector('#game-container').getBoundingClientRect().height}));
+            assert.ok(boxes.settings >= boxes.tabs, 'mobile settings must not overlap existing tabs');
+            assert.equal(Math.round(boxes.height), 844);
+            await guest.screenshot({path:path.join(os.tmpdir(),'balc-restored-mobile.png')});
+        }
         for(const page of pages) {
             assert.equal(await page.evaluate(()=>getBattleViewModel().online),true);
             assert.ok((await page.evaluate(()=>getGalleryItemsByType('ingredients'))).every(x=>x.imagePath.endsWith('.png')));

@@ -14,6 +14,17 @@ function runtime() {
 }
 async function initial(c) { return c.execute({ kind: 'init', host: { character: 'takumi', skill: 'lastOrder' }, guest: { character: 'akatsuki', skill: 'foodTrap' } }); }
 
+test('online worker supports browsers without randomUUID or Object.hasOwn', async () => {
+    const c = runtime();
+    c.crypto = { getRandomValues: bytes => require('node:crypto').webcrypto.getRandomValues(bytes) };
+    vm.runInContext('Object.hasOwn = undefined;', c);
+    const result = await initial(c);
+    assert.equal(result.views.guest.state.characterIds.player, 'akatsuki');
+    const ids = result.snapshot.deck.map(c => c.id);
+    for (const id of ids) assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    assert.equal(new Set(ids).size, ids.length);
+});
+
 test('every online character/skill choice stays with its participant through projection', async () => {
     const c = runtime();
     const chars = ['chizuru','mai','takumi','akatsuki'];

@@ -26,6 +26,7 @@ test('live Supabase Broadcast: two views, latency, legal match and reconnect',
         for (const [i, file] of ['web.html', 'mobile/mobile.html'].entries()) {
             const context = await browser.newContext({ viewport: i ? { width: 390, height: 844 } : { width: 1365, height: 900 } });
             contexts.push(context); const page = await context.newPage(); pages.push(page);
+            await page.addInitScript(() => { AbortSignal.timeout = undefined; crypto.randomUUID = undefined; });
             page.on('pageerror', error => errors.push(error.message));
             await page.goto(`http://127.0.0.1:${server.address().port}/${file}`);
             await page.locator('#menu-friend-button').click();
@@ -48,6 +49,10 @@ test('live Supabase Broadcast: two views, latency, legal match and reconnect',
                 i ? ['akatsuki','takumi','tasteThief','foodTrap'] : ['takumi','akatsuki','foodTrap','tasteThief']);
         };
         await verifySelections();
+        for (const page of pages) assert.equal(await page.locator('#online-bar').isVisible(), false);
+        assert.equal(await guest.evaluate(() => Math.round(document.getElementById('game-container').getBoundingClientRect().height)), 844);
+        await host.screenshot({path: path.join(os.tmpdir(), 'balc-restored-web.png')});
+        await guest.screenshot({path: path.join(os.tmpdir(), 'balc-restored-mobile.png')});
         report.checks.push('create/join/character/skill/private views');
         const ready = page => page.waitForFunction(() => !document.body.classList.contains('online-operation-locked'), null, { timeout: 15000 });
         const call = async (page, name, args = []) => {
@@ -63,8 +68,14 @@ test('live Supabase Broadcast: two views, latency, legal match and reconnect',
                 originalPngCount: assets.filter(r => r.name.endsWith('.png')).length };
         })));
         for (const page of pages) await page.evaluate(() => BattleMetrics.clear());
+        const measuredCall = async (name) => {
+            const before = await opponent.evaluate(() => BattleMetrics.records().filter(r => Number.isFinite(r.dom)).length);
+            await call(actor, name);
+            // Measure distinct round trips instead of racing newer checkpoint views.
+            await opponent.waitForFunction(count => BattleMetrics.records().filter(r => Number.isFinite(r.dom)).length > count, before);
+        };
         for (let n = 0; n < 20; n++) {
-            await call(actor, 'playerEndTurn'); await call(actor, 'cancelEndTurn');
+            await measuredCall('playerEndTurn'); await measuredCall('cancelEndTurn');
         }
         await opponent.waitForFunction(() => BattleMetrics.records().filter(r => Number.isFinite(r.dom)).length >= 40);
         const rows = await opponent.evaluate(() => BattleMetrics.records());
