@@ -31,6 +31,7 @@
         NOT_YOUR_TURN: '相手のターンです。', STALE_REVISION: '最新の状態を確認しています。',
         MATCH_NOT_READY: '対戦開始の準備中です。', MATCH_ENDED: '対戦は終了しています。',
         INVALID_SELECTION: '対戦キャラクターと対戦スキルを選んでから、部屋を作る・参加するを押してください。',
+        INVALID_PASSPHRASE: '参加する場合は、部屋を作った人から聞いた6桁の合言葉を入力してください。',
         'Invalid login credentials': 'メールアドレスまたはパスワードを確認してください。',
         'Email not confirmed': '確認メールのリンクを開いてからログインしてください。'
     };
@@ -77,10 +78,33 @@
         message(errors[code] || connectionErrors[code] || '接続処理に失敗しました（診断コード: UNKNOWN）。「接続を確認」を押してください。改善しない場合は、この画面の画像を管理者へ送ってください。');
     }
     const active = () => !!room;
+    function updateSkillDetails() {
+        const details = $('online-skill-details');
+        const skill = window.getSkillDefinitionByKey?.($('online-skill')?.value);
+        if (!details) return;
+        details.replaceChildren();
+        if (!skill) {
+            details.textContent = 'スキルを選ぶと、ここに発動条件と効果が表示されます。';
+            return;
+        }
+        const rows = [
+            ['発動条件', skill.condition || 'なし'],
+            ['効果', skill.effect || 'なし'],
+            ['使用回数', `${Math.max(1, Number(skill.maxUses) || 1)}回`]
+        ];
+        for (const [label, value] of rows) {
+            const row = document.createElement('p');
+            const title = document.createElement('strong');
+            title.textContent = `${label}: `;
+            row.append(title, document.createTextNode(value));
+            details.appendChild(row);
+        }
+    }
     function controls() {
         if ($('online-rematch')) $('online-rematch').hidden = !fastMode || !started || !GameState.gameEnded;
         const available = !busy && !room;
         for (const id of ['friend-create-button', 'friend-join-button']) if ($(id)) $(id).disabled = !available;
+        for (const id of ['friend-create-button', 'friend-join-button']) if ($(id)) $(id).setAttribute('aria-busy', String(busy));
         for (const id of ['online-character', 'online-skill']) if ($(id)) $(id).disabled = !available;
         if (room && user) {
             const ownInfo = room.host_id === user.id ? room.host_info : room.guest_info;
@@ -89,6 +113,7 @@
                 $('online-skill').value = ownInfo.skill;
             }
         }
+        updateSkillDetails();
         if ($('online-selection-hint')) $('online-selection-hint').textContent = room
             ? '選択は確定済みです。再接続・再戦でも同じキャラクターとスキルを使用します。変更する場合は退出して新しい部屋へ入ってください。'
             : '先にキャラクターとスキルを選んでください。「部屋を作る」「部屋に参加」を押すと確定します。相手のスキルは対戦画面では非公開です。';
@@ -223,6 +248,8 @@
         try {
             // Freeze the visible selection before asynchronous authentication/room creation.
             const info = profileInfo(options);
+            const passphrase = String(options.passphrase || $('friend-passphrase-input')?.value || '').trim();
+            if (kind === 'guest' && !/^\d{6}$/.test(passphrase)) throw new Error('INVALID_PASSPHRASE');
             await getClient();
             if (!user) {
                 const { data, error } = await client.auth.signInAnonymously();
@@ -230,7 +257,7 @@
                 user = data.user;
             }
             const result = kind === 'host' ? await rpc('balc_create_room', { p_info: info }) :
-                await rpc('balc_join_room', { p_code: String(options.passphrase || $('friend-passphrase-input').value).trim(), p_info: info });
+                await rpc('balc_join_room', { p_code: passphrase, p_info: info });
             await attach(result);
             lastConnectionError = null;
         } catch (error) { fail(error); } finally { busy = false; controls(); }
@@ -664,7 +691,7 @@
         const selection = document.createElement('div');
         selection.className = 'online-account-box';
         selection.id = 'online-selection';
-        selection.innerHTML = '<label>対戦キャラクター<select id="online-character"><option value="chizuru">千鶴</option><option value="mai">舞依</option><option value="takumi">拓海</option><option value="akatsuki">暁</option></select></label><label>対戦スキル<select id="online-skill"></select></label>';
+        selection.innerHTML = '<label>対戦キャラクター<select id="online-character"><option value="chizuru">千鶴</option><option value="mai">舞依</option><option value="takumi">拓海</option><option value="akatsuki">暁</option></select></label><label>対戦スキル<select id="online-skill" aria-describedby="online-skill-details"></select></label><div id="online-skill-details" class="online-skill-details" aria-live="polite"></div>';
         lobby.insertBefore(selection, lobby.querySelector('.start-user-form'));
         const hint = document.createElement('p'); hint.id = 'online-selection-hint';
         selection.appendChild(hint);
@@ -675,6 +702,8 @@
         const profile = window.getUserProfile?.() || {};
         $('online-character').value = ['chizuru', 'mai', 'takumi', 'akatsuki'].includes(profile.favoriteCharacterId) ? profile.favoriteCharacterId : 'chizuru';
         $('online-skill').value = window.getSkillDefinitionByKey?.(profile.favoriteSkillKey) ? profile.favoriteSkillKey : 'lastOrder';
+        $('online-skill').addEventListener('change', updateSkillDetails);
+        updateSkillDetails();
         const auth = document.createElement('div');
         auth.className = 'online-account-box';
         auth.innerHTML = `<p id="online-account">ログイン状態を確認してください</p>

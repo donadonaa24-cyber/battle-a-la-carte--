@@ -1039,6 +1039,7 @@ function renderPlayerMixedHand() {
     cards.forEach(card => {
         const className = card.type === 'event' ? 'event-card' : 'ingredient-card';
         const el = createFaceCard(card, className);
+        window.CardDragActions?.mark(el, card);
 
         if (GameState.selectionMode === 'discard' && GameState.selectedCardIds.includes(card.id)) el.classList.add('selected-card');
 

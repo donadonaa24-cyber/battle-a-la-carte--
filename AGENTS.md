@@ -47,6 +47,7 @@
 - プレイヤー/CPU処理: `player.js`, `cpu.js`
 - PC向け表示/起動: `render.js`, `audio.js`, `main.js`
 - スマホ向け表示/起動: `mobile/*-sp.js`
+- PC/スマホ共通カードドラッグ操作: `card-drag.js`
 - オンライン通信: `network.js`, `battle-protocol.js`, `battle-engine-worker.js`, `battle-chat.js`
 - 描画モデル/性能計測: `battle-view-model.js`, `battle-metrics.js`
 - 軽量対戦画像: `assets/battle-images/`, `battle-images.js`（原本は `assets/images/`）

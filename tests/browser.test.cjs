@@ -6,6 +6,28 @@ const http = require('node:http');
 const os = require('node:os');
 const { chromium } = require(process.env.BALC_PLAYWRIGHT_PATH || 'C:/Users/donad/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const root = path.resolve(__dirname,'..');
+async function pointerDrag(page, sourceSelector, targetSelector, options = {}) {
+    const source = await page.locator(sourceSelector).boundingBox();
+    const target = await page.locator(targetSelector).boundingBox();
+    assert.ok(source && target, `drag elements must be visible: ${sourceSelector} -> ${targetSelector}`);
+    const start = {x:source.x + source.width / 2,y:source.y + source.height / 2};
+    const end = {x:target.x + target.width / 2,y:target.y + target.height / 2};
+    if (options.touch) {
+        await page.locator(sourceSelector).dispatchEvent('pointerdown',{pointerId:17,pointerType:'touch',button:0,clientX:start.x,clientY:start.y,bubbles:true});
+        await page.evaluate(({start,end})=>{
+            document.dispatchEvent(new PointerEvent('pointermove',{pointerId:17,pointerType:'touch',clientX:start.x,clientY:start.y-14,bubbles:true,cancelable:true}));
+            document.dispatchEvent(new PointerEvent('pointermove',{pointerId:17,pointerType:'touch',clientX:end.x,clientY:end.y,bubbles:true,cancelable:true}));
+        },{start,end});
+        if(options.screenshot) await page.screenshot({path:options.screenshot});
+        await page.evaluate(end=>document.dispatchEvent(new PointerEvent('pointerup',{pointerId:17,pointerType:'touch',clientX:end.x,clientY:end.y,bubbles:true,cancelable:true})),end);
+    } else {
+        await page.mouse.move(start.x,start.y); await page.mouse.down();
+        await page.mouse.move(start.x,start.y-14,{steps:3});
+        await page.mouse.move(end.x,end.y,{steps:8});
+        if(options.screenshot) await page.screenshot({path:options.screenshot});
+        await page.mouse.up();
+    }
+}
 function mockClient(user) {
     window.__channels=[]; window.__presence={};
     window.__createClient=(_url,_key,options)=>{
@@ -135,9 +157,34 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
             await page.route('https://esm.sh/**',route=>i ? route.fulfill({contentType:'text/javascript',body:'export const createClient = window.__createClient;'}) : route.abort());
             await page.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'text/javascript',body:'window.supabase = {createClient:window.__createClient};'}));
             await page.goto(`http://127.0.0.1:${server.address().port}/${file}`);
-            await page.evaluate(()=>{initGame();updateUI(true);});
+            await page.evaluate(()=>{
+                initGame();
+                const ingredient=buildDeck().find(card=>card.type==='ingredient');
+                const event=buildDeck().find(card=>card.type==='event');
+                GameState.players.player.hand=[ingredient];
+                GameState.players.player.events=[event];
+                GameState.currentTurn='player'; GameState.selectionMode=null; GameState.gameEnded=false;
+                document.getElementById('start-overlay').classList.add('hidden');
+                updateUI(true);
+            });
             assert.equal(await page.evaluate(()=>getBattleViewModel().online),false);
             assert.ok((await page.locator('[data-online-label]').first().innerText()).includes('CPU'));
+            assert.equal(await page.locator('#player-hand-mixed [data-drag-card-type="ingredient"]').count(),1);
+            await page.locator('#player-hand-mixed [data-drag-card-type="ingredient"]').click();
+            await page.waitForFunction(()=>GameState.selectionMode==='ingredient-action');
+            await page.evaluate(()=>closeIngredientAction());
+            await pointerDrag(page,'#player-hand-mixed [data-drag-card-type="ingredient"]','#player-set',{
+                touch:i===1,screenshot:path.join(os.tmpdir(),i?'balc-card-drag-mobile.png':'balc-card-drag-web.png')});
+            await page.waitForTimeout(100);
+            const dragResult=await page.evaluate(()=>({mode:GameState.selectionMode,drag:CardDragActions.getLastResult(),
+                dragged:CardDragActions.getLastCardId(),hand:GameState.players.player.hand.map(card=>card.id),
+                turn:GameState.currentTurn,ended:GameState.gameEnded}));
+            assert.deepEqual(dragResult,{mode:'set-confirm',drag:'accepted:set-confirm',dragged:dragResult.dragged,
+                hand:dragResult.hand,turn:'player',ended:false});
+            await page.evaluate(()=>cancelSetCard());
+            await pointerDrag(page,'#player-hand-mixed [data-drag-card-type="event"]',i ? '.center-field' : '.center-panel');
+            await page.waitForFunction(()=>GameState.selectionMode==='event-confirm');
+            await page.evaluate(()=>{cancelEventCard();document.getElementById('start-overlay').classList.remove('hidden');});
             await page.locator('#menu-friend-button').click();
             await page.waitForFunction(()=>!document.getElementById('friend-create-button').disabled);
         }
@@ -150,6 +197,17 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
         await host.locator('#online-skill').selectOption('foodTrap');
         await guest.locator('#online-character').selectOption('akatsuki');
         await guest.locator('#online-skill').selectOption('tasteThief');
+        assert.match(await host.locator('#online-skill-details').innerText(),/発動条件.*自分が3点以下/s);
+        assert.match(await host.locator('#online-skill-details').innerText(),/効果.*相手セット/s);
+        assert.match(await guest.locator('#online-skill-details').innerText(),/使用回数.*2回/s);
+        await guest.screenshot({path:path.join(os.tmpdir(),'balc-online-lobby-improved.png')});
+        for (const page of pages) {
+            for (const id of ['#friend-create-button','#friend-join-button']) {
+                assert.match(await page.locator(id).evaluate(el=>getComputedStyle(el).backgroundImage),/gradient/);
+            }
+        }
+        await guest.locator('#friend-join-button').click();
+        await guest.waitForFunction(()=>document.getElementById('friend-room-message').textContent.includes('6桁'));
         await host.evaluate(() => window.__simulateRpcError = {code:'PGRST202',message:'missing test function'});
         await host.locator('#friend-create-button').click();
         await host.waitForFunction(() => FriendBattle.getConnectionError()?.code === 'SQL_REQUIRED');
@@ -183,6 +241,8 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
         assert.equal(await guest.evaluate(()=>GameState.players.cpu.hand.every(c=>!c.name&&!c.type)),true);
         await host.waitForFunction(()=>!document.body.classList.contains('online-operation-locked'));
         assert.equal(await host.evaluate(()=>FriendBattle.isFastMode()),true);
+        assert.equal(await host.locator('#friend-create-button').isDisabled(),true);
+        assert.match(await host.locator('#friend-create-button').evaluate(el=>getComputedStyle(el).backgroundImage),/rgb\(110, 120, 139\)/);
         assert.equal(await host.locator('#online-bar').isVisible(), false);
         assert.equal(await host.evaluate(()=>FriendBattle.getConnectionError()), null);
         if (process.env.BALC_BROWSER_GUEST_MOBILE === '1') {
@@ -203,6 +263,13 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
             await page.evaluate(()=>{closeInfoOverlay();GameState.openDishHistoryFor='cpu';updateUI(true);GameState.openDishHistoryFor=null;updateUI(true);});
             assert.equal(await page.locator('[data-online-label]').first().innerText().then(t=>t.includes('CPU')),false);
             await page.evaluate(()=>BattleMetrics.clear());
+        }
+        const onlineDragId=await host.evaluate(()=>GameState.players.player.hand.find(card=>card.type==='ingredient')?.id);
+        if(onlineDragId){
+            await pointerDrag(host,`#player-hand-mixed [data-drag-card-id="${onlineDragId}"]`,'#player-set');
+            await host.waitForFunction(()=>GameState.selectionMode==='set-confirm');
+            await host.evaluate(()=>cancelSetCard());
+            await host.waitForFunction(()=>!GameState.selectionMode&&!document.body.classList.contains('online-operation-locked'));
         }
         const cardId=await host.evaluate(()=>GameState.players.player.hand[0].id);
         for(let n=0;n<20;n++) {

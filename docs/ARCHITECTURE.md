@@ -78,6 +78,7 @@ GitHub Pages上の想定URL:
 - `battle-engine-worker.js`: HOST側で既存ゲームファイルを読み込み、初期状態作成と操作適用を行うWeb Worker
 - `battle-chat.js`: 定型チャット表示、送信、5秒クールダウン、再送ID保持
 - `online.css`: PC/スマホ共通のオンラインUI
+- `card-drag.js`: PC/スマホ、CPU/オンライン共通のPointer EventsドラッグUI。材料を既存の `playerSetCard`、イベントを既存の `playerUseEvent` へ渡し、ルール処理は重複させません。
 - `battle-view-model.js`: 従来ルールの視点状態を描画用 `me/opponent` に変換。両renderで共通利用
 - `battle-metrics.js`: `performance.now()` とtimeOriginで入力・描画等を記録。`BattleMetrics.records()` / `summary()` で取得
 - `battle-images.js`: 対戦WebPとギャラリー原本PNGのパス変換

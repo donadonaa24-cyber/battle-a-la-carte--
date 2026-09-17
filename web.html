@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Battle a la carte - Web UI</title>
     <link rel="stylesheet" href="style.css?v=20260916">
-    <link rel="stylesheet" href="online.css?v=20260917">
+    <link rel="stylesheet" href="online.css?v=20260917-drag1">
 </head>
 <body>
     <div id="game-container">
@@ -439,7 +439,7 @@
 
             <div id="start-friend-stage" class="start-stage hidden">
                 <h2 class="start-section-title">オンライン対戦</h2>
-                <p class="start-subtitle">合言葉を使ってルームを作成/参加します</p>
+                <p class="start-subtitle">部屋を作ると6桁の合言葉が生成されます。その数字を参加する人へ伝え、合言葉欄へ入力してもらうと対戦できます。</p>
 
                 <div class="start-user-form">
                     <label class="start-field-label" for="friend-passphrase-input">合言葉</label>
@@ -448,7 +448,7 @@
 
                 <div class="start-setup-actions">
                     <button id="friend-create-button" class="start-main-button">部屋を作る</button>
-                    <button id="friend-join-button" class="start-sub-button">部屋に参加</button>
+                    <button id="friend-join-button" class="start-main-button">部屋に参加</button>
                 </div>
 
                 <p id="friend-room-message" class="start-menu-message"></p>
@@ -531,14 +531,15 @@
     <script src="cpu.js?v=20260419d"></script>
     <script src="battle-view-model.js?v=20260916"></script>
     <script src="battle-images.js?v=20260916"></script>
-    <script src="render.js?v=20260916"></script>
+    <script src="render.js?v=20260917-drag1"></script>
     <script src="audio.js?v=20260419d"></script>
     <script src="supabase-config.js?v=20260912"></script>
     <script src="battle-protocol.js?v=20260916"></script>
     <script src="battle-chat.js?v=20260916"></script>
     <script src="battle-metrics.js?v=20260916"></script>
-    <script src="network.js?v=20260916"></script>
+    <script src="network.js?v=20260917-drag1"></script>
     <script src="main.js?v=20260916"></script>
+    <script src="card-drag.js?v=20260917-drag1"></script>
     <script src="story-mode.js?v=20260419d"></script>
 </body>
 </html>

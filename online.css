@@ -2,6 +2,38 @@
 #online-panel-toggle[hidden] { display: none !important; }
 .mobile-field-ui #online-panel-toggle { position: fixed; right: 8px; bottom: max(8px, env(safe-area-inset-bottom, 0px)); z-index: 200; }
 
+#start-friend-stage #friend-create-button,
+#start-friend-stage #friend-join-button {
+    margin-bottom: 0;
+    border: 1px solid #ffd77b;
+    color: #fff;
+    background: linear-gradient(180deg, #ffc857 0%, #cf7d12 100%);
+    box-shadow: 0 0 0 1px #ffde8a55, 0 0 16px #f0a02066;
+    animation: friend-action-glow 1.6s ease-in-out infinite;
+}
+#start-friend-stage #friend-create-button:active,
+#start-friend-stage #friend-join-button:active,
+#start-friend-stage #friend-create-button:disabled,
+#start-friend-stage #friend-join-button:disabled {
+    border-color: #71809b;
+    color: #d5dbe6;
+    background: linear-gradient(180deg, #6e788b 0%, #4d5668 100%);
+    box-shadow: none;
+    animation: none;
+}
+.online-skill-details { margin-top: 8px; padding: 9px 10px; border: 1px solid #6f8dbb; border-radius: 9px; background: #071a3ddd; color: #eef7ff; font-size: 12px; line-height: 1.45; }
+.online-skill-details p { margin: 2px 0; }
+.online-skill-details strong { color: #ffd985; }
+@keyframes friend-action-glow { 50% { filter: brightness(1.14); box-shadow: 0 0 0 1px #ffde8a88, 0 0 22px #f0a02099; } }
+@media (prefers-reduced-motion: reduce) { #start-friend-stage #friend-create-button, #start-friend-stage #friend-join-button { animation: none; } }
+
+.card-drag-source { cursor: grab; touch-action: pan-x; }
+.card-drag-source:active { cursor: grabbing; }
+.card-dragging { user-select: none; }
+.card-drag-ghost { position: fixed !important; z-index: 200002; margin: 0 !important; pointer-events: none !important; opacity: .88; transform: translate(-50%, -58%) rotate(3deg) scale(1.05); filter: drop-shadow(0 12px 12px #0009); }
+.card-drop-zone { position: fixed; z-index: 200001; box-sizing: border-box; display: flex; align-items: center; justify-content: center; pointer-events: none; border: 3px dashed #ffd15a; border-radius: 16px; background: #071a49cc; color: #fff1a9; font-size: clamp(20px, 5vw, 38px); font-weight: 900; letter-spacing: .12em; text-shadow: 0 2px 4px #000; box-shadow: inset 0 0 26px #ffbf2f33, 0 0 20px #0008; }
+.card-drop-zone.is-ready { border-style: solid; background: #b8690ee6; color: #fff; box-shadow: inset 0 0 30px #ffe39a55, 0 0 28px #ffbd3e; transform: scale(1.025); }
+
 /* Reserve fixed viewport space for every zone; keep player controls largest. */
 .online-session #game-container.mobile-field-ui { height: 100vh; height: 100dvh; overflow: hidden; }
 .online-session .mobile-field-ui .duel-field { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 2.7fr) minmax(0, 1.8fr) minmax(0, 3.5fr); gap: 4px; padding: calc(68px + env(safe-area-inset-top, 0px)) 8px calc(42px + env(safe-area-inset-bottom, 0px)); }
