@@ -10,6 +10,15 @@ let uiRenderQueued = false;
 let uiRenderFrameRequested = false;
 let lastUiRenderAt = 0;
 const renderSectionSignatureCache = Object.create(null);
+const CARD_DRAW_REVEAL_INTERVAL_MS = 500;
+let cardMotionState = {
+    initialized: false,
+    ownHandIds: new Set(),
+    opponentHandIds: new Set(),
+    discardIds: new Set(),
+    discardCount: 0
+};
+let activeCardMotionFrame = null;
 const HORIZONTAL_SCROLL_ROW_IDS = [
     'player-hand-mixed',
     'cpu-hand-mixed',
@@ -982,6 +991,7 @@ function createImageCard(card, cardEl, imagePath, fallbackClassName = '') {
 function createFaceCard(card, extraClass) {
     const cardEl = document.createElement('div');
     cardEl.className = `card ${extraClass || ''}`;
+    if (card?.id != null) cardEl.dataset.cardId = String(card.id);
 
     if (card.type === 'ingredient') {
         const path = getIngredientImagePath(card.name);
@@ -997,9 +1007,10 @@ function createFaceCard(card, extraClass) {
     return cardEl;
 }
 
-function createBackCard(titleText, descText) {
+function createBackCard(titleText, descText, cardId = null) {
     const cardEl = document.createElement('div');
     cardEl.className = 'card card-back';
+    if (cardId != null) cardEl.dataset.cardId = String(cardId);
 
     const title = document.createElement('div');
     title.className = 'card-title card-back-label';
@@ -1012,6 +1023,90 @@ function createBackCard(titleText, descText) {
     cardEl.appendChild(title);
     cardEl.appendChild(desc);
     return cardEl;
+}
+
+function getMotionCardIds(cards) {
+    return new Set((Array.isArray(cards) ? cards : [])
+        .map(card => card?.id == null ? null : String(card.id))
+        .filter(Boolean));
+}
+
+function beginCardMotionFrame() {
+    const model = getBattleViewModel();
+    const ownCards = [...(model.me.hand || []), ...(model.me.events || [])];
+    const opponentCards = [...(model.opponent.hand || []), ...(model.opponent.events || [])];
+    const discardCards = Array.isArray(GameState.discard) ? GameState.discard : [];
+    const ownHandIds = getMotionCardIds(ownCards);
+    const opponentHandIds = getMotionCardIds(opponentCards);
+    const discardIds = getMotionCardIds(discardCards);
+    const previousNodes = new Map();
+    for (const element of document.querySelectorAll('[data-card-id]')) {
+        const id = element.dataset.cardId;
+        if (!id || previousNodes.has(id)) continue;
+        const rect = element.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) previousNodes.set(id, { rect, clone: element.cloneNode(true) });
+    }
+
+    const newOwnIds = new Set([...ownHandIds].filter(id => !cardMotionState.initialized || !cardMotionState.ownHandIds.has(id)));
+    const newOpponentIds = new Set([...opponentHandIds].filter(id => !cardMotionState.initialized || !cardMotionState.opponentHandIds.has(id)));
+    const newDiscardCards = cardMotionState.initialized
+        ? discardCards.filter(card => card?.id != null && !cardMotionState.discardIds.has(String(card.id)))
+        : [];
+    const unidentifiedIncrease = cardMotionState.initialized
+        ? Math.max(0, discardCards.length - cardMotionState.discardCount - newDiscardCards.length)
+        : 0;
+
+    activeCardMotionFrame = {
+        newOwnIds,
+        newOpponentIds,
+        next: { ownHandIds, opponentHandIds, discardIds, discardCount: discardCards.length },
+        discardTransfers: [
+            ...newDiscardCards.map(card => ({ card, source: previousNodes.get(String(card.id)) || null })),
+            ...Array.from({ length: unidentifiedIncrease }, () => ({ card: null, source: null }))
+        ]
+    };
+}
+
+function markCardDrawArrival(element, order) {
+    if (!element) return;
+    element.classList.add('card-draw-enter');
+    element.style.setProperty('--card-draw-delay', `${Math.max(0, order) * CARD_DRAW_REVEAL_INTERVAL_MS}ms`);
+    element.addEventListener('animationend', () => {
+        element.classList.remove('card-draw-enter');
+        element.style.removeProperty('--card-draw-delay');
+    }, { once: true });
+}
+
+function animateDiscardTransfers(transfers) {
+    if (!Array.isArray(transfers) || transfers.length === 0) return;
+    const target = byId('discard-pile-button')?.getBoundingClientRect();
+    if (!target || target.width <= 0 || target.height <= 0) return;
+    const fallback = byId('deck-pile-button')?.getBoundingClientRect() || target;
+
+    transfers.forEach((transfer, index) => {
+        const sourceRect = transfer.source?.rect || fallback;
+        const ghost = transfer.source?.clone || createBackCard('捨て札', '移動中');
+        ghost.classList.remove('selected-card', 'card-draw-enter');
+        ghost.classList.add('card-discard-ghost');
+        ghost.removeAttribute('id');
+        ghost.style.left = `${sourceRect.left}px`;
+        ghost.style.top = `${sourceRect.top}px`;
+        ghost.style.width = `${sourceRect.width}px`;
+        ghost.style.height = `${sourceRect.height}px`;
+        ghost.style.setProperty('--discard-flight-x', `${target.left + target.width / 2 - (sourceRect.left + sourceRect.width / 2)}px`);
+        ghost.style.setProperty('--discard-flight-y', `${target.top + target.height / 2 - (sourceRect.top + sourceRect.height / 2)}px`);
+        ghost.style.setProperty('--discard-flight-delay', `${index * 90}ms`);
+        document.body.appendChild(ghost);
+        setTimeout(() => ghost.remove(), 900 + index * 90);
+    });
+}
+
+function finishCardMotionFrame() {
+    const frame = activeCardMotionFrame;
+    activeCardMotionFrame = null;
+    if (!frame) return;
+    animateDiscardTransfers(frame.discardTransfers);
+    cardMotionState = { initialized: true, ...frame.next };
 }
 
 function renderPlayerMixedHand() {
@@ -1036,9 +1131,11 @@ function renderPlayerMixedHand() {
 
     if (cards.length === 0) { container.textContent = '手札なし'; return; }
 
+    let drawOrder = 0;
     cards.forEach(card => {
         const className = card.type === 'event' ? 'event-card' : 'ingredient-card';
         const el = createFaceCard(card, className);
+        if (activeCardMotionFrame?.newOwnIds.has(String(card.id))) markCardDrawArrival(el, drawOrder++);
         window.CardDragActions?.mark(el, card);
 
         if (GameState.selectionMode === 'discard' && GameState.selectedCardIds.includes(card.id)) el.classList.add('selected-card');
@@ -1097,7 +1194,13 @@ function renderOpponentMixedHand() {
     container.innerHTML = '';
 
     if (total === 0) { container.textContent = 'なし'; return; }
-    for (let i = 0; i < total; i++) container.appendChild(createBackCard(getBattleViewModel().opponentLabel, '手札'));
+    let drawOrder = 0;
+    const cards = [...cpu.hand, ...cpu.events];
+    cards.forEach(card => {
+        const el = createBackCard(getBattleViewModel().opponentLabel, '手札', card.id);
+        if (activeCardMotionFrame?.newOpponentIds.has(String(card.id))) markCardDrawArrival(el, drawOrder++);
+        container.appendChild(el);
+    });
 }
 
 function renderOpponentSet() {
@@ -1978,6 +2081,7 @@ function performUIRender() {
     uiRenderInProgress = true;
 
     try {
+        beginCardMotionFrame();
         for (const label of document.querySelectorAll('[data-online-label]')) {
             label.dataset.cpuLabel ??= label.textContent;
             label.textContent = getBattleViewModel().online ? label.dataset.onlineLabel : label.dataset.cpuLabel;
@@ -2034,6 +2138,7 @@ function performUIRender() {
         renderEndTurnConfirmPanel();
         renderReferenceBooks();
         renderInfoOverlay();
+        finishCardMotionFrame();
 
         if (GameState.selectionMode !== 'discard') hideDiscardBanner();
         if (typeof window.__onGameStateUpdated === 'function') {

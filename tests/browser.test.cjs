@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const os = require('node:os');
-const { chromium } = require(process.env.BALC_PLAYWRIGHT_PATH || 'C:/Users/donad/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { chromium } = require(process.env.BALC_PLAYWRIGHT_PATH || 'playwright');
 const root = path.resolve(__dirname,'..');
 async function pointerDrag(page, sourceSelector, targetSelector, options = {}) {
     const source = await page.locator(sourceSelector).boundingBox();
@@ -291,6 +291,7 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
         }
         const onlineDragId=await host.evaluate(()=>GameState.players.player.hand.find(card=>card.type==='ingredient')?.id);
         if(onlineDragId){
+            await host.waitForFunction(()=>!document.querySelector('#player-hand-mixed .card-draw-enter'),null,{timeout:10000});
             await pointerDrag(host,`#player-hand-mixed [data-drag-card-id="${onlineDragId}"]`,'#player-set');
             await host.waitForFunction(()=>GameState.selectionMode==='set-confirm');
             await host.evaluate(()=>cancelSetCard());

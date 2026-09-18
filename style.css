@@ -844,6 +844,41 @@ button:disabled {
     cursor: default;
 }
 
+.card-draw-enter {
+    position: relative;
+    z-index: 4;
+    pointer-events: none;
+    animation: cardDrawArrival 360ms cubic-bezier(.18, .84, .28, 1.18) var(--card-draw-delay, 0ms) both;
+    will-change: transform, opacity, filter;
+}
+
+@keyframes cardDrawArrival {
+    0% { opacity: 0; transform: translateY(-34px) scale(.72) rotate(-7deg); filter: brightness(1.5) drop-shadow(0 0 14px #80d8ff); }
+    72% { opacity: 1; transform: translateY(3px) scale(1.05) rotate(1deg); filter: brightness(1.12) drop-shadow(0 8px 10px #0008); }
+    100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); filter: none; }
+}
+
+.card-discard-ghost {
+    position: fixed !important;
+    z-index: 200090 !important;
+    margin: 0 !important;
+    pointer-events: none !important;
+    transform-origin: center;
+    animation: cardDiscardFlight 650ms cubic-bezier(.34, .02, .36, 1) var(--discard-flight-delay, 0ms) both;
+    will-change: transform, opacity, filter;
+}
+
+@keyframes cardDiscardFlight {
+    0% { opacity: .96; transform: translate(0, 0) scale(1) rotate(0); filter: drop-shadow(0 8px 10px #0009); }
+    38% { opacity: 1; transform: translate(calc(var(--discard-flight-x) * .38), calc(var(--discard-flight-y) * .38 - 42px)) scale(.9) rotate(-8deg); filter: drop-shadow(0 14px 12px #000a); }
+    100% { opacity: .12; transform: translate(var(--discard-flight-x), var(--discard-flight-y)) scale(.26) rotate(18deg); filter: brightness(.72); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card-draw-enter,
+    .card-discard-ghost { animation-duration: 1ms !important; animation-delay: 0ms !important; }
+}
+
 #cook-button.has-recipe-alert {
     position: relative;
 }
