@@ -24,6 +24,16 @@
 .online-skill-details { margin-top: 8px; padding: 9px 10px; border: 1px solid #6f8dbb; border-radius: 9px; background: #071a3ddd; color: #eef7ff; font-size: 12px; line-height: 1.45; }
 .online-skill-details p { margin: 2px 0; }
 .online-skill-details strong { color: #ffd985; }
+.online-room-create-mode, .online-public-match { margin: 10px 0; padding: 10px; border: 1px solid #6f8dbb; border-radius: 10px; background: #071a3dcc; text-align: left; }
+.online-room-create-mode label { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.online-room-create-mode input { width: 20px; height: 20px; flex: 0 0 auto; }
+.online-room-create-mode p { margin: 6px 0 0; font-size: 12px; line-height: 1.5; }
+.online-public-match > button { width: 100%; margin: 0; }
+.online-public-room-list { display: grid; gap: 7px; margin-top: 8px; }
+.online-public-room-empty { margin: 0; padding: 8px; text-align: center; color: #dce8ff; }
+.online-public-room { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 8px; border: 1px solid #829ac5; border-radius: 9px; background: #ffffff0d; }
+.online-public-room span { min-width: 0; overflow-wrap: anywhere; }
+.online-public-room button { min-height: 40px; border: 1px solid #ffd77b; border-radius: 9px; background: linear-gradient(180deg,#ffc857,#cf7d12); color: #fff; font-weight: 900; }
 @keyframes friend-action-glow { 50% { filter: brightness(1.14); box-shadow: 0 0 0 1px #ffde8a88, 0 0 22px #f0a02099; } }
 @media (prefers-reduced-motion: reduce) { #start-friend-stage #friend-create-button, #start-friend-stage #friend-join-button { animation: none; } }
 
@@ -43,12 +53,12 @@
 .online-session .mobile-field-ui .cpu-middle-row,
 .online-session .mobile-field-ui .player-middle-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .online-session .mobile-field-ui .zone-block { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 3px 5px; }
-.online-session .mobile-field-ui .zone-label { flex-shrink: 0; margin-bottom: 2px; }
+.online-session .mobile-field-ui .zone-label { flex-shrink: 0; margin-bottom: 2px; min-height: 11px; font-size: 10px; line-height: 1.1; }
 .online-session .mobile-field-ui .card-row,
 .online-session .mobile-field-ui .pack-row { min-height: 0; flex: 1; padding: 0; }
 .online-session .mobile-field-ui .card-row .card,
-.online-session .mobile-field-ui .pack-row .card { height: 100%; max-height: 78px; width: auto; min-width: 0; aspect-ratio: 56 / 78; flex-shrink: 0; padding: 2px; }
-.online-session .mobile-field-ui .cpu-hand-zone .card { max-height: 52px; }
+.online-session .mobile-field-ui .pack-row .card { height: 100%; min-height: 44px; max-height: 78px; width: auto; min-width: 32px; aspect-ratio: 56 / 78; flex-shrink: 0; padding: 2px; }
+.online-session .mobile-field-ui .cpu-hand-zone .card { min-height: 36px; max-height: 52px; }
 .online-session .mobile-field-ui .card-name-plate { font-size: 8px; padding: 1px 2px; }
 .online-session .mobile-field-ui .card-back-label { font-size: 8px; }
 .online-session .mobile-field-ui .center-field { position: relative; inset: auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 96px; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 8px; pointer-events: auto; }
@@ -83,6 +93,8 @@
 .online-session .mobile-field-ui .player-main-hud .hud-skill-button { margin-top: 1px; padding: 2px 7px; font-size: 9px; }
 .online-session .mobile-field-ui .player-pack-actions { flex: 1; min-width: 0; align-content: center; gap: 4px; margin-bottom: 0; }
 .online-session .mobile-field-ui .player-pack-actions button { padding: 7px 6px; }
+.online-session .mobile-field-ui .info-tabs { justify-content: flex-start; scroll-padding-left: 4px; }
+.online-session .mobile-field-ui .tab-button { min-height: 30px; font-size: 10px; padding: 6px 8px; }
 @media (max-height: 700px) {
     .online-session .mobile-field-ui .cpu-hud { gap: 3px; padding: 2px 4px; }
     .online-session .mobile-field-ui .cpu-hud .character-icon { width: 28px; height: 28px; }
@@ -100,10 +112,10 @@
     .online-session .mobile-field-ui .duel-field { padding-top: calc(64px + env(safe-area-inset-top, 0px)); padding-bottom: calc(38px + env(safe-area-inset-bottom, 0px)); }
     .online-session .mobile-field-ui .cpu-hud .character-icon { width: 24px; height: 24px; }
     .online-session .mobile-field-ui .cpu-hud .hud-name,
-    .online-session .mobile-field-ui .cpu-hud .hud-score { font-size: 9px; line-height: 1; }
+    .online-session .mobile-field-ui .cpu-hud .hud-score { font-size: 10px; line-height: 1; }
     .online-session .mobile-field-ui .cpu-hud .hud-skill-name,
-    .online-session .mobile-field-ui .cpu-hud .hud-skill-state { font-size: 8px; line-height: 1; }
-    .online-session .mobile-field-ui .pile-title { font-size: 8px; line-height: 1; }
+    .online-session .mobile-field-ui .cpu-hud .hud-skill-state { font-size: 9px; line-height: 1; }
+    .online-session .mobile-field-ui .pile-title { font-size: 9px; line-height: 1; }
     .online-session .mobile-field-ui .pile-count { font-size: 14px; line-height: 1; }
     .online-session .mobile-field-ui .deck-pile .pile-title,
     .online-session .mobile-field-ui .deck-pile .pile-count { padding: 1px 4px; }
@@ -112,8 +124,8 @@
     .online-session .mobile-field-ui .player-main-hud .hud-name { font-size: 10px; line-height: 1; }
     .online-session .mobile-field-ui .player-main-hud .hud-score { font-size: 9px; line-height: 1; }
     .online-session .mobile-field-ui .player-main-hud .hud-skill-name,
-    .online-session .mobile-field-ui .player-main-hud .hud-skill-state { font-size: 8px; line-height: 1; }
-    .online-session .mobile-field-ui .player-main-hud .hud-skill-button { margin-top: 0; padding: 1px 6px; font-size: 8px; line-height: 1; }
+    .online-session .mobile-field-ui .player-main-hud .hud-skill-state { font-size: 9px; line-height: 1; }
+    .online-session .mobile-field-ui .player-main-hud .hud-skill-button { margin-top: 0; padding: 2px 6px; font-size: 9px; line-height: 1; }
 }
 .online-session [data-cpu-only], #online-rematch[hidden] { display: none !important; }
 #online-bar { position: fixed; z-index: 100000; bottom: 8px; left: 50%; transform: translateX(-50%); width: min(720px, 96vw); box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid #5777ab; border-radius: 12px; background: #091c3e; color: #fff; box-shadow: 0 3px 16px #0004; font-size: 14px; }

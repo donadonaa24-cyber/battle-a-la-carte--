@@ -63,7 +63,7 @@ function mockClient(user) {
       };
     };
 }
-test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, disconnect/reload', {timeout:60000}, async()=>{
+test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, disconnect/reload', {timeout:120000}, async()=>{
     const server=http.createServer((req,res)=>{
         const filename=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
         if(!filename.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
@@ -113,6 +113,7 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
                     const a=r.args;
                     let data;
                     if(r.name==='balc_broadcast_capabilities') data={version:2};
+                    if(r.name==='balc_list_public_rooms') data=[{id:'30000000-0000-4000-8000-000000000001',host_name:'公開テスト'}];
                     if(r.name==='balc_create_room') data=db.room={id:'room1',host_id:'host',guest_id:null,code:'482731',host_info:a.p_info,revision:0,status:'waiting'};
                     if(r.name==='balc_join_room') {db.room={...db.room,guest_id:'guest',guest_info:a.p_info,status:'playing',turn_user:'host',first_user:'host'};data=db.room;}
                     if(r.name==='balc_save_checkpoint') {
@@ -158,17 +159,30 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
             await page.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'text/javascript',body:'window.supabase = {createClient:window.__createClient};'}));
             await page.goto(`http://127.0.0.1:${server.address().port}/${file}`);
             await page.evaluate(()=>{
-                initGame();
+                window.__battleSafeStartGame();
                 const ingredient=buildDeck().find(card=>card.type==='ingredient');
                 const event=buildDeck().find(card=>card.type==='event');
                 GameState.players.player.hand=[ingredient];
                 GameState.players.player.events=[event];
+                GameState.players.player.packs=[packDefinitions[0]];
+                setPlayerSelectedSkill(GameState.players.player,'lastOrder');
                 GameState.currentTurn='player'; GameState.selectionMode=null; GameState.gameEnded=false;
                 document.getElementById('start-overlay').classList.add('hidden');
                 updateUI(true);
             });
             assert.equal(await page.evaluate(()=>getBattleViewModel().online),false);
             assert.ok((await page.locator('[data-online-label]').first().innerText()).includes('CPU'));
+            await page.evaluate(()=>{GameState.currentTurn='cpu';updateUI(true);});
+            await page.locator('#player-packs .inspectable-card').click();
+            assert.match(await page.locator('#spotlight-badge').innerText(),/加工アイテム効果/);
+            await page.evaluate(()=>hideSpotlightCard());
+            const skillButtonState=await page.evaluate(()=>({disabled:document.getElementById('player-skill-button').disabled,
+                turn:getBattleViewModel().turn,skill:getSelectedSkillDefinitionForSide('player')?.key,mode:GameState.selectionMode}));
+            assert.equal(skillButtonState.disabled,false,JSON.stringify(skillButtonState));
+            await page.locator('#player-skill-button').click();
+            assert.match(await page.locator('#spotlight-badge').innerText(),/スキル詳細/);
+            assert.match(await page.locator('#spotlight-sub').innerText(),/条件:.*効果:/s);
+            await page.evaluate(()=>{hideSpotlightCard();GameState.currentTurn='player';updateUI(true);});
             assert.equal(await page.locator('#player-hand-mixed [data-drag-card-type="ingredient"]').count(),1);
             await page.locator('#player-hand-mixed [data-drag-card-type="ingredient"]').click();
             await page.waitForFunction(()=>GameState.selectionMode==='ingredient-action');
@@ -184,7 +198,8 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
             await page.evaluate(()=>cancelSetCard());
             await pointerDrag(page,'#player-hand-mixed [data-drag-card-type="event"]',i ? '.center-field' : '.center-panel');
             await page.waitForFunction(()=>GameState.selectionMode==='event-confirm');
-            await page.evaluate(()=>{cancelEventCard();document.getElementById('start-overlay').classList.remove('hidden');});
+            await page.evaluate(()=>{cancelEventCard();document.getElementById('start-overlay').classList.remove('hidden');showStartStage('start-menu-stage');});
+            await page.waitForTimeout(1000);
             await page.locator('#menu-friend-button').click();
             await page.waitForFunction(()=>!document.getElementById('friend-create-button').disabled);
         }
@@ -200,6 +215,16 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
         assert.match(await host.locator('#online-skill-details').innerText(),/発動条件.*自分が3点以下/s);
         assert.match(await host.locator('#online-skill-details').innerText(),/効果.*相手セット/s);
         assert.match(await guest.locator('#online-skill-details').innerText(),/使用回数.*2回/s);
+        await guest.locator('#friend-private-toggle').uncheck();
+        assert.equal(await guest.locator('#friend-create-button').innerText(),'公開部屋を作る');
+        await guest.locator('#friend-private-toggle').check();
+        await guest.locator('#friend-search-public-button').click();
+        await guest.waitForFunction(()=>document.getElementById('friend-public-room-list').textContent.includes('公開テスト'));
+        assert.equal(await guest.locator('.online-public-room').count(),1);
+        const lobbyVisibility=await guest.evaluate(()=>({overlay:document.getElementById('start-overlay').className,
+            stage:document.getElementById('start-friend-stage').className,scroll:document.querySelector('.start-panel').scrollTop,
+            join:document.getElementById('friend-join-button').getBoundingClientRect().toJSON()}));
+        assert.equal(await guest.locator('#friend-join-button').isVisible(),true,JSON.stringify(lobbyVisibility));
         await guest.screenshot({path:path.join(os.tmpdir(),'balc-online-lobby-improved.png')});
         for (const page of pages) {
             for (const id of ['#friend-create-button','#friend-join-button']) {
@@ -313,6 +338,23 @@ test('Web HOST/GUEST UIs and worker: create/join, distinct selections, turns, di
         assert.equal(await guest.locator('#online-skill').inputValue(), 'tasteThief');
         assert.equal(await guest.evaluate(() => getBattleViewModel().me.selectedSkillKey), 'tasteThief');
         await host.waitForFunction(()=>document.getElementById('online-status').textContent.includes('相手のターン'));
+        await host.evaluate(()=>{
+            GameState.matchStartedAt=Date.now()-65000;GameState.matchEndedAt=Date.now();GameState.gameEnded=true;GameState.winner='player';
+            GameState.players.player.cookedRecipes=[{name:'おにぎり',points:1},{name:'爆弾おにぎり',points:10}];
+            GameState.players.cpu.cookedRecipes=[{name:'サラダ',points:1}];
+            GameState.lastCookedRecipe={side:'player',name:'爆弾おにぎり',points:10,cookedAt:Date.now()};
+            prepareMatchFinale('player');
+        });
+        await host.waitForTimeout(500);
+        await host.screenshot({path:path.join(os.tmpdir(),'balc-final-dish.png'),fullPage:true});
+        await host.waitForFunction(()=>!document.getElementById('show-match-result-button').classList.contains('hidden'),null,{timeout:5000});
+        await host.locator('#show-match-result-button').click();
+        await host.screenshot({path:path.join(os.tmpdir(),'balc-match-result.png'),fullPage:true});
+        assert.match(await host.locator('#result-summary').innerText(),/対戦時間 1分05秒/);
+        assert.match(await host.locator('#result-summary').innerText(),/爆弾おにぎり.*10点/s);
+        await host.locator('#result-field-button').click();
+        assert.equal(await host.locator('#result-overlay').isHidden(),true);
+        assert.equal(await host.locator('#show-match-result-button').isVisible(),true);
         assert.deepEqual(errors,[]);
     }finally{
         await browser.close(); await new Promise(resolve=>server.close(resolve));

@@ -1,5 +1,6 @@
 ﻿let bgmStarted = false;
 let resultOverlayTimer = null;
+let matchFinaleTimer = null;
 let spotlightTimer = null;
 let spotlightHideAt = 0;
 let gameStartedOnce = false;
@@ -177,6 +178,11 @@ function applySavedMatchSnapshot(snapshot) {
     GameState.selectedCardIds = Array.isArray(source.selectedCardIds) ? source.selectedCardIds : [];
     GameState.candidateRecipes = Array.isArray(source.candidateRecipes) ? source.candidateRecipes : [];
     GameState.gameEnded = false;
+    GameState.matchStartedAt = Number.isFinite(Number(source.matchStartedAt))
+        ? Number(source.matchStartedAt) : Date.now();
+    GameState.matchEndedAt = null;
+    GameState.lastCookedRecipe = source.lastCookedRecipe && typeof source.lastCookedRecipe === 'object'
+        ? source.lastCookedRecipe : null;
     GameState.winner = null;
     GameState.pendingEventContext = source.pendingEventContext || null;
     GameState.pendingSkillContext = source.pendingSkillContext || null;
@@ -885,10 +891,18 @@ function bindMainEvents() {
     bindIfExists('player-skill-button', () => {
         unlockAudio();
         startBgmOnce();
-        if (typeof playerUseSkill === 'function') {
+        if (getBattleViewModel().turn !== 'me' || GameState.gameEnded) {
+            if (typeof showPlayerSkillDetails === 'function') showPlayerSkillDetails();
+        } else if (typeof playerUseSkill === 'function') {
             playerUseSkill();
         }
     });
+
+    bindIfExists('show-match-result-button', () => {
+        showResultOverlay(buildWinnerText(GameState.winner), GameState.winner === 'player' ? 'win' : 'lose');
+    });
+
+    bindIfExists('result-field-button', returnToFinalField);
 
     bindIfExists('buy-knife-button', () => {
         unlockAudio();
@@ -1047,6 +1061,8 @@ function hardRepairGameState() {
     }
 
     GameState.gameEnded = false;
+    if (!Number.isFinite(Number(GameState.matchStartedAt))) GameState.matchStartedAt = Date.now();
+    GameState.matchEndedAt = null;
 }
 
 function safeStartGame() {
@@ -1806,6 +1822,126 @@ function showResultOverlay(text, type) {
     overlay.classList.remove('hidden', 'win', 'lose');
     overlay.classList.add(type);
     resultText.textContent = text;
+    renderMatchResultSummary();
+    document.getElementById('show-match-result-button')?.classList.add('hidden');
+    if (typeof playResultBGM === 'function') playResultBGM();
+}
+
+function formatMatchDuration(ms) {
+    const totalSeconds = Math.max(0, Math.floor(Number(ms || 0) / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}分${String(seconds).padStart(2, '0')}秒`;
+}
+
+function appendDishSummary(parent, title, player) {
+    const section = document.createElement('section');
+    section.className = 'result-dish-section';
+    const heading = document.createElement('h3');
+    const history = Array.isArray(player?.cookedRecipes) ? player.cookedRecipes : [];
+    heading.textContent = `${title}（${history.length}品）`;
+    section.appendChild(heading);
+    if (history.length === 0) {
+        const empty = document.createElement('p');
+        empty.textContent = '料理なし';
+        section.appendChild(empty);
+    } else {
+        const list = document.createElement('ol');
+        for (const dish of [...history].reverse()) {
+            const item = document.createElement('li');
+            item.textContent = `${dish.name || '料理'}　${Number(dish.points) || 0}点`;
+            list.appendChild(item);
+        }
+        section.appendChild(list);
+    }
+    parent.appendChild(section);
+}
+
+function renderMatchResultSummary() {
+    const container = document.getElementById('result-summary');
+    if (!container) return;
+    container.replaceChildren();
+    const model = getBattleViewModel();
+    const endedAt = Number(GameState.matchEndedAt) || Date.now();
+    const startedAt = Number(GameState.matchStartedAt) || endedAt;
+    const meta = document.createElement('div');
+    meta.className = 'result-meta';
+    meta.textContent = `対戦時間 ${formatMatchDuration(endedAt - startedAt)}　最終得点 ${model.me.score} - ${model.opponent.score}`;
+    container.appendChild(meta);
+    if (GameState.specialWinReason) {
+        const reason = document.createElement('div');
+        reason.className = 'result-reason';
+        reason.textContent = `決着: ${GameState.specialWinReason}`;
+        container.appendChild(reason);
+    }
+    const dishes = document.createElement('div');
+    dishes.className = 'result-dish-grid';
+    appendDishSummary(dishes, 'あなたの料理', model.me);
+    appendDishSummary(dishes, `${model.opponentLabel}の料理`, model.opponent);
+    container.appendChild(dishes);
+}
+
+function returnToFinalField() {
+    const overlay = document.getElementById('result-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.getElementById('show-match-result-button')?.classList.remove('hidden');
+    if (typeof stopBGM === 'function') stopBGM();
+}
+
+function showPlayerSkillDetails() {
+    const skill = typeof getSelectedSkillDefinitionForSide === 'function'
+        ? getSelectedSkillDefinitionForSide('player') : null;
+    if (!skill) return;
+    const player = getBattleViewModel().me;
+    const used = Number(player?.skillUseCounts?.[skill.key] || 0);
+    const maxUses = Math.max(1, Number(skill.maxUses) || 1);
+    showSpotlightCard({
+        badge: 'スキル詳細',
+        name: skill.name,
+        sub: `条件: ${skill.condition || 'なし'}\n効果: ${skill.effect || 'なし'}\n使用回数: ${used}/${maxUses}`,
+        imagePath: getSkillCutinImagePathForSide('player'),
+        kind: 'skill',
+        durationMs: 6000
+    });
+}
+
+function showFieldPackDetails(packDef) {
+    if (!packDef) return;
+    const imagePath = window.getPackImagePath ? window.getPackImagePath(packDef.key) : null;
+    showSpotlightCard({
+        badge: '加工アイテム効果',
+        name: packDef.name,
+        sub: packDef.description || (typeof getDetailedPackEffectText === 'function' ? getDetailedPackEffectText(packDef.key) : '加工アイテム'),
+        imagePath,
+        kind: 'pack',
+        durationMs: 6000
+    });
+}
+
+function prepareMatchFinale(winner) {
+    if (matchFinaleTimer) clearTimeout(matchFinaleTimer);
+    const overlay = document.getElementById('result-overlay');
+    const button = document.getElementById('show-match-result-button');
+    overlay?.classList.add('hidden');
+    button?.classList.add('hidden');
+    const finalDish = GameState.lastCookedRecipe?.side === winner ? GameState.lastCookedRecipe : null;
+    const waitMs = finalDish ? 3000 : 1200;
+    if (finalDish) {
+        const legendary = Number(finalDish.points) >= 10;
+        showSpotlightCard({
+            badge: legendary ? '伝説の一皿で決着！' : '決着の一皿！',
+            name: finalDish.name,
+            sub: `${finalDish.points}点　この料理が勝負を決めた！`,
+            imagePath: window.getRecipeImagePath?.(finalDish.name),
+            kind: legendary ? 'final-recipe legendary' : 'final-recipe',
+            durationMs: waitMs
+        });
+    }
+    matchFinaleTimer = setTimeout(() => {
+        hideSpotlightCard();
+        button?.classList.remove('hidden');
+        if (typeof playSfx === 'function') playSfx('gameEnd');
+    }, waitMs);
 }
 
 function hideResultOverlay() {
@@ -1814,6 +1950,12 @@ function hideResultOverlay() {
 
     overlay.classList.add('hidden');
     overlay.classList.remove('win', 'lose');
+    document.getElementById('show-match-result-button')?.classList.add('hidden');
+
+    if (matchFinaleTimer) {
+        clearTimeout(matchFinaleTimer);
+        matchFinaleTimer = null;
+    }
 
     if (resultOverlayTimer) {
         clearTimeout(resultOverlayTimer);
@@ -1867,13 +2009,17 @@ function showSpotlightCard({ badge, name, sub, imagePath, kind, durationMs }) {
     const cardKind = kind || 'recipe';
     const isBattleModeLike = cardKind === 'battle-mode' || cardKind === 'battle-mode-text';
     const isSkillLike = cardKind === 'skill' || isBattleModeLike;
+    const isFinale = cardKind.includes('final-recipe');
+    const isLegendary = cardKind.includes('legendary');
     const waitMs = resolveSpotlightDisplayMs(durationMs);
-    overlay.classList.remove('spotlight-skill', 'spotlight-battle-mode');
+    overlay.classList.remove('spotlight-skill', 'spotlight-battle-mode', 'spotlight-finale', 'spotlight-legendary');
     overlay.classList.toggle('spotlight-skill', isSkillLike);
     overlay.classList.toggle('spotlight-battle-mode', isBattleModeLike);
+    overlay.classList.toggle('spotlight-finale', isFinale);
+    overlay.classList.toggle('spotlight-legendary', isLegendary);
     overlay.classList.remove('hidden');
-    cardEl.classList.remove('event', 'recipe', 'pack', 'skill', 'battle-mode', 'battle-mode-text');
-    cardEl.classList.add(cardKind);
+    cardEl.classList.remove('event', 'recipe', 'pack', 'skill', 'battle-mode', 'battle-mode-text', 'final-recipe', 'legendary');
+    cardEl.classList.add(...cardKind.split(/\s+/).filter(Boolean));
 
     badgeEl.textContent = badge || '';
     nameEl.textContent = name || '';
@@ -1891,7 +2037,7 @@ function hideSpotlightCard() {
     if (!overlay) return;
 
     overlay.classList.add('hidden');
-    overlay.classList.remove('spotlight-skill', 'spotlight-battle-mode');
+    overlay.classList.remove('spotlight-skill', 'spotlight-battle-mode', 'spotlight-finale', 'spotlight-legendary');
     spotlightHideAt = 0;
 
     if (spotlightTimer) {
@@ -2062,6 +2208,7 @@ function endGame(winner) {
     if (GameState.gameEnded) return;
     GameState.gameEnded = true;
     GameState.winner = winner || null;
+    GameState.matchEndedAt = Date.now();
     clearSavedMatch();
     GameState.currentTurn = null;
     GameState.currentPhase = 'ゲーム終了';
@@ -2100,21 +2247,11 @@ function endGame(winner) {
     if (typeof setBattleModeBgmLocked === 'function') {
         setBattleModeBgmLocked(false);
     }
-    if (typeof playResultBGM === 'function') {
-        playResultBGM();
-    } else if (typeof stopBGM === 'function') {
+    if (typeof stopBGM === 'function') {
         stopBGM();
     }
-    if (typeof playSfx === 'function') playSfx('gameEnd');
     updateUI();
-
-    const showDelayMs = isSpotlightVisible() ? Math.max(100, getSpotlightRemainingMs() + 100) : 0;
-    setTimeout(() => {
-        showResultOverlay(buildWinnerText(winner), winner === 'player' ? 'win' : 'lose');
-        resultOverlayTimer = setTimeout(() => {
-            hideResultOverlay();
-        }, 2500);
-    }, showDelayMs);
+    prepareMatchFinale(winner);
 
     if (typeof window.handleStoryBattleEnded === 'function') {
         window.handleStoryBattleEnded(winner);
@@ -2142,6 +2279,9 @@ window.showBattleALaCarteModeCutin = showBattleALaCarteModeCutin;
 window.showBattleALaCarteModeCutinAsync = showBattleALaCarteModeCutinAsync;
 window.showSpotlightRecipeCard = showSpotlightRecipeCard;
 window.showSpotlightRecipeCardAsync = showSpotlightRecipeCardAsync;
+window.showFieldPackDetails = showFieldPackDetails;
+window.showPlayerSkillDetails = showPlayerSkillDetails;
+window.prepareMatchFinale = prepareMatchFinale;
 window.showSpotlightPackCard = showSpotlightPackCard;
 window.showSpotlightPackCardAsync = showSpotlightPackCardAsync;
 window.__battleSafeStartGame = safeStartGame;

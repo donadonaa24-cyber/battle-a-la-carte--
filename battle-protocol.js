@@ -30,6 +30,7 @@
             if (result[key]) result[key] = { player: result[key].cpu, cpu: result[key].player };
         }
         for (const key of ['currentTurn', 'winner', 'openDishHistoryFor']) result[key] = side(result[key]);
+        if (result.lastCookedRecipe?.side) result.lastCookedRecipe.side = side(result.lastCookedRecipe.side);
         for (const key of ['pendingEventContext', 'pendingSkillContext', 'pendingSkillConfirm']) {
             if (!result[key]) continue;
             for (const field of ['actor', 'ownerKey', 'selfPlayerKey', 'enemyPlayerKey']) {

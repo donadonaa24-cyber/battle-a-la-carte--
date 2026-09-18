@@ -132,6 +132,12 @@ function pushCookedRecipeHistory(player, recipe, doubledName) {
     });
 
     player.recipesCookedThisTurn = (player.recipesCookedThisTurn || 0) + 1;
+    GameState.lastCookedRecipe = {
+        side: getOwnerKeyFromPlayerRef(player),
+        name: recipe.name,
+        points: recipe.points,
+        cookedAt: Date.now()
+    };
     updateCookedMeatTypes(player, recipe);
 }
 

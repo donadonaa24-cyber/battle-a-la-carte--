@@ -180,6 +180,9 @@ const GameState = {
     candidateRecipes: [],
     gameEnded: false,
     winner: null,
+    matchStartedAt: null,
+    matchEndedAt: null,
+    lastCookedRecipe: null,
     pendingEventContext: null,
     pendingSkillContext: null,
     pendingSkillConfirm: null,
@@ -250,6 +253,9 @@ function resetUiState() {
     GameState.candidateRecipes = [];
     GameState.gameEnded = false;
     GameState.winner = null;
+    GameState.matchStartedAt = Date.now();
+    GameState.matchEndedAt = null;
+    GameState.lastCookedRecipe = null;
     GameState.pendingEventContext = null;
     GameState.pendingSkillContext = null;
     GameState.pendingSkillConfirm = null;

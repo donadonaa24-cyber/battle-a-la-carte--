@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Battle a la carte - Smartphone Field UI</title>
-    <link rel="stylesheet" href="style-sp.css?v=20260916">
-    <link rel="stylesheet" href="../online.css?v=20260917-drag1">
+    <link rel="stylesheet" href="style-sp.css?v=20260918-match1">
+    <link rel="stylesheet" href="../online.css?v=20260918-match1">
 </head>
 <body>
     <div id="game-container" class="mobile-field-ui">
@@ -324,8 +324,13 @@
     </div>
 
     <div id="result-overlay" class="result-overlay hidden">
-        <div id="result-text" class="result-text">勝利</div>
+        <div class="result-panel">
+            <div id="result-text" class="result-text">勝利</div>
+            <div id="result-summary" class="result-summary"></div>
+            <button id="result-field-button" class="result-field-button">フィールドを確認</button>
+        </div>
     </div>
+    <button id="show-match-result-button" class="show-match-result-button hidden">試合結果を見る</button>
 
     <div id="spotlight-overlay" class="spotlight-overlay hidden">
         <div class="spotlight-card-shell">
@@ -355,7 +360,7 @@
                         <button id="menu-cpu-button" class="start-main-button">料理開始！CPU戦</button>
                         <button id="menu-resume-button" class="start-main-button hidden">続きから対戦</button>
                         <button id="menu-story-button" class="start-main-button">ストーリーモード（チュートリアル）</button>
-                        <button id="menu-friend-button" class="start-menu-button">オンライン対戦（合言葉）</button>
+                        <button id="menu-friend-button" class="start-menu-button">オンライン対戦</button>
                         <button id="menu-coin-button" class="start-menu-button">コイン交換所</button>
                         <button id="menu-rules-button" class="start-menu-button">ルールページ</button>
                         <button id="menu-gallery-button" class="start-menu-button">ギャラリーページ</button>
@@ -496,9 +501,19 @@
                     <input id="friend-passphrase-input" class="start-text-input" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" placeholder="参加する場合：例 482731">
                 </div>
 
+                <div class="online-room-create-mode">
+                    <label><input id="friend-private-toggle" type="checkbox" checked> 合言葉あり（知っている人だけ参加）</label>
+                    <p id="friend-create-mode-help">チェックを外すと、誰でも検索して参加できる公開部屋を作ります。</p>
+                </div>
+
                 <div class="start-setup-actions">
                     <button id="friend-create-button" class="start-main-button">部屋を作る</button>
                     <button id="friend-join-button" class="start-main-button">部屋に参加</button>
+                </div>
+
+                <div class="online-public-match">
+                    <button id="friend-search-public-button" class="start-sub-button">フリーマッチの部屋を検索</button>
+                    <div id="friend-public-room-list" class="online-public-room-list" aria-live="polite"></div>
                 </div>
 
                 <p id="friend-room-message" class="start-menu-message"></p>
@@ -574,21 +589,21 @@
     </div>
 
     <script src="cards-sp.js?v=20260419d"></script>
-    <script src="state-sp.js?v=20260419d"></script>
+    <script src="state-sp.js?v=20260918-final1"></script>
     <script src="../profile.js?v=20260419d"></script>
-    <script src="rules-sp.js?v=20260419d"></script>
+    <script src="rules-sp.js?v=20260918-final1"></script>
     <script src="player-sp.js?v=20260419d"></script>
     <script src="cpu-sp.js?v=20260419d"></script>
     <script src="../battle-view-model.js?v=20260916"></script>
     <script src="../battle-images.js?v=20260916"></script>
-    <script src="render-sp.js?v=20260917-drag1"></script>
-    <script src="audio-sp.js?v=20260419d"></script>
+    <script src="render-sp.js?v=20260918-match1"></script>
+    <script src="audio-sp.js?v=20260918-match1"></script>
     <script src="../supabase-config.js?v=20260912"></script>
-    <script src="../battle-protocol.js?v=20260916"></script>
+    <script src="../battle-protocol.js?v=20260918-match1"></script>
     <script src="../battle-chat.js?v=20260916"></script>
     <script src="../battle-metrics.js?v=20260916"></script>
-    <script src="../network.js?v=20260917-drag1"></script>
-    <script src="main-sp.js?v=20260916"></script>
+    <script src="../network.js?v=20260918-match1"></script>
+    <script src="main-sp.js?v=20260918-match1"></script>
     <script src="../card-drag.js?v=20260917-drag1"></script>
     <script src="../story-mode.js?v=20260419d"></script>
 </body>

@@ -12,7 +12,7 @@ const LEGACY_BGM_TRACK_ALIAS = {
 const CONTEXT_BGM_TRACKS = {
     title: '../assets/audio/title-screen.mp3',
     story: '../assets/audio/story-dialogue.mp3',
-    battleMode: '../assets/audio/battle-mode.mp3',
+    battleMode: '../assets/audio/battle-mode.mp3?v=20260918',
     result: '../assets/audio/match-result.mp3'
 };
 
@@ -152,9 +152,9 @@ function playBgmByKey(key) {
 
 function setupAudio() {
     AudioManager.sounds = {
-        gameStart: new Audio('../assets/audio/game-start.mp3'),
+        gameStart: new Audio('../assets/audio/turn-start.mp3'),
         turnStart: new Audio('../assets/audio/turn-start.mp3'),
-        gameEnd: new Audio('../assets/audio/game-end.mp3'),
+        gameEnd: new Audio('../assets/audio/turn-start.mp3'),
         cook: new Audio('../assets/audio/cook.mp3')
     };
 

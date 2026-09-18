@@ -73,7 +73,7 @@ GitHub Pages上の想定URL:
 ## オンライン対戦モジュール
 
 - `supabase-config.js`: 公開可能なSupabase URLとPublishable key。秘密鍵は禁止です。
-- `network.js`: 認証、匿名ログイン、部屋作成/参加、Realtime、Presence、再接続、操作送信、HOST同期
+- `network.js`: 認証、匿名ログイン、合言葉/公開部屋の作成・検索・参加、Realtime、Presence、再接続、操作送信、HOST同期
 - `battle-protocol.js`: 許可操作、状態のHOST/GUEST変換、相手非公開情報のマスク、入力形式検証
 - `battle-engine-worker.js`: HOST側で既存ゲームファイルを読み込み、初期状態作成と操作適用を行うWeb Worker
 - `battle-chat.js`: 定型チャット表示、送信、5秒クールダウン、再送ID保持
@@ -86,7 +86,7 @@ GitHub Pages上の想定URL:
 ### 通信フロー
 
 1. 共通アカウントのセッションがあれば利用し、なければ部屋操作時に匿名ログインします。
-2. HOSTがRPCで部屋を作り、GUESTが6桁コードで参加します。
+2. HOSTがRPCで合言葉部屋または公開部屋を作ります。GUESTは6桁コード、または公開一覧の部屋IDで参加します。
 3. DBがランダムに `first_user` を決定します。
 4. 両者は部屋専用Private Channelへ参加し、Presenceで接続状態を共有します。
 5. 参加者別Private Channel `balc:<room>:user:<user>` を追加します。本人とHOSTだけがアクセス可能です。HOSTは操作要求の送信者をチャンネルの宛先IDから決め、payloadのuser値を信用しません。
@@ -95,6 +95,7 @@ GitHub Pages上の想定URL:
 8. `balc_save_checkpoint` はその後非同期でcheckpoint、2 View、room、処理済みaction履歴を保存します。保存中の新状態は最新へ集約し、失敗した保存は同じ内容で再送します。初回保存を飛ばしません。
 9. HOSTは保存待ちのsnapshotとaction履歴をsessionStorageに保持し、再読込時はDBリビジョンと比較します。GUESTは自分のDB ViewとHOSTへのrequest-stateで復帰します。部屋専用PresenceとPostgres Changesは接続・ライフサイクルに利用します。
 10. `balc_broadcast_capabilities` が利用できない旧DBでは従来通信へフォールバックします。
+11. GUEST参加時は `room-changed` Broadcastも送り、Postgres Changesを取りこぼしたHOSTへ即時再取得を促します。
 
 描画DOMの `player-*` / `cpu-*` IDは既存CSS・操作互換のため維持しています。状態参照は両renderとも `getBattleViewModel().me/opponent` です。既存ルール/Worker内部のplayer/cpuは変更していません。
 
@@ -116,6 +117,8 @@ GitHub Pages上の想定URL:
 - `battle_match_actions`: 参加者からの操作要求
 - `battle_chat_messages`: 定型チャット履歴
 - private schema内の試行回数/チャットクールダウン管理テーブル
+
+`supabase/battle-public-match.sql` は `battle_rooms.is_public` と、公開待機部屋の安全な一覧・作成・参加RPCを追加します。一覧は部屋ID、表示名、作成時刻だけを返し、待機15分を超えた部屋は閉じます。
 
 ### セキュリティ
 

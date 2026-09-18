@@ -18,6 +18,7 @@ self.triggerBattleModeDiscardPickupAfterDrawForCpu = owner => triggerBattleModeD
 self.endGame = winner => {
     GameState.gameEnded = true;
     GameState.winner = winner;
+    GameState.matchEndedAt = Date.now();
     GameState.currentTurn = null;
     GameState.currentPhase = 'ゲーム終了';
     GameState.selectionMode = null;

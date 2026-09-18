@@ -10,6 +10,7 @@
     let fastMode = false, snapshot = null, latestResult = null, processing = Promise.resolve();
     let saving = false, saveJob = null, savedRevision = 0, saveTimer;
     let retrySaveJob = null, inFlightSave = null, rematching = false;
+    let matchFoundNotifiedRoomId = null;
     const saveWaiters = [];
     const accepted = new Set(), unsavedActions = new Map(), originals = new Map();
     const metrics = window.BattleMetrics;
@@ -103,9 +104,12 @@
     function controls() {
         if ($('online-rematch')) $('online-rematch').hidden = !fastMode || !started || !GameState.gameEnded;
         const available = !busy && !room;
-        for (const id of ['friend-create-button', 'friend-join-button']) if ($(id)) $(id).disabled = !available;
+        for (const id of ['friend-create-button', 'friend-join-button', 'friend-search-public-button']) if ($(id)) $(id).disabled = !available;
         for (const id of ['friend-create-button', 'friend-join-button']) if ($(id)) $(id).setAttribute('aria-busy', String(busy));
         for (const id of ['online-character', 'online-skill']) if ($(id)) $(id).disabled = !available;
+        if ($('friend-private-toggle')) $('friend-private-toggle').disabled = !available;
+        if ($('friend-create-button')) $('friend-create-button').textContent = $('friend-private-toggle')?.checked === false
+            ? '公開部屋を作る' : '合言葉部屋を作る';
         if (room && user) {
             const ownInfo = room.host_id === user.id ? room.host_info : room.guest_info;
             if (ownInfo) {
@@ -129,15 +133,28 @@
         if (document.body) document.body.classList.toggle('online-operation-locked', !!room &&
             (room.status === 'closed' || !connected || !peerPresent || !!pending || busy || getBattleViewModel().turn !== 'me' || GameState.gameEnded));
     }
+    function notifyMatchFound() {
+        if (!room?.guest_id || matchFoundNotifiedRoomId === room.id) return;
+        matchFoundNotifiedRoomId = room.id;
+        window.unlockAudio?.();
+        window.playSfx?.('turnStart');
+        if (navigator.vibrate) navigator.vibrate([120, 70, 180]);
+    }
     function status() {
         controls();
         if (!room) return;
+        notifyMatchFound();
         if (room.status === 'closed') { message('この部屋は終了しました。「退出」でメニューへ戻れます。'); return; }
         if (GameState.gameEnded && started) {
             message(GameState.winner === 'player' ? 'あなたの勝利です！' : '相手の勝利です。'); return;
         }
         if (!connected) { message('接続が切れました。再接続中です。「接続を確認」からも再開できます。'); return; }
-        if (!room.guest_id) { message(`HOST / 合言葉 ${room.code} / 対戦相手を待っています（参加期限15分）`); return; }
+        if (!room.guest_id) {
+            message(room.is_public
+                ? 'HOST / 公開フリーマッチ / 対戦相手を待っています（参加期限15分）'
+                : `HOST / 合言葉 ${room.code} / 対戦相手を待っています（参加期限15分）`);
+            return;
+        }
         if (!peerPresent) { message('対戦相手との接続が切れました。相手の再接続を待っています。'); return; }
         if (!started) { message('対戦相手が参加しました。対戦を準備しています。'); return; }
         if (pending || busy) { message('操作を確認しています…'); return; }
@@ -250,21 +267,30 @@
             const info = profileInfo(options);
             const passphrase = String(options.passphrase || $('friend-passphrase-input')?.value || '').trim();
             if (kind === 'guest' && !/^\d{6}$/.test(passphrase)) throw new Error('INVALID_PASSPHRASE');
+            if (kind === 'publicGuest' && !/^[0-9a-f-]{36}$/i.test(String(options.roomId || ''))) throw new Error('ROOM_NOT_FOUND');
             await getClient();
             if (!user) {
                 const { data, error } = await client.auth.signInAnonymously();
                 if (error) throw error;
                 user = data.user;
             }
-            const result = kind === 'host' ? await rpc('balc_create_room', { p_info: info }) :
-                await rpc('balc_join_room', { p_code: passphrase, p_info: info });
+            let result;
+            if (kind === 'host') {
+                result = options.isPublic
+                    ? await rpc('balc_create_public_room', { p_info: info })
+                    : await rpc('balc_create_room', { p_info: info });
+            } else if (kind === 'publicGuest') {
+                result = await rpc('balc_join_public_room', { p_room: options.roomId, p_info: info });
+            } else {
+                result = await rpc('balc_join_room', { p_code: passphrase, p_info: info });
+            }
             await attach(result);
             lastConnectionError = null;
         } catch (error) { fail(error); } finally { busy = false; controls(); }
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20260916', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20260918-match1', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;
@@ -315,10 +341,7 @@
                 else window[effect.name]?.(...effect.args);
             }
         }
-        if (GameState.gameEnded && !wasEnded) {
-            window.playResultBGM?.();
-            window.showResultOverlay?.(GameState.winner === 'player' ? 'あなたの勝利です！' : '相手の勝利です。', GameState.winner === 'player' ? 'win' : 'lose');
-        }
+        if (GameState.gameEnded && !wasEnded) window.prepareMatchFinale?.(GameState.winner);
         status();
     }
     async function sync() {
@@ -555,7 +578,7 @@
         latestResult = await engine({ kind: 'init', host: room.host_info, guest: room.guest_info,
             firstRole: room.first_user === room.guest_id ? 'guest' : 'host' });
         snapshot = latestResult.snapshot; rematchReady.clear(); accepted.clear();
-        $('result-overlay')?.classList.add('hidden');
+        window.hideResultOverlay?.();
         applyView({ revision: revision + 1, payload: latestResult.views.host });
         await sendLatest(room.guest_id); queueSave();
         } finally { rematching = false; }
@@ -577,6 +600,7 @@
     }
     async function attach(value) {
         const sameRoom = room?.id === value.id;
+        let joinNoticeSent = false;
         await detach();
         // Private Realtime channels must receive the session created moments earlier.
         await client.realtime.setAuth();
@@ -590,6 +614,7 @@
         pending = remembered?.room === room.id && remembered.user === user.id ? remembered : null;
         channel = client.channel(`balc:${room.id}`, { config: { private: true, presence: { key: user.id } } });
         channel.on('presence', { event: 'sync' }, peerSync);
+        channel.on('broadcast', { event: 'room-changed' }, () => sync().catch(fail));
         window.BattleChat?.attach({ client, room, user, channel });
         for (const table of fastMode ? ['battle_rooms'] : ['battle_rooms', 'battle_views', 'battle_match_actions']) {
             channel.on('postgres_changes', { event: '*', schema: 'public', table,
@@ -606,6 +631,10 @@
                 await channel.track({ online: true });
                 window.BattleChat?.refresh();
                 await sync();
+                if (!joinNoticeSent && room?.guest_id === user.id) {
+                    joinNoticeSent = true;
+                    await channel.send({ type: 'broadcast', event: 'room-changed', payload: { room: room.id } });
+                }
                 peerSync();
                 if (pending) resend();
             }
@@ -672,6 +701,44 @@
             await attach(found);
         } catch (error) { fail(error); } finally { busy = false; controls(); }
     }
+    function renderPublicRooms(rooms) {
+        const container = $('friend-public-room-list');
+        if (!container) return;
+        container.replaceChildren();
+        if (!Array.isArray(rooms) || rooms.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'online-public-room-empty';
+            empty.textContent = '現在、参加できる公開部屋はありません。自分で公開部屋を作ることもできます。';
+            container.appendChild(empty);
+            return;
+        }
+        for (const publicRoom of rooms) {
+            const row = document.createElement('div');
+            row.className = 'online-public-room';
+            const text = document.createElement('span');
+            text.textContent = `${String(publicRoom.host_name || 'プレイヤー').slice(0, 24)}さんの部屋`;
+            const join = document.createElement('button');
+            join.type = 'button'; join.textContent = '参加';
+            join.addEventListener('click', () => enter('publicGuest', { roomId: publicRoom.id }));
+            row.append(text, join); container.appendChild(row);
+        }
+    }
+    async function searchPublicRooms() {
+        if (busy || room) return;
+        busy = true; controls();
+        try {
+            await getClient();
+            if (!user) {
+                const { data, error } = await client.auth.signInAnonymously();
+                if (error) throw error;
+                user = data.user;
+            }
+            const rooms = await rpc('balc_list_public_rooms', {});
+            renderPublicRooms(rooms);
+            message(Array.isArray(rooms) && rooms.length ? `${rooms.length}件の公開部屋が見つかりました。` : '現在、参加できる公開部屋はありません。');
+        } catch (error) { fail(error); }
+        finally { busy = false; controls(); }
+    }
     async function leaveRoom() {
         if (fastMode) await processing;
         if (fastMode && room?.host_id === user?.id) await flushSave();
@@ -679,6 +746,7 @@
         if (room) await rpc('balc_leave_room', { p_room: room.id });
         stopped = true; await detach();
         room = null; pending = null; started = false; revision = 0;
+        matchFoundNotifiedRoomId = null;
         window.BattleChat?.detach();
         worker?.terminate(); worker = null; clearTimeout(deadline);
         clearTimeout(saveTimer); snapshot = null; latestResult = null; saveJob = null;
@@ -744,6 +812,8 @@
             } catch (error) { fail(error); } finally { busy = false; controls(); }
         });
         $('online-resume').onclick = resume;
+        $('friend-private-toggle')?.addEventListener('change', controls);
+        if ($('friend-search-public-button')) $('friend-search-public-button').onclick = searchPublicRooms;
         $('online-reconnect').onclick = async () => {
             try { if (room) await attach(room); else await resume(); }
             catch (error) { fail(error); }
@@ -776,7 +846,9 @@
     }
     window.FriendBattle = {
         isActive: active, isAvailable: () => !!window.SUPABASE_CONFIG,
-        refreshLogin, createRoom: options => enter('host', options), joinRoom: options => enter('guest', options),
+        refreshLogin,
+        createRoom: options => enter('host', { ...options, isPublic: options?.isPublic ?? $('friend-private-toggle')?.checked === false }),
+        joinRoom: options => enter('guest', options), searchPublicRooms,
         getConnectionError: () => lastConnectionError ? { ...lastConnectionError } : null,
         leaveRoom, resume, schedulePublish: () => {}, isFastMode: () => fastMode
     };

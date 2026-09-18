@@ -1149,6 +1149,17 @@ function renderPacks(player, container) {
         } else {
             createCardTextBlock(card, el);
         }
+        el.classList.add('inspectable-card');
+        el.setAttribute('role', 'button');
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('aria-label', `${pack.name}の効果を確認`);
+        const inspect = () => window.showFieldPackDetails?.(pack);
+        el.addEventListener('click', inspect);
+        el.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            inspect();
+        });
         container.appendChild(el);
     });
 }
@@ -1759,7 +1770,7 @@ function renderSkillHud() {
         : { ok: false, reason: 'スキル未対応' };
     const isSkillConfirmMode = GameState.selectionMode === 'skill-confirm';
     const blockedBySelection = !!GameState.selectionMode && !isSkillConfirmMode;
-    const canOpenDetail = !!playerSkill && !GameState.gameEnded && !blockedBySelection;
+    const canOpenDetail = !!playerSkill && !blockedBySelection;
     const canUseNow = !!playerSkill &&
         !GameState.gameEnded &&
         getBattleViewModel().turn === 'me' &&
