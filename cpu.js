@@ -141,11 +141,11 @@ async function cpuTurn() {
             addLog(`CPUは「${bestPlan.recipe.name}」を作りました（+${bestPlan.recipe.points}点）`);
             if (window.playCookBgm) { playCookBgm(); } else { playSfx('cook'); }
 
+            updateUI();
+
             if (window.showSpotlightRecipeCardAsync) {
                 await window.showSpotlightRecipeCardAsync(bestPlan.recipe);
             }
-
-            updateUI();
 
             await cpuPause(CPU_BIG_ACTION_DELAY);
             if (GameState.gameEnded) return;

@@ -209,7 +209,6 @@ const GameState = {
     },
     settings: createGameSettings(),
     ui: {
-        pileConfirmType: null,
         pileViewType: null,
         infoOverlayType: null
     }
@@ -269,7 +268,6 @@ function resetUiState() {
     GameState.openDishHistoryFor = null;
     GameState.specialWinReason = null;
     GameState.ui = {
-        pileConfirmType: null,
         pileViewType: null,
         infoOverlayType: null
     };

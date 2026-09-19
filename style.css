@@ -160,11 +160,27 @@ body.web-battle-fixed .discard-banner {
 }
 
 .spotlight-card-shell {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
     animation: spotlightPop 0.22s ease;
+}
+
+.spotlight-close-button {
+    position: absolute;
+    top: -8px;
+    right: -56px;
+    z-index: 3;
+    pointer-events: auto;
+    border: 2px solid #fff2bd;
+    border-radius: 999px;
+    background: #193768e8;
+    color: #fff;
+    padding: 8px 13px;
+    font-weight: 900;
+    cursor: pointer;
 }
 
 @keyframes spotlightPop {
@@ -874,9 +890,43 @@ button:disabled {
     100% { opacity: .12; transform: translate(var(--discard-flight-x), var(--discard-flight-y)) scale(.26) rotate(18deg); filter: brightness(.72); }
 }
 
+.cooking-fusion-material,
+.cooking-fusion-result {
+    position: fixed !important;
+    z-index: 200091 !important;
+    margin: 0 !important;
+    pointer-events: none !important;
+    transform-origin: center;
+    will-change: transform, opacity, filter;
+}
+
+.cooking-fusion-material {
+    animation: cookingMaterialFusion 650ms cubic-bezier(.35, .02, .25, 1) var(--fusion-delay, 0ms) both;
+}
+
+.cooking-fusion-result {
+    animation: cookingResultToDiscard 900ms cubic-bezier(.22, .72, .28, 1) both;
+    box-shadow: 0 0 22px #fff, 0 0 48px #ffc94f, 0 18px 42px #000b;
+}
+
+@keyframes cookingMaterialFusion {
+    0% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); filter: brightness(1); }
+    72% { opacity: 1; transform: translate(var(--fusion-x), var(--fusion-y)) scale(.48) rotate(16deg); filter: brightness(1.8) drop-shadow(0 0 18px #ffd75e); }
+    100% { opacity: 0; transform: translate(var(--fusion-x), var(--fusion-y)) scale(.15) rotate(30deg); filter: brightness(2.5); }
+}
+
+@keyframes cookingResultToDiscard {
+    0% { opacity: 0; transform: scale(.25) rotate(-10deg); filter: brightness(2); }
+    18% { opacity: 1; transform: scale(1.12) rotate(2deg); filter: brightness(1.35); }
+    42% { opacity: 1; transform: scale(1) rotate(0); filter: brightness(1); }
+    100% { opacity: .15; transform: translate(var(--fusion-discard-x), var(--fusion-discard-y)) scale(.24) rotate(16deg); filter: brightness(.75); }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .card-draw-enter,
-    .card-discard-ghost { animation-duration: 1ms !important; animation-delay: 0ms !important; }
+    .card-discard-ghost,
+    .cooking-fusion-material,
+    .cooking-fusion-result { animation-duration: 1ms !important; animation-delay: 0ms !important; }
 }
 
 #cook-button.has-recipe-alert {
@@ -1163,7 +1213,6 @@ button:disabled {
 #set-confirm-panel:not(.hidden),
 #event-confirm-panel:not(.hidden),
 #set-view-panel:not(.hidden),
-#pile-confirm-panel:not(.hidden),
 #pile-view-panel:not(.hidden),
 #end-turn-confirm-panel:not(.hidden),
 #dish-history-panel:not(.hidden) {
@@ -1339,7 +1388,6 @@ button:disabled {
     background: #fff6e8;
 }
 
-#pile-confirm-panel,
 #pile-view-panel,
 #end-turn-confirm-panel,
 #dish-history-panel {
@@ -1608,7 +1656,6 @@ button:disabled {
 #event-confirm-panel:not(.hidden),
 #set-view-panel:not(.hidden),
 #ingredient-action-panel:not(.hidden),
-#pile-confirm-panel:not(.hidden),
 #pile-view-panel:not(.hidden),
 #end-turn-confirm-panel:not(.hidden),
 #dish-history-panel:not(.hidden) {
@@ -1777,6 +1824,20 @@ button:disabled {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+}
+
+#discard-pile-button.has-top-card {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: inset 0 0 0 3px #d7a243, 0 3px 10px rgba(0,0,0,0.24);
+}
+
+#discard-pile-button.has-top-card .pile-title,
+#discard-pile-button.has-top-card .pile-count {
+    background: rgba(255,255,255,0.9);
+    padding: 2px 6px;
+    border-radius: 8px;
 }
 
 .settings-bg-shop-meta {
@@ -2914,6 +2975,108 @@ button:disabled {
     z-index: 1;
     padding-top: 6px;
     background: linear-gradient(180deg, rgba(255, 243, 221, 0) 0%, rgba(255, 243, 221, 0.96) 36%, rgba(255, 243, 221, 1) 100%);
+}
+
+.open-pack-shop-button {
+    width: 100%;
+    min-height: 42px;
+    background: linear-gradient(180deg, #f9a93a, #d56b0b);
+    color: #fff;
+    font-weight: 900;
+}
+
+.open-pack-shop-button.all-exchanged {
+    background: linear-gradient(180deg, #45af83, #23765a);
+}
+
+.pack-shop-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    box-sizing: border-box;
+    background: rgba(5, 12, 30, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.pack-shop-modal {
+    position: relative;
+    width: min(94vw, 760px);
+    max-height: 86vh;
+    overflow: hidden;
+    border: 2px solid #f0bd65;
+    border-radius: 20px;
+    background: linear-gradient(160deg, #fff9e9, #ffe1aa);
+    box-shadow: 0 24px 70px #0009;
+}
+
+.pack-shop-confirm {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 4;
+    width: min(86%, 520px);
+    transform: translate(-50%, -50%);
+    padding: 18px;
+    border: 2px solid #d78b20;
+    background: #fffaf0;
+    box-shadow: 0 0 0 999px rgba(4, 9, 22, .55), 0 16px 45px #0007;
+}
+
+.pack-shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    border-bottom: 1px solid #d8a95e;
+    background: linear-gradient(90deg, #4b2f18, #7c4b1c);
+    color: #fff6d9;
+}
+
+.pack-shop-header h2,
+.pack-shop-header p { margin: 0; }
+.pack-shop-header p { margin-top: 4px; font-size: 13px; }
+.pack-shop-header button { background: #f4ddad; color: #4b2f18; font-weight: 900; }
+
+.pack-shop-list {
+    display: grid;
+    gap: 10px;
+    max-height: calc(86vh - 96px);
+    overflow-y: auto;
+    padding: 14px;
+}
+
+.pack-shop-item {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr) 128px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 2px solid #d9a44e;
+    border-radius: 14px;
+    background: #fffaf0;
+}
+
+.pack-shop-item.is-owned { border-color: #3a9c75; background: #effcf6; }
+.pack-shop-art { width: 68px; height: 92px; border-radius: 9px; background: #eee center / cover no-repeat; box-shadow: 0 4px 12px #0004; }
+.pack-shop-body { display: flex; flex-direction: column; gap: 4px; color: #3d2b1d; }
+.pack-shop-body strong { font-size: 18px; }
+.pack-shop-body span { font-size: 13px; }
+.pack-shop-cost { font-weight: 900; color: #a04b00; }
+.pack-shop-status { width: fit-content; padding: 3px 8px; border-radius: 999px; font-weight: 900; }
+.pack-shop-status.is-owned { background: #d1f4e4; color: #126245; }
+.pack-shop-status.is-unowned { background: #fff0c7; color: #8a4a00; }
+.pack-shop-exchange-button { min-height: 44px; font-weight: 900; }
+
+@media (max-width: 620px) {
+    .pack-shop-item { grid-template-columns: 62px minmax(0, 1fr); }
+    .pack-shop-art { width: 58px; height: 80px; }
+    .pack-shop-exchange-button { grid-column: 1 / -1; }
+    .spotlight-close-button { top: -44px; right: 0; }
 }
 
 #start-gallery-list .char-chizuru { background-image: url("assets/images/character-icons/chizuru-icons.png"); }

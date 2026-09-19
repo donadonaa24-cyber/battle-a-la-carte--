@@ -10,15 +10,21 @@ let uiRenderQueued = false;
 let uiRenderFrameRequested = false;
 let lastUiRenderAt = 0;
 const renderSectionSignatureCache = Object.create(null);
-const CARD_DRAW_REVEAL_INTERVAL_MS = 500;
+const PLAYER_DRAW_REVEAL_INTERVAL_MS = 500;
+const OPPONENT_DRAW_REVEAL_INTERVAL_MS = 300;
 let cardMotionState = {
     initialized: false,
     ownHandIds: new Set(),
     opponentHandIds: new Set(),
     discardIds: new Set(),
-    discardCount: 0
+    discardCount: 0,
+    ownDishKey: '',
+    opponentDishKey: '',
+    ownDishCount: 0,
+    opponentDishCount: 0
 };
 let activeCardMotionFrame = null;
+let packShopOpen = false;
 const HORIZONTAL_SCROLL_ROW_IDS = [
     'player-hand-mixed',
     'cpu-hand-mixed',
@@ -303,7 +309,6 @@ function getPackConditionWarning(player, packKey) {
 
 function ensureUiState() {
     if (!GameState.ui) GameState.ui = {};
-    if (typeof GameState.ui.pileConfirmType === 'undefined') GameState.ui.pileConfirmType = null;
     if (typeof GameState.ui.pileViewType === 'undefined') GameState.ui.pileViewType = null;
     if (typeof GameState.ui.infoOverlayType === 'undefined') GameState.ui.infoOverlayType = null;
 }
@@ -575,10 +580,11 @@ function bindRenderEventsOnce() {
 
     const deckButton = byId('deck-pile-button');
     const discardButton = byId('discard-pile-button');
-    const pileConfirmYes = byId('pile-confirm-yes-button');
-    const pileConfirmNo = byId('pile-confirm-no-button');
     const pileViewClose = byId('pile-view-close-button');
     const dishHistoryClose = byId('dish-history-close-button');
+    const packShopButton = byId('open-pack-shop-button');
+    const packShopClose = byId('pack-shop-close-button');
+    const packShopOverlay = byId('pack-shop-overlay');
 
     const recipesTab = byId('open-recipes-tab');
     const eventsTab = byId('open-events-tab');
@@ -592,10 +598,11 @@ function bindRenderEventsOnce() {
 
     if (deckButton) deckButton.addEventListener('click', () => requestPileView('deck'));
     if (discardButton) discardButton.addEventListener('click', () => requestPileView('discard'));
-    if (pileConfirmYes) pileConfirmYes.addEventListener('click', confirmPileView);
-    if (pileConfirmNo) pileConfirmNo.addEventListener('click', cancelPileView);
     if (pileViewClose) pileViewClose.addEventListener('click', closePileView);
     if (dishHistoryClose) dishHistoryClose.addEventListener('click', closeDishHistory);
+    if (packShopButton) packShopButton.addEventListener('click', openPackShop);
+    if (packShopClose) packShopClose.addEventListener('click', closePackShop);
+    if (packShopOverlay) packShopOverlay.addEventListener('click', e => { if (e.target === packShopOverlay) closePackShop(); });
 
     if (recipesTab) recipesTab.addEventListener('click', () => openInfoOverlay('recipes'));
     if (eventsTab) eventsTab.addEventListener('click', () => openInfoOverlay('events'));
@@ -1031,6 +1038,13 @@ function getMotionCardIds(cards) {
         .filter(Boolean));
 }
 
+function getLatestDishMotionState(player) {
+    const dishes = Array.isArray(player?.cookedRecipes) ? player.cookedRecipes : [];
+    const dish = dishes[0] || null;
+    const key = dish ? `${dish.name || ''}:${dish.cookedAt || ''}:${dishes.length}` : '';
+    return { dish, key, count: dishes.length };
+}
+
 function beginCardMotionFrame() {
     const model = getBattleViewModel();
     const ownCards = [...(model.me.hand || []), ...(model.me.events || [])];
@@ -1039,6 +1053,8 @@ function beginCardMotionFrame() {
     const ownHandIds = getMotionCardIds(ownCards);
     const opponentHandIds = getMotionCardIds(opponentCards);
     const discardIds = getMotionCardIds(discardCards);
+    const ownDish = getLatestDishMotionState(model.me);
+    const opponentDish = getLatestDishMotionState(model.opponent);
     const previousNodes = new Map();
     for (const element of document.querySelectorAll('[data-card-id]')) {
         const id = element.dataset.cardId;
@@ -1055,26 +1071,106 @@ function beginCardMotionFrame() {
     const unidentifiedIncrease = cardMotionState.initialized
         ? Math.max(0, discardCards.length - cardMotionState.discardCount - newDiscardCards.length)
         : 0;
+    const ownDishChanged = cardMotionState.initialized && ownDish.dish &&
+        (ownDish.count > cardMotionState.ownDishCount || ownDish.key !== cardMotionState.ownDishKey);
+    const opponentDishChanged = cardMotionState.initialized && opponentDish.dish &&
+        (opponentDish.count > cardMotionState.opponentDishCount || opponentDish.key !== cardMotionState.opponentDishKey);
+    const cookedDish = ownDishChanged
+        ? { side: 'player', dish: ownDish.dish }
+        : (opponentDishChanged ? { side: 'opponent', dish: opponentDish.dish } : null);
+    let fusionTransfers = [];
+    if (cookedDish) {
+        fusionTransfers = newDiscardCards
+            .filter(card => card?.type === 'ingredient')
+            .map(card => ({ card, source: previousNodes.get(String(card.id)) || null }));
+        if (fusionTransfers.length === 0 && Array.isArray(cookedDish.dish?.required)) {
+            fusionTransfers = cookedDish.dish.required.map((name, index) => ({
+                card: { id: `fusion-${index}`, type: 'ingredient', name },
+                source: null
+            }));
+        }
+    }
+    const fusionIds = new Set(fusionTransfers.map(item => item.card?.id).filter(Boolean).map(String));
 
     activeCardMotionFrame = {
         newOwnIds,
         newOpponentIds,
-        next: { ownHandIds, opponentHandIds, discardIds, discardCount: discardCards.length },
+        next: {
+            ownHandIds,
+            opponentHandIds,
+            discardIds,
+            discardCount: discardCards.length,
+            ownDishKey: ownDish.key,
+            opponentDishKey: opponentDish.key,
+            ownDishCount: ownDish.count,
+            opponentDishCount: opponentDish.count
+        },
+        cookingFusion: cookedDish && fusionTransfers.length > 0
+            ? { ...cookedDish, transfers: fusionTransfers }
+            : null,
         discardTransfers: [
-            ...newDiscardCards.map(card => ({ card, source: previousNodes.get(String(card.id)) || null })),
+            ...newDiscardCards
+                .filter(card => !fusionIds.has(String(card?.id)))
+                .map(card => ({ card, source: previousNodes.get(String(card.id)) || null })),
             ...Array.from({ length: unidentifiedIncrease }, () => ({ card: null, source: null }))
         ]
     };
 }
 
-function markCardDrawArrival(element, order) {
+function markCardDrawArrival(element, order, intervalMs) {
     if (!element) return;
     element.classList.add('card-draw-enter');
-    element.style.setProperty('--card-draw-delay', `${Math.max(0, order) * CARD_DRAW_REVEAL_INTERVAL_MS}ms`);
+    element.style.setProperty('--card-draw-delay', `${Math.max(0, order) * intervalMs}ms`);
     element.addEventListener('animationend', () => {
         element.classList.remove('card-draw-enter');
         element.style.removeProperty('--card-draw-delay');
     }, { once: true });
+}
+
+function animateCookingFusion(fusion) {
+    if (!fusion?.dish || !Array.isArray(fusion.transfers) || fusion.transfers.length === 0) return;
+    const discardTarget = byId('discard-pile-button')?.getBoundingClientRect();
+    if (!discardTarget || discardTarget.width <= 0 || discardTarget.height <= 0) return;
+    const fallbackElement = byId(fusion.side === 'opponent' ? 'cpu-hand-mixed' : 'player-hand-mixed');
+    const fallbackRect = fallbackElement?.getBoundingClientRect() || byId('deck-pile-button')?.getBoundingClientRect() || discardTarget;
+    const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+    fusion.transfers.forEach((transfer, index) => {
+        const sourceRect = transfer.source?.rect || fallbackRect;
+        const material = transfer.source?.clone || createFaceCard(transfer.card, 'ingredient-card');
+        material.classList.remove('selected-card', 'card-draw-enter');
+        material.classList.add('cooking-fusion-material');
+        material.removeAttribute('id');
+        material.style.left = `${sourceRect.left}px`;
+        material.style.top = `${sourceRect.top}px`;
+        material.style.width = `${sourceRect.width}px`;
+        material.style.height = `${sourceRect.height}px`;
+        material.style.setProperty('--fusion-x', `${center.x - (sourceRect.left + sourceRect.width / 2)}px`);
+        material.style.setProperty('--fusion-y', `${center.y - (sourceRect.top + sourceRect.height / 2)}px`);
+        material.style.setProperty('--fusion-delay', `${index * 70}ms`);
+        document.body.appendChild(material);
+        setTimeout(() => material.remove(), 720 + index * 70);
+    });
+
+    setTimeout(() => {
+        const width = Math.max(70, Math.min(118, fallbackRect.width || 92));
+        const height = width * 1.42;
+        const result = document.createElement('div');
+        result.className = 'card recipe-card cooking-fusion-result';
+        const imagePath = getRecipeImagePath(fusion.dish.name);
+        if (imagePath) createImageCard({ name: fusion.dish.name }, result, imagePath, 'recipe-card');
+        else createCardTextBlock({ name: fusion.dish.name, description: `${fusion.dish.points || 0}点` }, result);
+        const left = center.x - width / 2;
+        const top = center.y - height / 2;
+        result.style.left = `${left}px`;
+        result.style.top = `${top}px`;
+        result.style.width = `${width}px`;
+        result.style.height = `${height}px`;
+        result.style.setProperty('--fusion-discard-x', `${discardTarget.left + discardTarget.width / 2 - center.x}px`);
+        result.style.setProperty('--fusion-discard-y', `${discardTarget.top + discardTarget.height / 2 - center.y}px`);
+        document.body.appendChild(result);
+        setTimeout(() => result.remove(), 1050);
+    }, 520 + Math.max(0, fusion.transfers.length - 1) * 70);
 }
 
 function animateDiscardTransfers(transfers) {
@@ -1105,6 +1201,7 @@ function finishCardMotionFrame() {
     const frame = activeCardMotionFrame;
     activeCardMotionFrame = null;
     if (!frame) return;
+    animateCookingFusion(frame.cookingFusion);
     animateDiscardTransfers(frame.discardTransfers);
     cardMotionState = { initialized: true, ...frame.next };
 }
@@ -1135,7 +1232,7 @@ function renderPlayerMixedHand() {
     cards.forEach(card => {
         const className = card.type === 'event' ? 'event-card' : 'ingredient-card';
         const el = createFaceCard(card, className);
-        if (activeCardMotionFrame?.newOwnIds.has(String(card.id))) markCardDrawArrival(el, drawOrder++);
+        if (activeCardMotionFrame?.newOwnIds.has(String(card.id))) markCardDrawArrival(el, drawOrder++, PLAYER_DRAW_REVEAL_INTERVAL_MS);
         window.CardDragActions?.mark(el, card);
 
         if (GameState.selectionMode === 'discard' && GameState.selectedCardIds.includes(card.id)) el.classList.add('selected-card');
@@ -1198,7 +1295,7 @@ function renderOpponentMixedHand() {
     const cards = [...cpu.hand, ...cpu.events];
     cards.forEach(card => {
         const el = createBackCard(getBattleViewModel().opponentLabel, '手札', card.id);
-        if (activeCardMotionFrame?.newOpponentIds.has(String(card.id))) markCardDrawArrival(el, drawOrder++);
+        if (activeCardMotionFrame?.newOpponentIds.has(String(card.id))) markCardDrawArrival(el, drawOrder++, OPPONENT_DRAW_REVEAL_INTERVAL_MS);
         container.appendChild(el);
     });
 }
@@ -1368,25 +1465,13 @@ function renderDishHistoryPanel() {
     p.cookedRecipes.forEach(dish => list.appendChild(createDishCardElement(dish, ownerKey, false)));
 }
 
-function requestPileView(type) { if (!GameState.selectionMode && !GameState.gameEnded) { ensureUiState(); GameState.ui.pileConfirmType = type; updateUI(); } }
-function confirmPileView() { ensureUiState(); if (GameState.ui.pileConfirmType) { GameState.ui.pileViewType = GameState.ui.pileConfirmType; GameState.ui.pileConfirmType = null; updateUI(); } }
-function cancelPileView() { ensureUiState(); GameState.ui.pileConfirmType = null; updateUI(); }
-function closePileView() { ensureUiState(); GameState.ui.pileViewType = null; updateUI(); }
-
-function renderPileConfirmPanel() {
-    const panel = byId('pile-confirm-panel');
-    const title = byId('pile-confirm-title');
-    const desc = byId('pile-confirm-description');
-    if (!panel || !title || !desc) return;
-
+function requestPileView(type) {
+    if (GameState.selectionMode) return;
     ensureUiState();
-    if (!GameState.ui.pileConfirmType) { panel.classList.add('hidden'); return; }
-
-    const isDeck = GameState.ui.pileConfirmType === 'deck';
-    panel.classList.remove('hidden');
-    title.textContent = isDeck ? '山札確認' : '捨て札確認';
-    desc.textContent = isDeck ? '山札の中身を確認しますか？' : '捨て札の中身を確認しますか？';
+    GameState.ui.pileViewType = type === 'deck' ? 'deck' : 'discard';
+    updateUI();
 }
+function closePileView() { ensureUiState(); GameState.ui.pileViewType = null; updateUI(); }
 
 function renderPileViewPanel() {
     const panel = byId('pile-view-panel');
@@ -1437,6 +1522,20 @@ function renderPileViewPanel() {
         item.appendChild(type);
         list.appendChild(item);
     });
+}
+
+function renderDiscardPileTop() {
+    const pile = byId('discard-pile-button');
+    if (!pile) return;
+    const latest = Array.isArray(GameState.discard) && GameState.discard.length > 0
+        ? GameState.discard[GameState.discard.length - 1]
+        : null;
+    const imagePath = latest?.type === 'ingredient'
+        ? getIngredientImagePath(latest.name)
+        : (latest?.type === 'event' ? getEventImagePath(latest.name) : null);
+    pile.classList.toggle('has-top-card', !!imagePath);
+    pile.style.backgroundImage = imagePath ? `url("${imagePath}")` : '';
+    pile.setAttribute('aria-label', latest ? `捨て札${GameState.discard.length}枚。最後は${latest.name}` : '捨て札0枚');
 }
 
 function renderSelectionPanel() {
@@ -1962,26 +2061,92 @@ function renderSkillConfirmPanel() {
 function renderShopButtons() {
     const player = getBattleViewModel().me;
     const disabled = getBattleViewModel().turn !== 'me' || !!GameState.selectionMode || GameState.gameEnded;
-    const hasEcoBagPack = hasPack(player, 'ecoBag');
-
-    const knifeBtn = byId('buy-knife-button');
-    const freezerBtn = byId('buy-freezer-button');
-    const boardBtn = byId('buy-board-button');
+    const shopButton = byId('open-pack-shop-button');
     const cookBtn = byId('cook-button');
     const endBtn = byId('end-turn-button');
 
-    if (knifeBtn) {
-        knifeBtn.textContent = hasEcoBagPack ? 'エコバッグ所持済' : 'エコバッグ';
-        knifeBtn.disabled = disabled || !canBuyPack(player, 'ecoBag');
+    if (shopButton) {
+        const ownedCount = packDefinitions.filter(def => hasPack(player, def.key)).length;
+        shopButton.textContent = `加工アイテム交換 ${ownedCount}/${packDefinitions.length}`;
+        shopButton.disabled = !!GameState.selectionMode || GameState.gameEnded;
+        shopButton.classList.toggle('all-exchanged', ownedCount === packDefinitions.length);
     }
-    if (freezerBtn) freezerBtn.disabled = disabled || !canBuyPack(player, 'freezer');
-    if (boardBtn) boardBtn.disabled = disabled || !canBuyPack(player, 'board');
     if (cookBtn) {
         cookBtn.disabled = disabled;
         const canCookNow = !disabled && !player.lockedCookingThisTurn && findPossibleRecipesForPlayer(player).length > 0;
         cookBtn.classList.toggle('has-recipe-alert', canCookNow);
     }
     if (endBtn) endBtn.disabled = getBattleViewModel().turn !== 'me' || GameState.gameEnded;
+}
+
+function openPackShop() {
+    if (GameState.selectionMode || GameState.gameEnded) return;
+    packShopOpen = true;
+    updateUI();
+}
+
+function closePackShop() {
+    if (GameState.selectionMode === 'pack-resolving') return;
+    if (GameState.selectionMode === 'pack-confirm' && typeof window.cancelPackPurchase === 'function') {
+        window.cancelPackPurchase();
+    }
+    packShopOpen = false;
+    updateUI();
+}
+
+function renderPackShopModal() {
+    const overlay = byId('pack-shop-overlay');
+    const score = byId('pack-shop-score');
+    const list = byId('pack-shop-list');
+    const closeButton = byId('pack-shop-close-button');
+    if (!overlay || !score || !list) return;
+    overlay.classList.toggle('hidden', !packShopOpen);
+    if (!packShopOpen) return;
+
+    const player = getBattleViewModel().me;
+    const canOperate = getBattleViewModel().turn === 'me' && !GameState.gameEnded &&
+        (!GameState.selectionMode || GameState.selectionMode === 'pack-confirm');
+    score.textContent = `現在の点数: ${player.score}点 / 交換には各3点必要です`;
+    if (closeButton) closeButton.disabled = GameState.selectionMode === 'pack-resolving';
+    list.innerHTML = '';
+
+    packDefinitions.forEach(def => {
+        const owned = hasPack(player, def.key);
+        const available = canOperate && !GameState.selectionMode && canBuyPack(player, def.key);
+        const item = document.createElement('article');
+        item.className = `pack-shop-item${owned ? ' is-owned' : ''}`;
+
+        const art = document.createElement('div');
+        art.className = 'pack-shop-art';
+        const imagePath = getPackImagePath(def.key);
+        if (imagePath) art.style.backgroundImage = `url("${imagePath}")`;
+
+        const body = document.createElement('div');
+        body.className = 'pack-shop-body';
+        const title = document.createElement('strong');
+        title.textContent = def.name;
+        const effect = document.createElement('span');
+        effect.textContent = getDetailedPackEffectText(def.key);
+        const cost = document.createElement('span');
+        cost.className = 'pack-shop-cost';
+        cost.textContent = `必要点数: ${def.cost}点`;
+        const status = document.createElement('span');
+        status.className = `pack-shop-status ${owned ? 'is-owned' : 'is-unowned'}`;
+        status.textContent = owned
+            ? '交換済み'
+            : (player.score < def.cost ? `未交換・あと${def.cost - player.score}点必要` :
+                (getBattleViewModel().turn !== 'me' ? '未交換・相手のターン' : '未交換・交換できます'));
+        body.append(title, effect, cost, status);
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'pack-shop-exchange-button';
+        button.textContent = owned ? '交換済み' : `${def.cost}点で交換`;
+        button.disabled = !available;
+        button.addEventListener('click', () => window.playerBuyPack?.(def.key));
+        item.append(art, body, button);
+        list.appendChild(item);
+    });
 }
 
 function renderDiscardButton() {
@@ -2101,6 +2266,7 @@ function performUIRender() {
         safeSetText('cpu-side-score', String(getBattleViewModel().opponent.score));
         safeSetText('deck-count', String(GameState.deck.length));
         safeSetText('discard-count', String(GameState.discard.length));
+        renderDiscardPileTop();
 
         const opponentLabel = getBattleViewModel().opponentLabel;
         safeSetText('turn-indicator', 'ターン: ' + (
@@ -2122,6 +2288,7 @@ function performUIRender() {
         renderCandidateRecipes();
         renderSkillHud();
         renderShopButtons();
+        renderPackShopModal();
         renderDiscardButton();
         renderDishSummaries();
         renderDishHistoryPanel();
@@ -2133,7 +2300,6 @@ function performUIRender() {
         renderSetViewPanel();
         renderIngredientActionPanel();
         renderSkillConfirmPanel();
-        renderPileConfirmPanel();
         renderPileViewPanel();
         renderEndTurnConfirmPanel();
         renderReferenceBooks();
@@ -2186,8 +2352,6 @@ window.hideDiscardBanner = hideDiscardBanner;
 window.openDishHistory = openDishHistory;
 window.closeDishHistory = closeDishHistory;
 window.requestPileView = requestPileView;
-window.confirmPileView = confirmPileView;
-window.cancelPileView = cancelPileView;
 window.closePileView = closePileView;
 window.getIngredientImagePath = getIngredientImagePath;
 window.getRecipeImagePath = getRecipeImagePath;

@@ -201,7 +201,6 @@ function applySavedMatchSnapshot(snapshot) {
     GameState.characterNames = source.characterNames || { player: '千鶴', cpu: '舞依' };
     GameState.settings = { ...(GameState.settings || {}), ...(source.settings || {}) };
     GameState.ui = source.ui || {
-        pileConfirmType: null,
         pileViewType: null,
         infoOverlayType: null
     };
@@ -904,23 +903,7 @@ function bindMainEvents() {
 
     bindIfExists('result-field-button', returnToFinalField);
 
-    bindIfExists('buy-knife-button', () => {
-        unlockAudio();
-        startBgmOnce();
-        playerBuyPack('ecoBag');
-    });
-
-    bindIfExists('buy-freezer-button', () => {
-        unlockAudio();
-        startBgmOnce();
-        playerBuyPack('freezer');
-    });
-
-    bindIfExists('buy-board-button', () => {
-        unlockAudio();
-        startBgmOnce();
-        playerBuyPack('board');
-    });
+    bindIfExists('spotlight-close-button', hideSpotlightCard);
 
     bindIfExists('selection-confirm-button', () => {
         unlockAudio();
@@ -2145,23 +2128,33 @@ function showBattleALaCarteModeCutinAsync(side) {
 
 function showSpotlightRecipeCard(recipe) {
     const imagePath = window.getRecipeImagePath ? window.getRecipeImagePath(recipe.name) : null;
-    showSpotlightCard({
-        badge: '料理完成！',
-        name: recipe.name,
-        sub: `${recipe.points}点`,
-        imagePath,
-        kind: 'recipe'
-    });
+    const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 900;
+    setTimeout(() => {
+        if (GameState.gameEnded) return;
+        showSpotlightCard({
+            badge: '料理完成！',
+            name: recipe.name,
+            sub: `${recipe.points}点`,
+            imagePath,
+            kind: 'recipe'
+        });
+    }, delay);
 }
 
 function showSpotlightRecipeCardAsync(recipe) {
     const imagePath = window.getRecipeImagePath ? window.getRecipeImagePath(recipe.name) : null;
-    return showSpotlightCardAsync({
-        badge: '料理完成！',
-        name: recipe.name,
-        sub: `${recipe.points}点`,
-        imagePath,
-        kind: 'recipe'
+    const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 900;
+    return new Promise(resolve => {
+        setTimeout(() => {
+            if (GameState.gameEnded) { resolve(); return; }
+            showSpotlightCardAsync({
+                badge: '料理完成！',
+                name: recipe.name,
+                sub: `${recipe.points}点`,
+                imagePath,
+                kind: 'recipe'
+            }).then(resolve);
+        }, delay);
     });
 }
 
@@ -2223,7 +2216,6 @@ function endGame(winner) {
     GameState.pendingIngredientAction = null;
 
     if (GameState.ui) {
-        GameState.ui.pileConfirmType = null;
         GameState.ui.pileViewType = null;
     }
 

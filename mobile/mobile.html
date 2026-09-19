@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Battle a la carte - Smartphone Field UI</title>
-    <link rel="stylesheet" href="style-sp.css?v=20260919-motion1">
+    <link rel="stylesheet" href="style-sp.css?v=20260919-ui2">
     <link rel="stylesheet" href="../online.css?v=20260918-match1">
 </head>
 <body>
@@ -135,9 +135,7 @@
                     </div>
 
                     <div class="player-pack-actions">
-                        <button id="buy-knife-button">エコバッグ</button>
-                        <button id="buy-freezer-button">冷蔵庫</button>
-                        <button id="buy-board-button">まな板</button>
+                        <button id="open-pack-shop-button" class="open-pack-shop-button">加工アイテム交換 0/3</button>
                     </div>
                 </div>
             </section>
@@ -188,15 +186,6 @@
             </div>
         </div>
 
-        <div id="pack-confirm-panel" class="panel-box selection-panel hidden">
-            <h3>加工アイテム交換確認</h3>
-            <div id="pack-confirm-description" class="selection-description"></div>
-            <div class="selection-actions">
-                <button id="pack-confirm-yes-button">交換する</button>
-                <button id="pack-confirm-no-button">キャンセル</button>
-            </div>
-        </div>
-
         <div id="ingredient-action-panel" class="panel-box selection-panel hidden">
             <h3 id="ingredient-action-title">材料アクション</h3>
             <div id="ingredient-action-description" class="selection-description"></div>
@@ -236,15 +225,6 @@
             <div id="set-view-description" class="selection-description"></div>
             <div class="selection-actions">
                 <button id="set-view-close-button">確認して閉じる</button>
-            </div>
-        </div>
-
-        <div id="pile-confirm-panel" class="panel-box selection-panel hidden">
-            <h3 id="pile-confirm-title">確認</h3>
-            <div id="pile-confirm-description" class="selection-description"></div>
-            <div class="selection-actions">
-                <button id="pile-confirm-yes-button">確認する</button>
-                <button id="pile-confirm-no-button">キャンセル</button>
             </div>
         </div>
 
@@ -323,6 +303,27 @@
         <div id="log-area" class="log-area hidden"></div>
     </div>
 
+    <section id="pack-shop-overlay" class="pack-shop-overlay hidden" aria-label="加工アイテム交換">
+        <div class="pack-shop-modal" role="dialog" aria-modal="true" aria-labelledby="pack-shop-title">
+            <div class="pack-shop-header">
+                <div>
+                    <h2 id="pack-shop-title">加工アイテム交換</h2>
+                    <p id="pack-shop-score">現在の点数: 0点 / 交換には各3点必要です</p>
+                </div>
+                <button id="pack-shop-close-button" type="button">閉じる</button>
+            </div>
+            <div id="pack-shop-list" class="pack-shop-list"></div>
+            <div id="pack-confirm-panel" class="panel-box pack-shop-confirm hidden">
+                <h3>加工アイテム交換確認</h3>
+                <div id="pack-confirm-description" class="selection-description"></div>
+                <div class="selection-actions">
+                    <button id="pack-confirm-yes-button">交換する</button>
+                    <button id="pack-confirm-no-button">キャンセル</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <div id="result-overlay" class="result-overlay hidden">
         <div class="result-panel">
             <div id="result-text" class="result-text">勝利</div>
@@ -334,6 +335,7 @@
 
     <div id="spotlight-overlay" class="spotlight-overlay hidden">
         <div class="spotlight-card-shell">
+            <button id="spotlight-close-button" class="spotlight-close-button" type="button" aria-label="カード表示を閉じる">閉じる</button>
             <div id="spotlight-badge" class="spotlight-badge">イベントカード使用</div>
             <div id="spotlight-card" class="spotlight-card">
                 <div id="spotlight-art" class="spotlight-art"></div>
@@ -589,21 +591,21 @@
     </div>
 
     <script src="cards-sp.js?v=20260419d"></script>
-    <script src="state-sp.js?v=20260918-final1"></script>
+    <script src="state-sp.js?v=20260919-ui2"></script>
     <script src="../profile.js?v=20260419d"></script>
     <script src="rules-sp.js?v=20260918-final1"></script>
     <script src="player-sp.js?v=20260419d"></script>
-    <script src="cpu-sp.js?v=20260419d"></script>
+    <script src="cpu-sp.js?v=20260919-ui2"></script>
     <script src="../battle-view-model.js?v=20260916"></script>
     <script src="../battle-images.js?v=20260916"></script>
-    <script src="render-sp.js?v=20260919-motion1"></script>
+    <script src="render-sp.js?v=20260919-ui2"></script>
     <script src="audio-sp.js?v=20260918-match1"></script>
     <script src="../supabase-config.js?v=20260912"></script>
     <script src="../battle-protocol.js?v=20260918-match1"></script>
     <script src="../battle-chat.js?v=20260916"></script>
     <script src="../battle-metrics.js?v=20260916"></script>
     <script src="../network.js?v=20260918-match1"></script>
-    <script src="main-sp.js?v=20260918-match1"></script>
+    <script src="main-sp.js?v=20260919-ui2"></script>
     <script src="../card-drag.js?v=20260917-drag1"></script>
     <script src="../story-mode.js?v=20260419d"></script>
 </body>
