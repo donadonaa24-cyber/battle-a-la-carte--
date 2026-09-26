@@ -1,7 +1,7 @@
 (function (root) {
     'use strict';
     const actions = Object.freeze([
-        'playerSetCard', 'confirmSetCard', 'cancelSetCard', 'viewSetCard', 'closeSetCardView',
+        'playerSurrender', 'playerSetCard', 'confirmSetCard', 'cancelSetCard', 'viewSetCard', 'closeSetCardView',
         'openIngredientAction', 'closeIngredientAction', 'showIngredientCombinations',
         'backIngredientAction', 'confirmIngredientSetFromAction', 'playerShowRecipeCandidates',
         'playerCancelRecipeCandidates', 'playerCookSelectedRecipe', 'playerUseEvent',
@@ -29,7 +29,7 @@
         for (const key of ['players', 'characterIds', 'characterNames', 'characterSides']) {
             if (result[key]) result[key] = { player: result[key].cpu, cpu: result[key].player };
         }
-        for (const key of ['currentTurn', 'winner', 'openDishHistoryFor']) result[key] = side(result[key]);
+        for (const key of ['currentTurn', 'winner', 'surrenderedBy', 'openDishHistoryFor']) result[key] = side(result[key]);
         if (result.lastCookedRecipe?.side) result.lastCookedRecipe.side = side(result.lastCookedRecipe.side);
         for (const key of ['pendingEventContext', 'pendingSkillContext', 'pendingSkillConfirm']) {
             if (!result[key]) continue;
@@ -66,6 +66,7 @@
     }
     function validAction(action) {
         return action && actions.includes(action.name) && Array.isArray(action.args) && action.args.length <= 2 &&
+            (action.name !== 'playerSurrender' || action.args.length === 0) &&
             action.args.every(arg => (typeof arg === 'string' && arg.length <= 160) ||
                 (typeof arg === 'number' && Number.isSafeInteger(arg)));
     }

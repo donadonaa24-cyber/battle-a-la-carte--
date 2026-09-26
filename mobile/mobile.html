@@ -4,10 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Battle a la carte - Smartphone Field UI</title>
-    <link rel="stylesheet" href="style-sp.css?v=20260919-ui2">
+    <link rel="stylesheet" href="style-sp.css?v=20260927-surrender1">
     <link rel="stylesheet" href="../online.css?v=20260918-match1">
 </head>
 <body>
+    <dialog id="surrender-dialog" aria-labelledby="surrender-question">
+        <p id="surrender-question">降参しますか？ この対戦は敗北になります。</p>
+        <div class="surrender-actions">
+            <button id="confirm-surrender-button" class="hud-button">降参する</button>
+            <button id="cancel-surrender-button" class="hud-button" autofocus>キャンセル</button>
+        </div>
+    </dialog>
     <div id="game-container" class="mobile-field-ui">
         <div class="field-bg"></div>
 
@@ -20,6 +27,12 @@
 
             <div class="header-actions">
                 <button id="open-settings-tab" class="hud-button" aria-label="設定">設定</button>
+                <div class="battle-menu">
+                    <button id="battle-menu-button" class="hud-button" aria-expanded="false" aria-controls="battle-menu-panel" disabled>メニュー</button>
+                    <div id="battle-menu-panel" hidden>
+                        <button id="open-surrender-button" class="hud-button">降参する</button>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -591,23 +604,23 @@
     </div>
 
     <script src="cards-sp.js?v=20260419d"></script>
-    <script src="state-sp.js?v=20260919-ui2"></script>
-    <script src="../profile.js?v=20260419d"></script>
+    <script src="state-sp.js?v=20260927-surrender1"></script>
+    <script src="../profile.js?v=20260927-surrender1"></script>
     <script src="rules-sp.js?v=20260918-final1"></script>
-    <script src="player-sp.js?v=20260419d"></script>
+    <script src="player-sp.js?v=20260927-surrender1"></script>
     <script src="cpu-sp.js?v=20260919-ui2"></script>
     <script src="../battle-view-model.js?v=20260916"></script>
     <script src="../battle-images.js?v=20260916"></script>
-    <script src="render-sp.js?v=20260919-ui2"></script>
+    <script src="render-sp.js?v=20260927-surrender1"></script>
     <script src="audio-sp.js?v=20260918-match1"></script>
     <script src="../supabase-config.js?v=20260912"></script>
-    <script src="../battle-protocol.js?v=20260918-match1"></script>
+    <script src="../battle-protocol.js?v=20260927-surrender1"></script>
     <script src="../battle-chat.js?v=20260916"></script>
     <script src="../battle-metrics.js?v=20260916"></script>
-    <script src="../network.js?v=20260918-match1"></script>
-    <script src="main-sp.js?v=20260919-ui2"></script>
+    <script src="../network.js?v=20260927-surrender1"></script>
+    <script src="main-sp.js?v=20260927-surrender1"></script>
     <script src="../card-drag.js?v=20260917-drag1"></script>
-    <script src="../story-mode.js?v=20260419d"></script>
+    <script src="../story-mode.js?v=20260927-surrender1"></script>
 </body>
 </html>
 

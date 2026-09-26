@@ -272,13 +272,13 @@ function recordDishCooked(count = 1, dishName = '') {
     return { coinsGained: gained, profile: updated };
 }
 
-function recordMatchResult(isWin) {
+function recordMatchResult(isWin, options = {}) {
     let gained = 0;
     const updated = mutateUserProfile(profile => {
         profile.stats.matches += 1;
         if (isWin) profile.stats.wins += 1;
 
-        gained = USER_COIN_RULES.perMatch + (isWin ? USER_COIN_RULES.perWin : 0);
+        gained = options.noCoins ? 0 : USER_COIN_RULES.perMatch + (isWin ? USER_COIN_RULES.perWin : 0);
         profile.coins += gained;
         return profile;
     });

@@ -6,6 +6,7 @@
     let revision = 0, started = false, busy = false, connected = false, peerPresent = false;
     let syncing = false, syncAgain = false, stopped = false, pending = null, deadline, generation = 0;
     const workerRequests = new Map();
+    const recordedSurrenders = new Set();
     const streams = new Map();
     let fastMode = false, snapshot = null, latestResult = null, processing = Promise.resolve();
     let saving = false, saveJob = null, savedRevision = 0, saveTimer;
@@ -290,7 +291,7 @@
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20260918-match1', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20260927-surrender1', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;
@@ -339,6 +340,18 @@
                 'showSpotlightSkillCutin', 'showSpotlightPackCardAsync', 'setBattleModeBgmLocked', 'playBattleModeBGM', 'showBattleALaCarteModeCutin'].includes(effect.name)) {
                 if (effect.name === 'showBattleALaCarteModeCutin') setTimeout(() => window[effect.name]?.(...effect.args), 2100);
                 else window[effect.name]?.(...effect.args);
+            }
+        }
+        if (GameState.gameEnded && GameState.surrenderedBy === 'player') {
+            const resultKey = 'battle-a-la-carte:surrender:' + room.id + ':' + GameState.matchEndedAt;
+            if (!recordedSurrenders.has(resultKey)) {
+                let recorded = false;
+                try { recorded = localStorage.getItem(resultKey) === '1'; } catch (_) {}
+                if (!recorded) {
+                    window.recordMatchResult?.(false, { noCoins: true });
+                    try { localStorage.setItem(resultKey, '1'); } catch (_) {}
+                }
+                recordedSurrenders.add(resultKey);
             }
         }
         if (GameState.gameEnded && !wasEnded) window.prepareMatchFinale?.(GameState.winner);
@@ -659,7 +672,7 @@
         } finally { controls(); }
     }
     function dispatch(name, args) {
-        if (!room || room.status === 'closed' || stopped || busy || pending || !connected || !peerPresent || GameState.gameEnded || getBattleViewModel().turn !== 'me') return;
+        if (!room || room.status === 'closed' || stopped || busy || pending || !connected || !peerPresent || GameState.gameEnded || (name !== 'playerSurrender' && getBattleViewModel().turn !== 'me')) return;
         const action = { name, args };
         if (!protocol.validAction(action)) return;
         pending = { id: protocol.randomUUID(), room: room.id, user: user.id, revision, action };
@@ -791,7 +804,7 @@
         toggle.id = 'online-panel-toggle'; toggle.textContent = '通信'; toggle.hidden = true;
         toggle.className = 'hud-button'; toggle.setAttribute('aria-controls', 'online-bar');
         toggle.onclick = () => { connectionPanelOpen = !connectionPanelOpen; controls(); };
-        document.querySelector('.header-actions').appendChild(toggle);
+        document.querySelector('.header-actions').insertBefore(toggle, document.querySelector('.battle-menu'));
         bar.innerHTML = '<span id="online-status" role="status" aria-live="polite"></span><button id="online-reconnect">接続を確認</button><button id="online-leave">退出</button>';
         bar.appendChild(closePanel);
         const rematch = document.createElement('button');

@@ -3046,3 +3046,12 @@ body {
     .pack-shop-body span { font-size: 8px; }
     .spotlight-close-button { top: -38px; right: 0; }
 }
+
+/* Battle surrender menu (smartphone). */
+.top-hud:has(#battle-menu-panel:not([hidden])) { z-index: 200095; }
+.battle-menu { position: relative; flex-shrink: 0; }
+#battle-menu-panel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 100; padding: 10px; min-width: 110px; border-radius: 12px; background: #152139; border: 1px solid #91b9dd; box-shadow: 0 6px 20px #0008; }
+#battle-menu-button:disabled { opacity: .45; cursor: default; }
+#surrender-dialog { box-sizing: border-box; max-width: min(420px, 92vw); padding: 22px; border: 1px solid #91b9dd; border-radius: 14px; background: #152139; color: #fff; }
+#surrender-dialog::backdrop { background: #0009; }
+.surrender-actions { display: flex; justify-content: flex-end; gap: 12px; }

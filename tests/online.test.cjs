@@ -8,11 +8,72 @@ const clone = x => JSON.parse(JSON.stringify(x));
 function runtime() {
     const context = vm.createContext({ console, crypto: require('node:crypto').webcrypto, setTimeout, clearTimeout });
     context.self = context;
-    context.importScripts = (...names) => names.forEach(name => vm.runInContext(fs.readFileSync(path.join(root, name), 'utf8'), context, { filename: name }));
+    context.importScripts = (...names) => names.forEach(name => vm.runInContext(fs.readFileSync(path.join(root, name.split('?')[0]), 'utf8'), context, { filename: name }));
     context.importScripts('battle-engine-worker.js');
     return context;
 }
 async function initial(c) { return c.execute({ kind: 'init', host: { character: 'takumi', skill: 'lastOrder' }, guest: { character: 'akatsuki', skill: 'foodTrap' } }); }
+
+test('surrender contract, both roles on either turn, private views and ended guard', async () => {
+    const c = runtime();
+    assert.ok(c.BattleProtocol.actions.includes('playerSurrender'));
+    assert.equal(c.BattleProtocol.validAction({name: 'playerSurrender', args: []}), true);
+    assert.equal(c.BattleProtocol.validAction({name: 'playerSurrender', args: ['cpu']}), false);
+    for (const role of ['host', 'guest']) for (const turn of ['player', 'cpu']) {
+        const start = await initial(c);
+        start.snapshot.currentTurn = turn;
+        start.snapshot.selectionMode = 'event-select';
+        const result = await action(c, start.snapshot, 'playerSurrender', [], role);
+        const ownSide = role === 'host' ? 'player' : 'cpu';
+        assert.equal(result.snapshot.surrenderedBy, ownSide);
+        assert.equal(result.snapshot.winner, ownSide === 'player' ? 'cpu' : 'player');
+        assert.equal(result.snapshot.gameEnded, true);
+        assert.equal(result.snapshot.currentTurn, null);
+        const projected = await c.execute({kind: 'project', snapshot: result.snapshot});
+        for (const viewer of ['host', 'guest']) {
+            const view = projected[viewer];
+            assert.equal(view.state.surrenderedBy, viewer === role ? 'player' : 'cpu');
+            assert.equal(view.state.winner, viewer === role ? 'cpu' : 'player');
+            assert.equal(view.logs[0], viewer === role
+                ? '降参しました。あなたの敗北です。' : '相手が降参しました。あなたの勝利です！');
+            assert.ok(view.state.players.cpu.hand.every(card => !card.name && !card.type));
+        }
+        await assert.rejects(action(c, result.snapshot, 'playerSurrender', [], role), /MATCH_ENDED/);
+        await assert.rejects(action(c, start.snapshot, 'playerSurrender', [1], role), /INVALID_ACTION/);
+    }
+    const next = await initial(c);
+    assert.equal(next.snapshot.surrenderedBy, null);
+});
+
+for (const mobile of [false, true]) test(`local surrender preserves coins, records one loss and invokes story defeat (${mobile ? 'mobile' : 'PC'})`, () => {
+    const storage = new Map();
+    const logs = [];
+    let storyWinner, cleared = 0;
+    const c = vm.createContext({console, Date, setTimeout: () => 0, clearTimeout,
+        localStorage: {getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value)},
+        document: {addEventListener() {}, getElementById() { return null; }},
+        addEventListener() {}, addLog: text => logs.push(text)});
+    c.window = c;
+    const file = name => mobile ? `mobile/${name}-sp.js` : `${name}.js`;
+    for (const name of ['cards', 'state', 'player']) vm.runInContext(fs.readFileSync(path.join(root, file(name)), 'utf8'), c);
+    vm.runInContext(fs.readFileSync(path.join(root, 'profile.js'), 'utf8'), c);
+    vm.runInContext(fs.readFileSync(path.join(root, file('main')), 'utf8'), c);
+    Object.assign(c, {clearSavedMatch: () => cleared++, setCPUStatus() {}, hideDiscardBanner() {},
+        updateUI() {}, prepareMatchFinale() {}, getOpponentLabelText: () => 'CPU',
+        handleStoryBattleEnded: winner => { storyWinner = winner; }});
+    const before = clone(c.getUserProfile());
+    vm.runInContext("GameState.currentTurn = 'cpu'; playerSurrender(); playerSurrender();", c);
+    const after = c.getUserProfile();
+    assert.equal(after.coins, before.coins);
+    assert.equal(after.stats.matches, before.stats.matches + 1);
+    assert.equal(after.stats.wins, before.stats.wins);
+    assert.equal(cleared, 1);
+    assert.equal(storyWinner, 'cpu');
+    assert.equal(logs[0], '降参しました。あなたの敗北です。');
+    assert.equal(vm.runInContext('buildWinnerText(GameState.winner)', c), logs[0]);
+    const normal = c.recordMatchResult(true);
+    assert.equal(normal.coinsGained, c.getUserCoinRules().perMatch + c.getUserCoinRules().perWin);
+});
 
 test('online worker supports browsers without randomUUID or Object.hasOwn', async () => {
     const c = runtime();
@@ -23,6 +84,59 @@ test('online worker supports browsers without randomUUID or Object.hasOwn', asyn
     const ids = result.snapshot.deck.map(c => c.id);
     for (const id of ids) assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     assert.equal(new Set(ids).size, ids.length);
+});
+
+test('network dispatch permits only surrender off-turn and preserves other guards', () => {
+    const source = fs.readFileSync(path.join(root, 'network.js'), 'utf8');
+    const dispatch = source.slice(source.indexOf('    function dispatch('), source.indexOf('    async function resume('));
+    const c = vm.createContext({ room: {id: 'test', status: 'playing'}, stopped: false, busy: false,
+        pending: null, connected: true, peerPresent: true, GameState: {gameEnded: false},
+        getBattleViewModel: () => ({turn: 'opponent'}), protocol: runtime().BattleProtocol,
+        user: {id: 'participant'}, revision: 5, fastMode: false, pendingKey: 'test',
+        sessionStorage: {setItem() {}}, status() {}, clearTimeout() {}, setTimeout: () => 0,
+        deadline: null, resend() {}, message() {}});
+    vm.runInContext(dispatch, c);
+    c.dispatch('playerEndTurn', []);
+    assert.equal(c.pending, null);
+    c.dispatch('playerSurrender', []);
+    assert.equal(c.pending.action.name, 'playerSurrender');
+    assert.equal(c.pending.revision, 5);
+    const pending = c.pending;
+    c.dispatch('playerSurrender', []);
+    assert.equal(c.pending, pending);
+    for (const [key, value] of [['stopped', true], ['busy', true], ['connected', false], ['peerPresent', false]]) {
+        c.pending = null;
+        const original = c[key]; c[key] = value;
+        c.dispatch('playerSurrender', []);
+        assert.equal(c.pending, null, key);
+        c[key] = original;
+    }
+    c.GameState.gameEnded = true;
+    c.dispatch('playerSurrender', []);
+    assert.equal(c.pending, null);
+});
+
+test('online surrender loss is recorded once across projections and reloads; winner receives no reward', () => {
+    const source = fs.readFileSync(path.join(root, 'network.js'), 'utf8');
+    const apply = source.slice(source.indexOf('    function applyView('), source.indexOf('    async function sync('));
+    const storage = new Map();
+    let losses = 0;
+    const c = vm.createContext({pending: null, stopped: false, started: true, revision: 0, metrics: null,
+        GameState: {}, room: {id: 'test-room'}, recordedSurrenders: new Set(),
+        localStorage: {getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value)},
+        $: () => null, status() {}, window: {updateUI() {}, addLog() {}, prepareMatchFinale() {},
+            recordMatchResult(win, options) { assert.equal(win, false); assert.equal(options.noCoins, true); losses++; }}});
+    vm.runInContext(apply, c);
+    const state = {gameEnded: true, surrenderedBy: 'player', winner: 'cpu', matchEndedAt: 12345};
+    c.applyView({revision: 1, payload: {state}});
+    c.applyView({revision: 2, payload: {state}});
+    c.recordedSurrenders.clear();
+    c.applyView({revision: 3, payload: {state}});
+    assert.equal(losses, 1);
+    c.applyView({revision: 4, payload: {state: {...state, surrenderedBy: 'cpu', winner: 'player'}}});
+    assert.equal(losses, 1);
+    c.applyView({revision: 5, payload: {state: {...state, matchEndedAt: 23456}}});
+    assert.equal(losses, 2);
 });
 
 test('every online character/skill choice stays with its participant through projection', async () => {

@@ -1,6 +1,6 @@
 // HOST-only worker. Reuses the actual game rules without rendering or local coin rewards.
 self.window = self;
-importScripts('battle-protocol.js', 'cards.js', 'state.js', 'rules.js', 'player.js');
+importScripts('battle-protocol.js?v=20260927-surrender1', 'cards.js?v=20260927-surrender1', 'state.js?v=20260927-surrender1', 'rules.js?v=20260927-surrender1', 'player.js?v=20260927-surrender1');
 // Rule timers only schedule presentation; deliver those cues with the committed action.
 self.setTimeout = callback => { callback(); return 0; };
 let effects = [], logs = [];
@@ -53,7 +53,7 @@ async function execute(request) {
     } else {
         loadSnapshot(request.snapshot);
         if (GameState.gameEnded) throw new Error('MATCH_ENDED');
-        if ((GameState.currentTurn === 'player' ? 'host' : 'guest') !== actor) throw new Error('NOT_YOUR_TURN');
+        if (request.action?.name !== 'playerSurrender' && (GameState.currentTurn === 'player' ? 'host' : 'guest') !== actor) throw new Error('NOT_YOUR_TURN');
         if (!BattleProtocol.validAction(request.action)) throw new Error('INVALID_ACTION');
         if (actor === 'guest') loadSnapshot(BattleProtocol.swap(GameState));
         await self[request.action.name](...request.action.args);
@@ -71,7 +71,9 @@ async function execute(request) {
         const skillStatus = getSkillActivationStatusForSide(role === 'host' ? 'player' : 'cpu');
         projected.onlineSkillStatus = { ok: skillStatus.ok, reason: skillStatus.reason };
         views[role] = { state: projected, effects: adapted,
-            logs: role === actor ? logs : (request.kind === 'init' ? [] : ['相手が操作しました。']) };
+            logs: projected.surrenderedBy ? [projected.surrenderedBy === 'player'
+                ? '降参しました。あなたの敗北です。' : '相手が降参しました。あなたの勝利です！']
+                : role === actor ? logs : (request.kind === 'init' ? [] : ['相手が操作しました。']) };
     }
     return request.kind === 'project' ? views : { snapshot, views };
 }

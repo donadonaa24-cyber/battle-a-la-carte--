@@ -1841,3 +1841,10 @@ window.canUseEventThisTurn = canUseEventThisTurn;
 
 
 
+
+// Shared action contract: playerSurrender, args: []. No turn restriction.
+function playerSurrender() {
+    if (GameState.gameEnded) return;
+    GameState.surrenderedBy = 'player';
+    endGame('cpu');
+}

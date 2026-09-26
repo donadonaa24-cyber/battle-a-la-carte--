@@ -870,6 +870,7 @@
         setHudVisible(false);
 
         setTimeout(() => {
+            if (window.GameState?.surrenderedBy) window.hideResultOverlay?.();
             const overlay = byId('start-overlay');
             if (overlay) overlay.classList.remove('hidden');
             showStartStage('start-story-stage');

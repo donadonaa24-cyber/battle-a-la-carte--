@@ -179,6 +179,7 @@ const GameState = {
     selectedCardIds: [],
     candidateRecipes: [],
     gameEnded: false,
+    surrenderedBy: null,
     winner: null,
     matchStartedAt: null,
     matchEndedAt: null,
@@ -251,6 +252,7 @@ function resetUiState() {
     GameState.selectedCardIds = [];
     GameState.candidateRecipes = [];
     GameState.gameEnded = false;
+    GameState.surrenderedBy = null;
     GameState.winner = null;
     GameState.matchStartedAt = Date.now();
     GameState.matchEndedAt = null;

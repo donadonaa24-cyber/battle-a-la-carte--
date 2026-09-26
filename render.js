@@ -2320,6 +2320,7 @@ function performUIRender() {
 }
 
 function updateUI(forceImmediate = false) {
+    if (typeof updateBattleMenu === 'function') updateBattleMenu();
     if (forceImmediate === true) {
         uiRenderQueued = false;
         uiRenderFrameRequested = false;

@@ -1960,12 +1960,19 @@ function showFieldPackDetails(packDef) {
 }
 
 function prepareMatchFinale(winner) {
+    updateBattleMenu();
+    if (GameState.surrenderedBy) {
+        if (matchFinaleTimer) clearTimeout(matchFinaleTimer);
+        hideSpotlightCard();
+        showResultOverlay(buildWinnerText(winner), winner === 'player' ? 'win' : 'lose');
+        return;
+    }
     if (matchFinaleTimer) clearTimeout(matchFinaleTimer);
     const overlay = document.getElementById('result-overlay');
     const button = document.getElementById('show-match-result-button');
     overlay?.classList.add('hidden');
     button?.classList.add('hidden');
-    const finalDish = GameState.lastCookedRecipe?.side === winner ? GameState.lastCookedRecipe : null;
+    const finalDish = !GameState.surrenderedBy && GameState.lastCookedRecipe?.side === winner ? GameState.lastCookedRecipe : null;
     const waitMs = finalDish ? 3000 : 1200;
     if (finalDish) {
         const legendary = Number(finalDish.points) >= 10;
@@ -2239,6 +2246,8 @@ function showSpotlightPackCardAsync(packDef) {
 }
 
 function buildWinnerText(winner) {
+    if (GameState.surrenderedBy) return GameState.surrenderedBy === 'player'
+        ? '降参しました。あなたの敗北です。' : '相手が降参しました。あなたの勝利です！';
     const reason = GameState.specialWinReason;
     if (winner === 'player') {
         return reason ? `勝利！\n${reason}` : '勝利！';
@@ -2281,14 +2290,16 @@ function endGame(winner) {
     hideDiscardBanner();
 
     const opponentLabel = getOpponentLabelText();
-    if (winner === 'player') {
+    if (GameState.surrenderedBy) {
+        addLog(buildWinnerText(winner));
+    } else if (winner === 'player') {
         addLog(GameState.specialWinReason ? `あなたの特殊勝利: ${GameState.specialWinReason}` : 'あなたの勝利です！');
     } else {
         addLog(GameState.specialWinReason ? `${opponentLabel}の特殊勝利: ${GameState.specialWinReason}` : `${opponentLabel}の勝利です。`);
     }
 
     if (typeof recordMatchResult === 'function') {
-        const reward = recordMatchResult(winner === 'player');
+        const reward = recordMatchResult(winner === 'player', { noCoins: GameState.surrenderedBy === 'player' });
         if (reward && reward.coinsGained > 0) {
             addLog(`コイン +${reward.coinsGained}（所持: ${reward.profile.coins}）`);
         }
@@ -2341,3 +2352,51 @@ window.__battleStartBgmOnce = () => {
 };
 window.__showStartStage = showStartStage;
 window.getOpponentLabelText = getOpponentLabelText;
+
+function updateBattleMenu() {
+    const button = document.getElementById('battle-menu-button');
+    if (!button) return;
+    button.disabled = !shouldGuardMatchExit();
+    if (button.disabled) {
+        document.getElementById('battle-menu-panel').hidden = true;
+        button.setAttribute('aria-expanded', 'false');
+        const dialog = document.getElementById('surrender-dialog');
+        if (dialog.open) dialog.close();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const button = document.getElementById('battle-menu-button');
+    const panel = document.getElementById('battle-menu-panel');
+    const dialog = document.getElementById('surrender-dialog');
+    button.addEventListener('click', () => {
+        updateBattleMenu();
+        if (button.disabled) return;
+        panel.hidden = !panel.hidden;
+        button.setAttribute('aria-expanded', String(!panel.hidden));
+    });
+    document.getElementById('open-surrender-button').addEventListener('click', () => {
+        panel.hidden = true;
+        button.setAttribute('aria-expanded', 'false');
+        if (shouldGuardMatchExit()) dialog.showModal();
+    });
+    document.getElementById('cancel-surrender-button').addEventListener('click', () => dialog.close());
+    document.getElementById('confirm-surrender-button').addEventListener('click', () => {
+        dialog.close();
+        if (shouldGuardMatchExit()) window.playerSurrender();
+    });
+    document.addEventListener('click', event => {
+        if (!event.target.closest('.battle-menu')) {
+            panel.hidden = true;
+            button.setAttribute('aria-expanded', 'false');
+        }
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !panel.hidden) {
+            panel.hidden = true;
+            button.setAttribute('aria-expanded', 'false');
+            button.focus();
+        }
+    });
+    updateBattleMenu();
+});
