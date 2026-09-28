@@ -3,15 +3,10 @@ html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    font-family: sans-serif;
-    background: #071a49;
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #000;
     color: #fff;
     touch-action: manipulation;
-}
-
-body {
-    position: fixed;
-    inset: 0;
 }
 
 .hidden {
@@ -20,8 +15,8 @@ body {
 
 #game-container.mobile-field-ui {
     position: relative;
-    width: 100vw;
-    height: 100vh;
+    width: 100cqw;
+    height: 100cqh;
     overflow: hidden;
     isolation: isolate;
     --bg-design-image: none;
@@ -92,7 +87,7 @@ body {
 
 .top-hud {
     position: absolute;
-    top: env(safe-area-inset-top, 0);
+    top: 0px;
     left: 0;
     right: 0;
     z-index: 20;
@@ -161,8 +156,8 @@ body {
     transform: translate(-50%, -50%);
     z-index: 24;
     min-width: 200px;
-    width: min(60vw, 260px);
-    max-width: 68vw;
+    width: min(60cqw, 260px);
+    max-width: 68cqw;
     text-align: center;
     padding: 9px 12px;
     border-radius: 14px;
@@ -191,11 +186,11 @@ body {
 }
 
 .cpu-side {
-    min-height: 21vh;
+    min-height: 21cqh;
 }
 
 .player-side {
-    min-height: 30vh;
+    min-height: 30cqh;
 }
 
 .player-hud {
@@ -203,7 +198,7 @@ body {
     align-items: center;
     gap: 6px;
     width: fit-content;
-    max-width: 56vw;
+    max-width: 56cqw;
     padding: 5px 7px;
     border-radius: 14px;
     background: rgba(4, 10, 30, 0.72);
@@ -459,7 +454,7 @@ body {
 .realtime-log-panel {
     flex: 1;
     min-width: 0;
-    max-width: 45vw;
+    max-width: 45cqw;
     padding: 5px 6px;
     border-radius: 12px;
     border: 1px solid rgba(133, 196, 255, 0.3);
@@ -804,6 +799,20 @@ body {
     box-shadow: 0 0 0 2px rgba(255, 116, 116, 0.2), 0 2px 8px rgba(0,0,0,0.25);
 }
 
+.roman-reserved-card::after {
+    content: '10点専用';
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    z-index: 2;
+    padding: 1px 3px;
+    border-radius: 5px;
+    background: #51340b;
+    color: #fff1b8;
+    font-size: 8px;
+    font-weight: 900;
+}
+
 .trap-locked-card::after {
     content: 'トラップ';
     position: absolute;
@@ -1021,7 +1030,7 @@ body {
     position: absolute;
     left: 154px;
     right: 84px;
-    top: calc(env(safe-area-inset-top, 0) + 8px);
+    top: calc(0px + 8px);
     transform: none;
     bottom: auto;
     z-index: 21;
@@ -1069,7 +1078,7 @@ body {
 .info-overlay-panel {
     width: 100%;
     max-width: 560px;
-    max-height: 78vh;
+    max-height: 78cqh;
     overflow: hidden;
     border-radius: 18px;
     background: linear-gradient(180deg, rgba(7,19,55,0.97) 0%, rgba(8,25,70,0.97) 100%);
@@ -1326,8 +1335,8 @@ body {
     top: 50%;
     transform: translate(-50%, -50%);
     z-index: 60;
-    width: min(92vw, 520px);
-    max-height: 80vh;
+    width: min(92cqw, 520px);
+    max-height: 80cqh;
     overflow-y: auto;
     padding: 12px;
     box-sizing: border-box;
@@ -1339,7 +1348,7 @@ body {
 }
 
 #dish-history-panel.selection-panel {
-    width: min(96vw, 640px);
+    width: min(96cqw, 640px);
 }
 
 #selection-panel:not(.hidden),
@@ -1653,8 +1662,8 @@ body {
     pointer-events: auto;
 }
 
-.result-panel { width: min(390px, 92vw); max-height: 86dvh; overflow: auto; padding: 14px; border: 2px solid #f3d27b; border-radius: 18px; background: linear-gradient(180deg, #102654f2, #061329f7); color: #fff; box-shadow: 0 18px 60px #000b; }
-.result-panel .result-text { margin: 0 auto 10px; font-size: clamp(28px, 10vw, 42px); }
+.result-panel { width: min(390px, 92cqw); max-height: 86cqh; overflow: auto; padding: 14px; border: 2px solid #f3d27b; border-radius: 18px; background: linear-gradient(180deg, #102654f2, #061329f7); color: #fff; box-shadow: 0 18px 60px #000b; }
+.result-panel .result-text { margin: 0 auto 10px; font-size: clamp(28px, 10cqw, 42px); }
 .result-summary { display: grid; gap: 8px; }
 .result-meta, .result-reason { padding: 8px 9px; border-radius: 10px; background: #ffffff12; text-align: center; font-size: 11px; font-weight: 800; }
 .result-reason { color: #ffe39a; }
@@ -1666,7 +1675,7 @@ body {
 .result-dish-section li { margin: 2px 0; }
 .result-field-button, .show-match-result-button { border: 1px solid #ffe29a; border-radius: 13px; background: linear-gradient(180deg, #ffc857, #cb760c); color: #fff; font-weight: 900; }
 .result-field-button { display: block; width: 100%; margin-top: 11px; padding: 11px; font-size: 13px; }
-.show-match-result-button { position: fixed; z-index: 200050; left: 50%; bottom: max(54px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); padding: 13px 22px; font-size: 14px; box-shadow: 0 0 25px #ffb52aaa; animation: mobileResultButtonPulse 1.2s ease-in-out infinite alternate; }
+.show-match-result-button { position: fixed; z-index: 200050; left: 50%; bottom: max(54px, 0px); transform: translateX(-50%); padding: 13px 22px; font-size: 14px; box-shadow: 0 0 25px #ffb52aaa; animation: mobileResultButtonPulse 1.2s ease-in-out infinite alternate; }
 .spotlight-overlay.spotlight-finale { z-index: 200100; }
 @keyframes mobileResultButtonPulse { to { filter: brightness(1.18); box-shadow: 0 0 34px #ffc54dcc; } }
 .inspectable-card { cursor: pointer; }
@@ -1699,7 +1708,7 @@ body {
 }
 
 .spotlight-card.skill {
-    width: min(94vw, 520px);
+    width: min(94cqw, 520px);
     min-height: 0;
     border-color: #ffd878;
     background: radial-gradient(circle at 50% 20%, #fff0c4 0%, #e28600 72%, #8f4300 100%);
@@ -1707,7 +1716,7 @@ body {
 }
 
 .spotlight-card.battle-mode {
-    width: min(95vw, 560px);
+    width: min(95cqw, 560px);
     min-height: 0;
     border-color: #fff0b0;
     background: radial-gradient(circle at 50% 14%, #fff8dd 0%, #ffc957 38%, #d27700 72%, #613400 100%);
@@ -1715,7 +1724,7 @@ body {
 }
 
 .spotlight-card.battle-mode-text {
-    width: min(92vw, 520px);
+    width: min(92cqw, 520px);
     min-height: 0;
     border-color: #ffe9a9;
     background: linear-gradient(180deg, #fff3d0 0%, #e79a2e 100%);
@@ -1752,7 +1761,7 @@ body {
 }
 
 .spotlight-card.skill .spotlight-art {
-    height: clamp(220px, 50vh, 430px);
+    height: clamp(220px, 50cqh, 430px);
     background-size: cover;
     background-position: center top;
     background-color: rgba(35, 16, 0, 0.58);
@@ -1760,20 +1769,20 @@ body {
 }
 
 .spotlight-card.skill .spotlight-name {
-    font-size: clamp(22px, 6.2vw, 34px);
+    font-size: clamp(22px, 6.2cqw, 34px);
     letter-spacing: 1px;
     color: #fff5d0;
     text-shadow: 0 3px 10px rgba(0, 0, 0, 0.68);
 }
 
 .spotlight-card.skill .spotlight-sub {
-    font-size: clamp(12px, 3.7vw, 17px);
+    font-size: clamp(12px, 3.7cqw, 17px);
     color: #ffe8ad;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .spotlight-card.battle-mode .spotlight-art {
-    height: clamp(230px, 56vh, 460px);
+    height: clamp(230px, 56cqh, 460px);
     background-size: cover;
     background-position: center top;
     background-color: rgba(45, 20, 0, 0.5);
@@ -1782,14 +1791,14 @@ body {
 }
 
 .spotlight-card.battle-mode .spotlight-name {
-    font-size: clamp(22px, 6.6vw, 38px);
+    font-size: clamp(22px, 6.6cqw, 38px);
     letter-spacing: 1px;
     color: #fff8dc;
     text-shadow: 0 4px 12px rgba(0, 0, 0, 0.72), 0 0 14px rgba(255, 216, 114, 0.46);
 }
 
 .spotlight-card.battle-mode .spotlight-sub {
-    font-size: clamp(12px, 4vw, 19px);
+    font-size: clamp(12px, 4cqw, 19px);
     color: #fff0c2;
     text-shadow: 0 2px 9px rgba(0, 0, 0, 0.66);
 }
@@ -1800,8 +1809,8 @@ body {
 }
 
 .spotlight-card.battle-mode-text .spotlight-name {
-    padding: clamp(15px, 5.2vw, 24px) clamp(14px, 5.4vw, 26px);
-    font-size: clamp(24px, 8.2vw, 42px);
+    padding: clamp(15px, 5.2cqw, 24px) clamp(14px, 5.4cqw, 26px);
+    font-size: clamp(24px, 8.2cqw, 42px);
     letter-spacing: 1px;
     color: #fff9e8;
     text-shadow: 0 3px 10px rgba(0, 0, 0, 0.72), 0 0 12px rgba(255, 210, 115, 0.5);
@@ -1919,8 +1928,8 @@ body {
 }
 
 .start-panel {
-    width: min(92vw, 420px);
-    max-height: min(88vh, 760px);
+    width: min(92cqw, 420px);
+    max-height: min(88cqh, 760px);
     border-radius: 20px;
     background: linear-gradient(180deg, rgba(8,20,58,0.97) 0%, rgba(11,30,78,0.97) 100%);
     border: 1px solid rgba(140, 204, 255, 0.28);
@@ -2216,6 +2225,13 @@ body {
     color: #eaf6ff;
 }
 
+.skill-recommendation {
+    color: #ffd26e;
+    font-weight: 800;
+    line-height: 1.35;
+    margin: 2px 0 5px;
+}
+
 .start-skill-tile.active {
     border-color: rgba(255, 208, 126, 0.68);
     box-shadow: 0 0 0 1px rgba(255, 208, 126, 0.45) inset;
@@ -2383,7 +2399,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: min(34vh, 240px);
+    max-height: min(34cqh, 240px);
     overflow-y: auto;
     padding-right: 2px;
 }
@@ -2466,7 +2482,7 @@ body {
 
 .start-rules-scroll {
     text-align: left;
-    max-height: min(48vh, 360px);
+    max-height: min(48cqh, 360px);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -2516,7 +2532,7 @@ body {
 }
 
 .start-gallery-list {
-    max-height: min(60vh, 520px);
+    max-height: min(60cqh, 520px);
     overflow-y: auto;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -2622,7 +2638,7 @@ body {
     top: 56px;
     right: 8px;
     z-index: 115;
-    width: min(270px, 86vw);
+    width: min(270px, 86cqw);
     border-radius: 12px;
     border: 1px solid rgba(176, 223, 255, 0.38);
     background: linear-gradient(180deg, rgba(8, 24, 66, 0.94) 0%, rgba(7, 19, 56, 0.96) 100%);
@@ -2668,7 +2684,7 @@ body {
 .story-episode-list {
     display: grid;
     gap: 8px;
-    max-height: min(52vh, 390px);
+    max-height: min(52cqh, 390px);
     overflow-y: auto;
     padding-right: 2px;
 }
@@ -2849,14 +2865,14 @@ body {
 }
 
 .candidate-recipes-panel {
-    max-height: min(25vh, 132px);
+    max-height: min(25cqh, 132px);
     overflow-y: auto;
     padding-bottom: 4px;
 }
 
 .candidate-recipes-panel.expanded {
     top: 21%;
-    max-height: min(46vh, 320px);
+    max-height: min(46cqh, 320px);
 }
 
 .candidate-recipes-panel .recipe-cancel-row {
@@ -2919,7 +2935,7 @@ body {
     font-weight: 900;
 }
 
-@media (min-width: 700px) {
+@container (min-width: 700px) {
     #game-container.mobile-field-ui {
         max-width: 430px;
         margin: 0 auto;
@@ -2969,8 +2985,8 @@ body {
 
 .pack-shop-modal {
     position: relative;
-    width: min(96vw, 540px);
-    max-height: 88vh;
+    width: min(96cqw, 540px);
+    max-height: 88cqh;
     overflow: hidden;
     border: 2px solid #ffc95d;
     border-radius: 18px;
@@ -3012,7 +3028,7 @@ body {
 .pack-shop-list {
     display: grid;
     gap: 7px;
-    max-height: calc(88vh - 76px);
+    max-height: calc(88cqh - 76px);
     overflow-y: auto;
     padding: 9px;
 }
@@ -3039,7 +3055,7 @@ body {
 .pack-shop-status.is-unowned { background: #fff0c7; color: #8a4a00; }
 .pack-shop-exchange-button { min-height: 40px; padding: 6px; font-size: 10px; font-weight: 900; }
 
-@media (max-width: 350px), (max-height: 590px) {
+@container (max-width: 350px) {
     .pack-shop-item { grid-template-columns: 44px minmax(0, 1fr) 70px; gap: 5px; padding: 5px; }
     .pack-shop-art { width: 42px; height: 58px; }
     .pack-shop-body strong { font-size: 11px; }
@@ -3052,6 +3068,133 @@ body {
 .battle-menu { position: relative; flex-shrink: 0; }
 #battle-menu-panel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 100; padding: 10px; min-width: 110px; border-radius: 12px; background: #152139; border: 1px solid #91b9dd; box-shadow: 0 6px 20px #0008; }
 #battle-menu-button:disabled { opacity: .45; cursor: default; }
-#surrender-dialog { box-sizing: border-box; max-width: min(420px, 92vw); padding: 22px; border: 1px solid #91b9dd; border-radius: 14px; background: #152139; color: #fff; }
+#surrender-dialog { box-sizing: border-box; max-width: min(420px, 92cqw); padding: 22px; border: 1px solid #91b9dd; border-radius: 14px; background: #152139; color: #fff; }
 #surrender-dialog::backdrop { background: #0009; }
 .surrender-actions { display: flex; justify-content: flex-end; gap: 12px; }
+
+/* The 432 x 768 stage uses one vertical battle flow. */
+.top-hud {
+    height: 48px;
+    align-items: flex-start;
+    padding: 5px 6px;
+}
+
+.turn-phase-box {
+    width: 126px;
+    padding: 3px 5px;
+    gap: 0;
+    box-sizing: border-box;
+}
+
+#turn-indicator, #phase-indicator, #cpu-status {
+    font-size: 9px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+#cpu-status { min-height: 11px; }
+.header-actions { gap: 3px; }
+.header-actions .hud-button { padding: 6px 5px; font-size: 9px; border-radius: 8px; white-space: nowrap; }
+.info-tabs { left: 136px; right: 100px; top: 6px; gap: 2px; overflow: visible; }
+.info-tabs .tab-button { padding: 6px 5px; font-size: 9px; border-radius: 8px; }
+
+.duel-field {
+    padding: 52px 8px 8px;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.cpu-side, .player-side { min-height: 0; flex: 0 0 auto; }
+.field-side { gap: 4px; }
+.cpu-top-row { height: 65px; }
+.cpu-hud { width: 205px; max-width: none; flex: 0 0 205px; box-sizing: border-box; }
+.cpu-hud .character-icon { width: 44px; height: 44px; }
+.cpu-hud .hud-info { gap: 1px; }
+.cpu-hud .hud-info > div { font-size: 9px; line-height: 1.1; }
+.realtime-log-panel { max-width: none; min-width: 0; box-sizing: border-box; }
+.realtime-log-list { max-height: 40px; }
+
+.cpu-hand-zone { height: 66px; min-height: 0; }
+.enemy-hand-row { min-height: 40px; height: 40px; justify-content: flex-start; }
+.enemy-hand-row .card { width: 30px; min-width: 30px; height: 40px; padding: 1px; }
+.enemy-hand-row .card-back-label { font-size: 7px; padding: 1px; }
+.cpu-middle-row, .player-middle-row { height: 80px; min-height: 0; }
+.cpu-middle-row > .zone-block, .player-middle-row > .zone-block { min-width: 0; overflow: hidden; }
+.cpu-middle-row .card-row, .cpu-middle-row .pack-row,
+.player-middle-row .card-row, .player-middle-row .pack-row { min-height: 52px; height: 52px; }
+.cpu-middle-row .card, .player-middle-row .card { height: 52px; width: 42px; min-width: 42px; }
+
+.center-field {
+    position: relative;
+    inset: auto;
+    flex: 0 0 153px;
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr) 100px;
+    grid-template-rows: 86px 61px;
+    gap: 6px;
+    min-width: 0;
+    pointer-events: auto;
+}
+
+.deck-discard-cluster {
+    position: static;
+    grid-column: 1;
+    grid-row: 1;
+    transform: none;
+    gap: 8px;
+    align-self: start;
+}
+
+.field-center-actions {
+    position: static;
+    grid-column: 3;
+    grid-row: 1;
+    transform: none;
+    width: auto;
+    gap: 3px;
+}
+
+.field-center-actions .main-action { min-height: 26px; padding: 4px 2px; font-size: 10px; border-radius: 8px; }
+.candidate-recipes-panel {
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    min-height: 0;
+    max-height: 86px;
+    padding: 4px;
+}
+.candidate-recipes-panel.expanded {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    top: 235px;
+    z-index: 30;
+    max-height: 290px;
+    box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.42);
+}
+
+.center-dish-panels {
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+    height: 61px;
+}
+.center-dish-panels .dish-mini-panel { min-height: 0; height: 61px; padding: 4px; overflow: hidden; }
+.center-dish-panels .latest-dish-slot { min-height: 40px; height: 40px; overflow: hidden; }
+.center-dish-panels .dish-card { min-height: 40px; height: 40px; }
+.center-dish-panels .latest-dish-empty { min-height: 38px; }
+
+.player-hand-zone { height: 98px; min-height: 0; }
+.player-hand-row { min-height: 70px; height: 70px; }
+.player-hand-row .card { height: 70px; }
+.player-bottom-row { height: 78px; align-items: center; }
+.player-main-hud { width: 242px; max-width: none; box-sizing: border-box; padding: 4px; }
+.player-main-hud .character-icon { width: 49px; height: 49px; }
+.player-main-hud .hud-info { gap: 1px; }
+.player-main-hud .hud-info > div { font-size: 9px; line-height: 1.1; }
+.player-main-hud .hud-skill-button { margin-top: 1px; padding: 2px 6px; font-size: 9px; }
+.player-pack-actions { width: 156px; max-width: 156px; margin: 0; }
+.player-pack-actions .open-pack-shop-button { min-width: 0; padding: 7px 4px; font-size: 9px; }
+.story-hud-panel { box-sizing: border-box; max-height: calc(100cqh - 64px); overflow-y: auto; }

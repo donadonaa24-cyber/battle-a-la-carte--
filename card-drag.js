@@ -32,15 +32,16 @@
 
     function positionGhost(x, y) {
         if (!ghost) return;
-        ghost.style.left = `${x}px`;
-        ghost.style.top = `${y}px`;
+        const point = StageLayout.toStagePoint({ x, y });
+        ghost.style.left = `${point.x}px`;
+        ghost.style.top = `${point.y}px`;
     }
 
     function beginDrag(event) {
         const destination = destinationFor(gesture.type);
         if (!destination.element) return false;
-        const sourceRect = gesture.source.getBoundingClientRect();
-        const targetRect = destination.element.getBoundingClientRect();
+        const sourceRect = StageLayout.toStageRect(gesture.source.getBoundingClientRect());
+        const targetRect = StageLayout.toStageRect(destination.element.getBoundingClientRect());
 
         ghost = gesture.source.cloneNode(true);
         ghost.removeAttribute('id');
@@ -59,7 +60,7 @@
             width: `${targetRect.width}px`, height: `${targetRect.height}px`
         });
 
-        document.body.append(ghost, dropZone);
+        StageLayout.stage.append(ghost, dropZone);
         document.body.classList.add('card-dragging');
         gesture.dragging = true;
         lastResult = 'dragging';
@@ -114,13 +115,15 @@
         event.preventDefault();
         event.stopPropagation();
         positionGhost(event.clientX, event.clientY);
-        dropZone?.classList.toggle('is-ready', isInside(event.clientX, event.clientY, gesture.targetRect));
+        const point = StageLayout.toStagePoint({ x: event.clientX, y: event.clientY });
+        dropZone?.classList.toggle('is-ready', isInside(point.x, point.y, gesture.targetRect));
     }, { capture: true, passive: false });
 
     function finish(event, cancelled) {
         if (!gesture || event.pointerId !== gesture.pointerId) return;
         const current = gesture;
-        const accepted = current.dragging && !cancelled && isInside(event.clientX, event.clientY, current.targetRect);
+        const point = StageLayout.toStagePoint({ x: event.clientX, y: event.clientY });
+        const accepted = current.dragging && !cancelled && isInside(point.x, point.y, current.targetRect);
         if (current.dragging) {
             event.preventDefault();
             event.stopPropagation();
@@ -137,6 +140,7 @@
         const sourceCard = sourceCards.find(card => String(card.id) === current.id);
         if (!sourceCard) { lastResult = 'missing'; return; }
         if (current.type === 'ingredient') window.playerSetCard?.(sourceCard.id);
+        else if (window.QuickConfirm) window.QuickConfirm.withDraggedEvent(() => window.playerUseEvent?.(sourceCard.id));
         else window.playerUseEvent?.(sourceCard.id);
         lastResult = `accepted:${GameState.selectionMode || 'none'}`;
     }

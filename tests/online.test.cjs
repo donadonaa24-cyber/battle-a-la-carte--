@@ -5,6 +5,28 @@ const vm = require('node:vm');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const clone = x => JSON.parse(JSON.stringify(x));
+test('PC and mobile skill recommendations match the approved table', () => {
+    const approved = {
+        tasteThief: [3, '初心者向け'], aceProcurement: [3, '初心者向け'],
+        foodTrap: [2, '妨害向け'], makanaiSupply: [2, 'ロマン向け'],
+        kitchenInfiltration: [2, '逆転向け'], lastOrder: [1, '上級者向け']
+    };
+    const actual = [];
+    for (const file of ['state.js', 'mobile/state-sp.js']) {
+        const context = vm.createContext({});
+        context.window = context;
+        vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, {filename: file});
+        const definitions = JSON.parse(vm.runInContext('JSON.stringify(SKILL_DEFINITIONS.map(skill => ({key:skill.key, stars:skill.recommendStars, tag:skill.recommendTag, text:skillRecommendationText(skill)})))', context));
+        assert.equal(definitions.length, 6, file);
+        for (const skill of definitions) {
+            assert.ok(skill.stars >= 1 && skill.stars <= 3 && skill.tag.trim(), `${file}: ${skill.key}`);
+            assert.deepEqual([skill.stars, skill.tag], approved[skill.key], `${file}: ${skill.key}`);
+            assert.equal(skill.text, '★'.repeat(skill.stars) + '☆'.repeat(3 - skill.stars) + '  ' + skill.tag);
+        }
+        actual.push(definitions);
+    }
+    assert.deepEqual(actual[0], actual[1]);
+});
 function runtime() {
     const context = vm.createContext({ console, crypto: require('node:crypto').webcrypto, setTimeout, clearTimeout });
     context.self = context;
@@ -94,7 +116,7 @@ test('network dispatch permits only surrender off-turn and preserves other guard
         getBattleViewModel: () => ({turn: 'opponent'}), protocol: runtime().BattleProtocol,
         user: {id: 'participant'}, revision: 5, fastMode: false, pendingKey: 'test',
         sessionStorage: {setItem() {}}, status() {}, clearTimeout() {}, setTimeout: () => 0,
-        deadline: null, resend() {}, message() {}});
+        deadline: null, resend() {}, message() {}, window: {}, quickConfirm: null});
     vm.runInContext(dispatch, c);
     c.dispatch('playerEndTurn', []);
     assert.equal(c.pending, null);
@@ -161,7 +183,7 @@ async function action(c, state, name, args = [], role = 'host') {
 }
 function total(s) {
     return s.deck.length + s.discard.length + Object.values(s.players).reduce((n,p)=>n+p.hand.length+p.set.length+p.events.length,0)
-        + (s.pendingEventContext?.openedCards?.length || 0);
+        + (s.pendingEventContext?.openedCards?.length || 0) + (s.pendingSkillContext?.openedCards?.length || 0);
 }
 function fixture(c, state, ingredients = ['ごはん','のり'], event) {
     const s = clone(state);
@@ -171,7 +193,7 @@ function fixture(c, state, ingredients = ['ごはん','のり'], event) {
     s.players.player.hand = ingredients.map(take);
     s.players.cpu.hand = ['魚','牛肉'].map(take);
     if(event) s.players.player.events=[take(event)];
-    s.deck=deck; s.discard=[]; s.currentTurn='player'; s.currentPhase='メインフェイズ';
+    s.deck=deck; s.discard=[]; s.currentTurn='player'; s.currentPhase='メインフェイズ'; s.turnNumber=2;
     s.selectionMode=null; s.candidateRecipes=[]; s.gameEnded=false; s.winner=null;
     return s;
 }
@@ -259,6 +281,81 @@ test('all nine events resolve through existing player.js without losing cards', 
         assert.equal(total(r.snapshot),54,event.name);
         assert.ok(r.snapshot.discard.some(card=>card.name===event.name),event.name);
     }
+});
+test('food trap unlocks when the victim returns its set to hand or cleaning discards it', async () => {
+    for (const eventName of ['やっぱやめた', '大掃除']) {
+        const c=runtime(); let s=fixture(c,(await initial(c)).snapshot,['ごはん','のり']);
+        s.players.player.selectedSkillKey='foodTrap';
+        let r=await action(c,s,'playerUseSkill');
+        r=await action(c,r.snapshot,'confirmSkillActivation');
+        const trapId=r.snapshot.pendingSkillContext.options[0].id;
+        r=await action(c,r.snapshot,'toggleEventTargetSelection',[trapId]);
+        r=await action(c,r.snapshot,'confirmEventSelection');
+        const trap=r.snapshot.players.cpu.set.find(card=>card.id===trapId);
+        assert.equal(trap.trapLocked,true);
+        s=r.snapshot;
+        const actor=eventName==='やっぱやめた' ? 'cpu' : 'player';
+        const role=actor==='cpu' ? 'guest' : 'host';
+        s.currentTurn=actor;
+        if (eventName==='やっぱやめた') {
+            s.players.cpu.hand.push(s.deck.splice(s.deck.findIndex(card=>card.name==='のり'),1)[0]);
+        }
+        const eventIndex=s.deck.findIndex(card=>card.name===eventName);
+        const eventCard=s.deck.splice(eventIndex,1)[0];
+        s.players[actor].events.push(eventCard);
+        r=await action(c,s,'playerUseEvent',[eventCard.id],role);
+        r=await action(c,r.snapshot,'confirmEventCard',[],role);
+        const zone=eventName==='やっぱやめた' ? r.snapshot.players.cpu.hand : r.snapshot.discard;
+        const moved=zone.find(card=>card.id===trapId);
+        assert.ok(moved,`${eventName}: ${JSON.stringify({logs:r.views[role].logs,mode:r.snapshot.selectionMode,turn:r.snapshot.turnNumber,hand:r.snapshot.players.cpu.hand.map(card=>card.name),set:r.snapshot.players.cpu.set.map(card=>card.name)})}`);
+        for (const key of ['trapLocked','blockedByTrap','trapOwner']) assert.equal(Object.hasOwn(moved,key),false,`${eventName}: ${key}`);
+        if (eventName==='やっぱやめた') {
+            assert.equal(c.isCardUsableForCooking(moved),true);
+            assert.ok(c.findPossibleRecipesForPlayer(r.snapshot.players.cpu).some(plan=>plan.recipe.name==='おにぎり'));
+        }
+        assert.equal(total(r.snapshot),54);
+    }
+});
+test('redo discards remaining ingredients and events, draws that count, and needs another card', async () => {
+    const c=runtime(), base=(await initial(c)).snapshot;
+    let s=fixture(c,base,['ごはん','のり'],'やり直し');
+    const otherEvent=s.deck.splice(s.deck.findIndex(card=>card.name==='緊急料理'),1)[0];
+    s.players.player.events.push(otherEvent);
+    const discardedIds=[...s.players.player.hand,otherEvent].map(card=>card.id);
+    const redoId=s.players.player.events[0].id, deckBefore=s.deck.length;
+    let r=await action(c,s,'playerUseEvent',[redoId]);
+    r=await action(c,r.snapshot,'confirmEventCard');
+    assert.equal(r.snapshot.deck.length,deckBefore-discardedIds.length);
+    assert.equal(r.snapshot.players.player.hand.length+r.snapshot.players.player.events.length,discardedIds.length);
+    for (const id of discardedIds) assert.ok(r.snapshot.discard.some(card=>card.id===id),id);
+    assert.ok(r.views.host.logs.some(line=>line.includes('手札3枚を引き直しました')));
+    assert.equal(total(r.snapshot),54);
+
+    s=fixture(c,base,[],'やり直し');
+    r=await action(c,s,'playerUseEvent',[s.players.player.events[0].id]);
+    assert.equal(r.snapshot.selectionMode,null);
+    assert.equal(r.snapshot.players.player.events.length,1);
+    assert.equal(r.snapshot.players.player.usedEventThisTurn,false);
+    assert.ok(r.views.host.logs.some(line=>line.includes('引き直す手札がありません')));
+
+    s=fixture(c,base,[],'やり直し');
+    s.players.player.events.push(s.deck.splice(s.deck.findIndex(card=>card.name==='緊急料理'),1)[0]);
+    r=await action(c,s,'playerUseEvent',[s.players.player.events[0].id]);
+    r=await action(c,r.snapshot,'confirmEventCard');
+    assert.equal(r.snapshot.players.player.hand.length+r.snapshot.players.player.events.length,1);
+    assert.ok(r.snapshot.discard.some(card=>card.name==='緊急料理'));
+});
+test('CPU preserves usable emergency cooking instead of redrawing it', () => {
+    const c=runtime(); c.importScripts('cpu.js');
+    const cpu=c.createPlayerState(), player=c.createPlayerState();
+    cpu.hand=[{id:'rice',name:'ごはん',type:'ingredient'},{id:'beef',name:'牛肉',type:'ingredient'}];
+    const redo={id:'redo',name:'やり直し',type:'event'};
+    const emergency={id:'emergency',name:'緊急料理',type:'event'};
+    cpu.events=[redo,emergency];
+    assert.equal(c.isCpuEventUseful(cpu,player,emergency,'緊急料理'),true);
+    assert.equal(c.isCpuEventUseful(cpu,player,redo,'やり直し'),false);
+    cpu.events=[redo];
+    assert.equal(c.isCpuEventUseful(cpu,player,redo,'やり直し'),true);
 });
 test('pack purchase stays in match points and skill trap remains public', async () => {
     const c=runtime(); let s=fixture(c,(await initial(c)).snapshot); s.players.player.score=3;
@@ -357,4 +454,216 @@ test('GUEST cooking, pack and skill use the same rules and winner perspective', 
     r=await action(c,s,'playerShowRecipeCandidates',[],'guest');
     r=await action(c,r.snapshot,'playerCookSelectedRecipe',['おにぎり'],'guest');
     assert.equal(r.snapshot.winner,'cpu'); assert.equal(r.views.guest.state.winner,'player');
+});
+
+test('Roman skill reveals seven, enforces eligibility and two picks, and allows zero', async () => {
+    const c=runtime(); let s=fixture(c,(await initial(c)).snapshot,['ごはん']);
+    s.players.player.selectedSkillKey='makanaiSupply';
+    s.players.player.score=8;
+    let r=await action(c,s,'playerUseSkill');
+    r=await action(c,r.snapshot,'confirmSkillActivation');
+    assert.equal(r.snapshot.players.player.skillUseCounts.makanaiSupply || 0,0);
+    assert.equal(r.snapshot.selectionMode,'skill-confirm');
+    assert.match(r.views.host.state.onlineSkillStatus.reason,/7点以下/);
+    s.players.player.score=7;
+    const names=['緊急料理','牛乳','ごはん','魚','カレー粉','のり','バナナ'];
+    const placed=names.map(name=>s.deck.splice(s.deck.findIndex(card=>card.name===name),1)[0]);
+    s.deck.push(...placed.reverse());
+    r=await action(c,s,'playerUseSkill');
+    r=await action(c,r.snapshot,'confirmSkillActivation');
+    assert.equal(r.snapshot.selectionMode,'skill-target');
+    assert.equal(r.snapshot.players.player.skillUseCounts.makanaiSupply,1);
+    const ctx=r.snapshot.pendingSkillContext;
+    assert.equal(ctx.openedCards.length,7);
+    assert.equal(ctx.minSelect,0); assert.equal(ctx.maxSelect,2); assert.equal(ctx.maxSelections,2);
+    assert.ok(ctx.description.includes('緊急料理（選択不可）'));
+    assert.equal(ctx.options.length,4);
+    assert.equal(total(r.snapshot),54);
+    r=await action(c,r.snapshot,'toggleEventTargetSelection',[ctx.openedCards[0].id]);
+    assert.equal(r.snapshot.selectedTargetIds.length,0);
+    for(const option of ctx.options.slice(0,3)) r=await action(c,r.snapshot,'toggleEventTargetSelection',[option.id]);
+    assert.equal(r.snapshot.selectedTargetIds.length,2);
+    const invalid=clone(r.snapshot); invalid.selectedTargetIds=[...ctx.options.slice(0,3).map(option=>option.id)];
+    const refused=await action(c,invalid,'confirmEventSelection');
+    assert.equal(refused.snapshot.selectionMode,'skill-target');
+    assert.equal(refused.snapshot.players.player.hand.filter(card=>card.romanReserved).length,0);
+    const chosen=[...r.snapshot.selectedTargetIds];
+    r=await action(c,r.snapshot,'confirmEventSelection');
+    assert.equal(r.snapshot.selectionMode,null);
+    for(const card of ctx.openedCards) {
+        if(chosen.includes(card.id)) assert.equal(r.snapshot.players.player.hand.find(x=>x.id===card.id)?.romanReserved,true);
+        else assert.ok(r.snapshot.discard.some(x=>x.id===card.id && !x.romanReserved));
+    }
+    assert.equal(total(r.snapshot),54);
+    r=await action(c,r.snapshot,'playerUseSkill');
+    r=await action(c,r.snapshot,'confirmSkillActivation');
+    assert.equal(r.snapshot.players.player.skillUseCounts.makanaiSupply,2);
+    const second=r.snapshot.pendingSkillContext.openedCards;
+    r=await action(c,r.snapshot,'confirmEventSelection');
+    assert.equal(r.snapshot.selectionMode,null);
+    for(const card of second) assert.ok(r.snapshot.discard.some(x=>x.id===card.id));
+    assert.equal(total(r.snapshot),54);
+});
+
+test('Roman seven-card reveal reshuffles discarded cards when the deck runs out', async () => {
+    const c=runtime(); const s=fixture(c,(await initial(c)).snapshot,['ごはん']);
+    s.players.player.selectedSkillKey='makanaiSupply';
+    s.discard.push(...s.deck.splice(0,s.deck.length-2));
+    let r=await action(c,s,'playerUseSkill');
+    r=await action(c,r.snapshot,'confirmSkillActivation');
+    assert.equal(r.snapshot.pendingSkillContext.openedCards.length,7);
+    assert.equal(new Set(r.snapshot.pendingSkillContext.openedCards.map(card=>card.id)).size,7);
+    assert.equal(total(r.snapshot),54);
+    r=await action(c,r.snapshot,'confirmEventSelection');
+    assert.equal(total(r.snapshot),54);
+});
+
+test('Roman reserved ingredients obey recipe and special-event limits and clear on discard and trade', async () => {
+    const c=runtime(), base=(await initial(c)).snapshot;
+    let s=fixture(c,base,['ごはん','のり'],'緊急料理'); s.players.player.hand[0].romanReserved=true;
+    assert.equal(c.getRecipePlan(s.players.player,c.recipes.find(x=>x.name==='おにぎり')).isValid,false);
+    const stale={recipe:c.recipes.find(x=>x.name==='おにぎり'),doubledName:null,isValid:true};
+    assert.equal(c.applyRecipePlan(s.players.player,stale),false);
+    assert.equal(s.players.player.hand.length,2);
+    s=fixture(c,base,['ごはん'],'緊急料理'); s.players.player.hand[0].romanReserved=true;
+    let r=await action(c,s,'playerUseEvent',[s.players.player.events[0].id]);
+    assert.equal(r.snapshot.selectionMode,null);
+    assert.ok(r.views.host.logs.some(line=>line.includes('10点料理にしか使えません')));
+    s=fixture(c,base,['ごはん','のり'],'緊急料理'); s.players.player.hand[0].romanReserved=true;
+    r=await action(c,s,'playerUseEvent',[s.players.player.events[0].id]);
+    r=await action(c,r.snapshot,'confirmEventCard');
+    assert.equal(r.snapshot.selectionMode,'event-target');
+    assert.equal(r.snapshot.pendingEventContext.options.length,1);
+    assert.equal(r.snapshot.pendingEventContext.options[0].label,'のり（手札）');
+    s=fixture(c,base,['ごはん','のり'],'創作料理'); s.players.player.hand[0].romanReserved=true;
+    r=await action(c,s,'playerUseEvent',[s.players.player.events[0].id]);
+    assert.equal(r.snapshot.selectionMode,null);
+    assert.ok(r.views.host.logs.some(line=>line.includes('10点料理にしか使えません')));
+    for(const [name,ingredients] of [
+        ['満腹カレー',['ごはん','牛肉','たまねぎ','にんじん','じゃがいも','カレー粉']],
+        ['爆弾おにぎり',['ごはん','ごはん','ごはん','ごはん','のり','魚']]
+    ]) {
+        s=fixture(c,base,ingredients); s.players.player.hand[0].romanReserved=true;
+        s.players.player.score=0;
+        assert.equal(c.getRecipePlan(s.players.player,c.recipes.find(x=>x.name===name)).isValid,true);
+        r=await action(c,s,'playerShowRecipeCandidates');
+        r=await action(c,r.snapshot,'playerCookSelectedRecipe',[name]);
+        assert.equal(r.snapshot.players.player.score,10);
+        assert.equal(r.snapshot.discard.find(card=>card.id===s.players.player.hand[0].id)?.romanReserved,undefined);
+    }
+    s=fixture(c,base,['ごはん'],'物々交換'); s.players.player.hand[0].romanReserved=true;
+    s.players.cpu.hand[0].romanReserved=true;
+    r=await action(c,s,'playerUseEvent',[s.players.player.events[0].id]);
+    r=await action(c,r.snapshot,'confirmEventCard');
+    for(let step=0;step<2;step++) {
+        const id=r.snapshot.pendingEventContext.options[0].id;
+        r=await action(c,r.snapshot,'toggleEventTargetSelection',[id]);
+        r=await action(c,r.snapshot,'confirmEventSelection');
+    }
+    assert.equal(r.snapshot.players.player.hand[0].romanReserved,undefined);
+    assert.equal(r.snapshot.players.cpu.hand.find(card=>card.name==='ごはん')?.romanReserved,undefined);
+    s=fixture(c,base,['ごはん']); s.players.player.hand[0].romanReserved=true;
+    c.GameState.players.player.hand=[s.players.player.hand[0]]; c.GameState.discard=[];
+    c.moveCardToDiscard(c.GameState.players.player.hand.pop());
+    assert.equal(c.GameState.discard[0].romanReserved,undefined);
+});
+
+test('GUEST Roman selection uses skill-target actions and private projection', async () => {
+    const c=runtime(); let s=fixture(c,(await initial(c)).snapshot,['ごはん']);
+    s=c.BattleProtocol.swap(s); s.players.cpu.selectedSkillKey='makanaiSupply';
+    let r=await action(c,s,'playerUseSkill',[],'guest');
+    r=await action(c,r.snapshot,'confirmSkillActivation',[],'guest');
+    assert.equal(r.views.guest.state.selectionMode,'skill-target');
+    assert.equal(r.views.host.state.pendingSkillContext,null);
+    const context=r.views.guest.state.pendingSkillContext;
+    assert.equal(context.maxSelections,2);
+    if(context.options.length) {
+        r=await action(c,r.snapshot,'toggleEventTargetSelection',[context.options[0].id],'guest');
+    }
+    const selected=[...r.snapshot.selectedTargetIds];
+    r=await action(c,r.snapshot,'confirmEventSelection',[],'guest');
+    assert.equal(r.snapshot.selectionMode,null);
+    assert.equal(r.snapshot.players.cpu.skillUseCounts.makanaiSupply,1);
+    for(const id of selected) assert.equal(r.snapshot.players.cpu.hand.find(card=>card.id===id)?.romanReserved,true);
+    assert.equal(total(r.snapshot),54);
+});
+
+test('Kitchen infiltration costs no event, first-turn events are blocked for either first player', async () => {
+    const c=runtime(), base=(await initial(c)).snapshot;
+    let s=fixture(c,base,['ごはん']);
+    s.players.player.selectedSkillKey='kitchenInfiltration'; s.players.cpu.score=1;
+    s.players.cpu.set.push(s.players.cpu.hand.pop());
+    let r=await action(c,s,'playerUseSkill'); r=await action(c,r.snapshot,'confirmSkillActivation');
+    for(let step=0;step<2;step++) {
+        const id=r.snapshot.pendingSkillContext.options[0].id;
+        r=await action(c,r.snapshot,'toggleEventTargetSelection',[id]);
+        r=await action(c,r.snapshot,'confirmEventSelection');
+    }
+    assert.equal(r.snapshot.players.player.skillUseCounts.kitchenInfiltration,1);
+    assert.equal(r.snapshot.players.player.events.length,0);
+    for(const firstRole of ['host','guest']) {
+        s=fixture(c,base,['ごはん'],'爆買い');
+        const guestEvent=s.deck.splice(s.deck.findIndex(card=>card.name==='爆買い'),1)[0];
+        s.players.cpu.events.push(guestEvent);
+        s.turnNumber=1; s.currentTurn=firstRole==='host'?'player':'cpu';
+        const firstEvent=firstRole==='host'?s.players.player.events[0]:guestEvent;
+        r=await action(c,s,'playerUseEvent',[firstEvent.id],firstRole);
+        assert.equal(r.snapshot.selectionMode,null);
+        assert.equal(r.views[firstRole].state.onlineEventStatus.reason,'最初のターンはイベントを使用できません。');
+        assert.ok(r.views[firstRole].logs.includes('最初のターンはイベントを使用できません。'));
+        r=await action(c,r.snapshot,'playerEndTurn',[],firstRole);
+        r=await action(c,r.snapshot,'confirmEndTurn',[],firstRole);
+        if(r.snapshot.selectionMode==='discard') {
+            const actor=firstRole==='host'?'player':'cpu';
+            const id=r.snapshot.players[actor].hand[0].id;
+            r=await action(c,r.snapshot,'toggleDiscardSelection',[id],firstRole);
+            r=await action(c,r.snapshot,'confirmDiscardSelection',[],firstRole);
+        }
+        assert.equal(r.snapshot.turnNumber,2);
+        const secondRole=firstRole==='host'?'guest':'host';
+        const secondEvent=secondRole==='host'?r.snapshot.players.player.events[0]:r.snapshot.players.cpu.events[0];
+        r=await action(c,r.snapshot,'playerUseEvent',[secondEvent.id],secondRole);
+        assert.equal(r.views[secondRole].state.selectionMode,'event-confirm');
+    }
+});
+
+test('Eco Bag and Freezer cost two, board three; Eco Bag raises hand limit and refill', () => {
+    const c=runtime();
+    assert.deepEqual(clone(c.packDefinitions.map(pack=>pack.cost)),[2,2,3]);
+    const p=c.createPlayerState(); p.score=2;
+    assert.equal(c.canBuyPack(p,'ecoBag'),true);
+    assert.equal(c.canBuyPack(p,'freezer'),true);
+    assert.equal(c.canBuyPack(p,'board'),false);
+    c.buyPack(p,'ecoBag');
+    assert.equal(c.getEndPhaseHandLimit(p),3);
+    assert.equal(c.getTargetTotalHandSize(p),6);
+    p.packs.push({key:'board'});
+    assert.equal(c.getTargetTotalHandSize(p),7);
+});
+
+test('CPU uses Roman only with three owned recipe ingredients and pays expendable event first', () => {
+    const c=runtime(); c.importScripts('cpu.js');
+    const base=c.initGame();
+    const cpu=c.GameState.players.cpu, player=c.GameState.players.player;
+    cpu.selectedSkillKey='makanaiSupply'; cpu.score=0;
+    cpu.hand=[{id:'r1',name:'ごはん',type:'ingredient'},{id:'r2',name:'ごはん',type:'ingredient'}];
+    cpu.set=[];
+    assert.equal(c.cpuShouldUseRoman(cpu),false);
+    cpu.hand.push({id:'r3',name:'ごはん',type:'ingredient'});
+    assert.equal(c.cpuShouldUseRoman(cpu),true);
+    assert.deepEqual(clone(c.chooseCpuRomanCards(cpu,[
+        {id:'milk',name:'牛乳',type:'ingredient'},{id:'rice',name:'ごはん',type:'ingredient'},
+        {id:'nori',name:'のり',type:'ingredient'}])),['rice','nori']);
+    const emergency={id:'emergency',name:'緊急料理',type:'event'};
+    const cleaning={id:'cleaning',name:'大掃除',type:'event'};
+    cpu.events=[emergency,cleaning];
+    assert.equal(c.cpuPreferredSkillCost(cpu).id,'cleaning');
+    cpu.selectedSkillKey='lastOrder'; cpu.score=0; player.score=8;
+    c.GameState.currentTurn='cpu'; c.GameState.turnNumber=2;
+    const result=c.activateSkillBySide('cpu',{auto:true});
+    assert.equal(result.ok,true);
+    assert.ok(cpu.events.some(card=>card.id==='emergency'));
+    assert.ok(c.GameState.discard.some(card=>card.id==='cleaning'));
+    c.GameState.turnNumber=1;
+    assert.equal(c.canUseEventThisTurn(cpu),false);
 });

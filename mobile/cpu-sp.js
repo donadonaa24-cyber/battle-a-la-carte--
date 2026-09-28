@@ -21,10 +21,10 @@ function cpuPause(ms) {
 }
 
 function getCpuSelectableIngredientCards(cpu) {
-    return [...cpu.hand, ...cpu.set].filter(card =>
-        typeof isCardUsableForCooking === 'function'
+    return [...cpu.hand, ...cpu.set].filter(card => card.romanReserved !== true &&
+        (typeof isCardUsableForCooking === 'function'
             ? isCardUsableForCooking(card)
-            : !(card?.trapLocked === true || card?.blockedByTrap === true)
+            : !(card?.trapLocked === true || card?.blockedByTrap === true))
     );
 }
 
@@ -57,6 +57,51 @@ function getCpuEventPriorityNames() {
         return ['緊急料理', '創作料理', '爆買い', '食材探索', 'ゴミ収集車', 'やり直し', '物々交換', '大掃除', 'やっぱやめた'];
     }
     return ['緊急料理', '創作料理', '爆買い', '食材探索', '大掃除', 'ゴミ収集車', 'やっぱやめた', 'やり直し', '物々交換'];
+}
+
+function cpuPreferredSkillCost(cpu) {
+    const protectedEvents = new Set(['緊急料理', '創作料理', '爆買い']);
+    const priority = getCpuEventPriorityNames();
+    return [...cpu.events].sort((a, b) => {
+        const protectedDifference = Number(protectedEvents.has(a.name)) - Number(protectedEvents.has(b.name));
+        if (protectedDifference) return protectedDifference;
+        const value = card => card.name === '爆買い' ? 5 : card.name === '緊急料理' ? 4 : 1;
+        if (value(a) !== value(b)) return value(a) - value(b);
+        return priority.indexOf(b.name) - priority.indexOf(a.name);
+    })[0] || null;
+}
+
+function cpuRomanMissing(cpu, recipe) {
+    const pool = getUsableIngredientCards(cpu, recipe).map(card => card.name);
+    let missing = 0;
+    for (const name of recipe.required) {
+        const index = pool.indexOf(name);
+        if (index < 0) missing++;
+        else pool.splice(index, 1);
+    }
+    return missing;
+}
+
+function cpuShouldUseRoman(cpu) {
+    return recipes.some(recipe => recipe.points >= 10 &&
+        recipe.required.length - cpuRomanMissing(cpu, recipe) >= 3);
+}
+
+function cpuRomanCardValue(cpu, card) {
+    const relevant = recipes.filter(recipe => recipe.points === 10 && recipe.required.includes(card.name));
+    if (relevant.length === 0) return 0;
+    const owned = getUsableIngredientCards(cpu).filter(held => held.name === card.name).length;
+    const missingCopy = relevant.some(recipe => owned < recipe.required.filter(name => name === card.name).length);
+    let normalValue = Math.max(0, ...recipes.filter(recipe => recipe.required.includes(card.name))
+        .map(recipe => (recipe.points + 2) / (cpuRomanMissing(cpu, recipe) + 1)));
+    if (getCpuPersonalityKey() === 'comeback' && ['ごはん', 'のり', '魚'].includes(card.name)) normalValue += 60;
+    return (missingCopy ? 100 : 0) + Math.max(...relevant.map(recipe => 10 - cpuRomanMissing(cpu, recipe))) + normalValue / 100;
+}
+
+function chooseCpuRomanCards(cpu, openedCards) {
+    return openedCards.filter(isRomanIngredient)
+        .sort((a, b) => cpuRomanCardValue(cpu, b) - cpuRomanCardValue(cpu, a))
+        .slice(0, 2).map(card => card.id);
 }
 
 async function cpuTurn() {
@@ -220,6 +265,7 @@ async function cpuTurn() {
         return;
     }
 
+    GameState.turnNumber = (GameState.turnNumber || 1) + 1;
     GameState.currentTurn = 'player';
     GameState.currentPhase = 'ドローフェイズ';
     player.usedEventThisTurn = false;
@@ -369,7 +415,8 @@ function isCpuEventUseful(cpu, player, card, targetName) {
         case 'やっぱやめた':
             return cpu.set.length > 0;
         case 'やり直し':
-            return getCurrentTotalHandCount(cpu) >= 3 && findPossibleRecipesForPlayer(cpu).length === 0;
+            return getCurrentTotalHandCount(cpu) >= 3 && findPossibleRecipesForPlayer(cpu).length === 0 &&
+                !cpu.events.some(other => other !== card && other.name !== 'やり直し' && isCpuEventUseful(cpu, player, other, other.name));
         case '物々交換':
             return cpu.hand.length > 0 && player.hand.length > 0;
         default:

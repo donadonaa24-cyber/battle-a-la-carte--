@@ -1,6 +1,60 @@
+#app-stage {
+    position: absolute;
+    width: 1440px;
+    height: 810px;
+    box-sizing: border-box;
+    container-type: size;
+    transform: scale(1);
+    transform-origin: top left;
+    overflow: hidden;
+    background: #fff8ef;
+}
+#app-stage[data-stage-width="432"] { width: 432px; height: 768px; background: #071a49; }
+button, input, select, textarea, dialog { font-family: 'Noto Sans JP', sans-serif; }
+#app-stage:has(#surrender-dialog[open])::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 200090;
+    background: #0009;
+}
+#surrender-dialog[open] {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    z-index: 200091;
+}
+.stage-prompt-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0009;
+}
+.stage-prompt-panel {
+    box-sizing: border-box;
+    width: min(92cqw, 440px);
+    max-height: 88cqh;
+    overflow-y: auto;
+    padding: 22px;
+    border: 1px solid #91b9dd;
+    border-radius: 14px;
+    background: #152139;
+    color: #fff;
+    text-align: center;
+    box-shadow: 0 16px 50px #0009;
+}
+.stage-prompt-panel p { margin: 0 0 18px; overflow-wrap: anywhere; }
+.stage-prompt-actions { display: flex; justify-content: center; gap: 12px; }
+.stage-prompt-actions button { min-width: 88px; min-height: 40px; padding: 8px 12px; border: 1px solid #91b9dd; border-radius: 8px; background: #2d5a9e; color: #fff; }
+
 #online-bar[hidden], .online-account-box [hidden] { display: none !important; }
 #online-panel-toggle[hidden] { display: none !important; }
-.mobile-field-ui #online-panel-toggle { position: fixed; right: 8px; bottom: max(8px, env(safe-area-inset-bottom, 0px)); z-index: 200; }
+.mobile-field-ui #online-panel-toggle { position: fixed; right: 8px; bottom: max(8px, 0px); z-index: 200; }
 
 #start-friend-stage #friend-create-button,
 #start-friend-stage #friend-join-button {
@@ -41,12 +95,25 @@
 .card-drag-source:active { cursor: grabbing; }
 .card-dragging { user-select: none; }
 .card-drag-ghost { position: fixed !important; z-index: 200002; margin: 0 !important; pointer-events: none !important; opacity: .88; transform: translate(-50%, -58%) rotate(3deg) scale(1.05); filter: drop-shadow(0 12px 12px #0009); }
-.card-drop-zone { position: fixed; z-index: 200001; box-sizing: border-box; display: flex; align-items: center; justify-content: center; pointer-events: none; border: 3px dashed #ffd15a; border-radius: 16px; background: #071a49cc; color: #fff1a9; font-size: clamp(20px, 5vw, 38px); font-weight: 900; letter-spacing: .12em; text-shadow: 0 2px 4px #000; box-shadow: inset 0 0 26px #ffbf2f33, 0 0 20px #0008; }
+.card-drop-zone { position: fixed; z-index: 200001; box-sizing: border-box; display: flex; align-items: center; justify-content: center; pointer-events: none; border: 3px dashed #ffd15a; border-radius: 16px; background: #071a49cc; color: #fff1a9; font-size: clamp(20px, 5cqw, 38px); font-weight: 900; letter-spacing: .12em; text-shadow: 0 2px 4px #000; box-shadow: inset 0 0 26px #ffbf2f33, 0 0 20px #0008; }
 .card-drop-zone.is-ready { border-style: solid; background: #b8690ee6; color: #fff; box-shadow: inset 0 0 30px #ffe39a55, 0 0 28px #ffbd3e; transform: scale(1.025); }
 
 /* Reserve fixed viewport space for every zone; keep player controls largest. */
-.online-session #game-container.mobile-field-ui { height: 100vh; height: 100dvh; overflow: hidden; }
-.online-session .mobile-field-ui .duel-field { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 2.7fr) minmax(0, 1.8fr) minmax(0, 3.5fr); gap: 4px; padding: calc(68px + env(safe-area-inset-top, 0px)) 8px calc(42px + env(safe-area-inset-bottom, 0px)); }
+.online-session #game-container.mobile-field-ui { height: 100cqh; height: 100cqh; overflow: hidden; }
+.online-session .mobile-field-ui .duel-field { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 2.7fr) minmax(0, 1.8fr) minmax(0, 3.5fr); gap: 4px; padding: 52px 8px 72px; }
+.online-session .mobile-field-ui .cpu-top-row,
+.online-session .mobile-field-ui .cpu-hand-zone,
+.online-session .mobile-field-ui .cpu-middle-row,
+.online-session .mobile-field-ui .center-field,
+.online-session .mobile-field-ui .player-middle-row,
+.online-session .mobile-field-ui .player-hand-zone,
+.online-session .mobile-field-ui .player-bottom-row,
+.online-session .mobile-field-ui .center-dish-panels,
+.online-session .mobile-field-ui .center-dish-panels .dish-mini-panel,
+.online-session .mobile-field-ui .center-dish-panels .latest-dish-slot,
+.online-session .mobile-field-ui .center-dish-panels .dish-card,
+.online-session .mobile-field-ui .card-row,
+.online-session .mobile-field-ui .pack-row { height: auto; }
 .online-session .mobile-field-ui .field-side { display: grid; min-height: 0; min-width: 0; gap: 4px; }
 .online-session .mobile-field-ui .cpu-side { grid-template-rows: minmax(0, 1.2fr) minmax(0, .95fr) minmax(0, 1.15fr); }
 .online-session .mobile-field-ui .player-side { grid-template-rows: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.35fr); }
@@ -69,7 +136,7 @@
 .online-session .mobile-field-ui .field-center-actions { position: static; transform: none; grid-column: 2; grid-row: 1 / 3; width: auto; min-height: 0; display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 4px; }
 .online-session .mobile-field-ui .main-action { min-height: 0; padding: 4px; font-size: 11px; }
 .online-session .mobile-field-ui .candidate-recipes-panel,
-.online-session .mobile-field-ui .candidate-recipes-panel.expanded { position: fixed; inset: calc(70px + env(safe-area-inset-top, 0px)) 8px calc(100px + env(safe-area-inset-bottom, 0px)); z-index: 35; display: block; min-height: 0; max-height: none; overflow-y: auto; background: #091c3e; box-shadow: 0 8px 32px #0009; }
+.online-session .mobile-field-ui .candidate-recipes-panel.expanded { position: fixed; inset: calc(70px + 0px) 8px calc(100px + 0px); z-index: 35; display: block; min-height: 0; max-height: none; overflow-y: auto; background: #091c3e; box-shadow: 0 8px 32px #0009; }
 .online-session .mobile-field-ui .center-dish-panels { position: static; grid-column: 1; grid-row: 2; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .online-session .mobile-field-ui .dish-mini-panel { min-width: 0; min-height: 0; padding: 3px 5px; display: flex; flex-direction: column; }
 .online-session .mobile-field-ui .latest-dish-slot { min-height: 0; flex: 1; }
@@ -80,7 +147,7 @@
 .online-session .mobile-field-ui .cpu-top-row { align-items: stretch; }
 .online-session .mobile-field-ui .cpu-hud { max-width: 48%; flex-shrink: 0; align-self: stretch; }
 .online-session .mobile-field-ui .player-hud { padding: 3px 5px; box-sizing: border-box; min-height: 0; }
-.online-session .mobile-field-ui .character-icon { width: clamp(30px, 6vh, 56px); height: clamp(30px, 6vh, 56px); }
+.online-session .mobile-field-ui .character-icon { width: clamp(30px, 6cqh, 56px); height: clamp(30px, 6cqh, 56px); }
 .online-session .mobile-field-ui .realtime-log-panel { max-width: none; }
 .online-session .mobile-field-ui .hud-info { min-width: 0; gap: 1px; }
 .online-session .mobile-field-ui .hud-skill-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -95,7 +162,7 @@
 .online-session .mobile-field-ui .player-pack-actions button { padding: 7px 6px; }
 .online-session .mobile-field-ui .info-tabs { justify-content: flex-start; scroll-padding-left: 4px; }
 .online-session .mobile-field-ui .tab-button { min-height: 30px; font-size: 10px; padding: 6px 8px; }
-@media (max-height: 700px) {
+@container (max-height: 700px) {
     .online-session .mobile-field-ui .cpu-hud { gap: 3px; padding: 2px 4px; }
     .online-session .mobile-field-ui .cpu-hud .character-icon { width: 28px; height: 28px; }
     .online-session .mobile-field-ui .cpu-hud .hud-info { gap: 0; }
@@ -108,8 +175,8 @@
     .online-session .mobile-field-ui .realtime-log-list { gap: 1px; }
     .online-session .mobile-field-ui .realtime-log-entry { font-size: 8px; line-height: 1.05; }
 }
-@media (max-height: 600px) {
-    .online-session .mobile-field-ui .duel-field { padding-top: calc(64px + env(safe-area-inset-top, 0px)); padding-bottom: calc(38px + env(safe-area-inset-bottom, 0px)); }
+@container (max-height: 600px) {
+    .online-session .mobile-field-ui .duel-field { padding-top: calc(64px + 0px); padding-bottom: calc(38px + 0px); }
     .online-session .mobile-field-ui .cpu-hud .character-icon { width: 24px; height: 24px; }
     .online-session .mobile-field-ui .cpu-hud .hud-name,
     .online-session .mobile-field-ui .cpu-hud .hud-score { font-size: 10px; line-height: 1; }
@@ -128,7 +195,7 @@
     .online-session .mobile-field-ui .player-main-hud .hud-skill-button { margin-top: 0; padding: 2px 6px; font-size: 9px; line-height: 1; }
 }
 .online-session [data-cpu-only], #online-rematch[hidden] { display: none !important; }
-#online-bar { position: fixed; z-index: 100000; bottom: 8px; left: 50%; transform: translateX(-50%); width: min(720px, 96vw); box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid #5777ab; border-radius: 12px; background: #091c3e; color: #fff; box-shadow: 0 3px 16px #0004; font-size: 14px; }
+#online-bar { position: fixed; z-index: 100000; bottom: 8px; left: 50%; transform: translateX(-50%); width: min(720px, 96cqw); box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid #5777ab; border-radius: 12px; background: #091c3e; color: #fff; box-shadow: 0 3px 16px #0004; font-size: 14px; }
 #online-status { flex: 1 1 120px; min-width: 0; }
 #online-bar button { min-height: 44px; flex-shrink: 0; border: 1px solid #5777ab; border-radius: 8px; background: #123263; padding: 6px 10px; color: #fff; cursor: pointer; }
 .online-account-box { text-align: left; padding: 12px; border: 1px solid #c99750; border-radius: 10px; margin: 12px 0; }
@@ -141,14 +208,14 @@
 .online-operation-locked #candidate-recipes, .online-operation-locked #selection-panel {
     pointer-events: none;
 }
-@media (max-width: 600px) { #online-bar { font-size: 12px; bottom: 2px; padding: 6px 10px; } }
+@container (max-width: 600px) { #online-bar { font-size: 12px; bottom: 2px; padding: 6px 10px; } }
 
 #online-chat-panel[hidden] { display: none; }
-#online-chat-panel { position: absolute; bottom: calc(100% + 6px); right: 0; width: min(360px, 96vw); box-sizing: border-box; max-height: 65dvh; overflow: auto; padding: 12px; background: #091c3e; border: 1px solid #5777ab; border-radius: 12px; }
-#online-chat-history { max-height: 20dvh; overflow: auto; overflow-wrap: anywhere; }
+#online-chat-panel { position: absolute; bottom: calc(100% + 6px); right: 0; width: min(360px, 96cqw); box-sizing: border-box; max-height: 65cqh; overflow: auto; padding: 12px; background: #091c3e; border: 1px solid #5777ab; border-radius: 12px; }
+#online-chat-history { max-height: 20cqh; overflow: auto; overflow-wrap: anywhere; }
 .online-chat-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 #online-bar button:disabled { opacity: .45; cursor: default; }
-@media (max-width: 600px) {
+@container (max-width: 600px) {
     #online-bar { gap: 4px; padding: 5px; }
     #online-bar { flex-wrap: wrap; }
     #online-status { flex-basis: 100%; }

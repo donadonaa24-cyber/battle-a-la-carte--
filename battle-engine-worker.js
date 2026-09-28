@@ -1,6 +1,6 @@
 // HOST-only worker. Reuses the actual game rules without rendering or local coin rewards.
 self.window = self;
-importScripts('battle-protocol.js?v=20260927-surrender1', 'cards.js?v=20260927-surrender1', 'state.js?v=20260927-surrender1', 'rules.js?v=20260927-surrender1', 'player.js?v=20260927-surrender1');
+importScripts('battle-protocol.js?v=20260927-balance1', 'cards.js?v=20260927-balance1', 'state.js?v=20260928-stars1', 'rules.js?v=20260927-balance1', 'player.js?v=20260927-balance1');
 // Rule timers only schedule presentation; deliver those cues with the committed action.
 self.setTimeout = callback => { callback(); return 0; };
 let effects = [], logs = [];
@@ -70,6 +70,9 @@ async function execute(request) {
         const projected = BattleProtocol.view(snapshot, role);
         const skillStatus = getSkillActivationStatusForSide(role === 'host' ? 'player' : 'cpu');
         projected.onlineSkillStatus = { ok: skillStatus.ok, reason: skillStatus.reason };
+        projected.onlineEventStatus = GameState.turnNumber === 1
+            ? { ok: false, reason: '最初のターンはイベントを使用できません。' }
+            : { ok: true, reason: '' };
         views[role] = { state: projected, effects: adapted,
             logs: projected.surrenderedBy ? [projected.surrenderedBy === 'player'
                 ? '降参しました。あなたの敗北です。' : '相手が降参しました。あなたの勝利です！']

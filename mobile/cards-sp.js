@@ -29,8 +29,8 @@ const eventDefinitions = [
 ];
 
 const packDefinitions = [
-    { key: 'ecoBag', name: 'エコバッグ', cost: 3, imageFile: 'eco-bag-boy.png', description: 'エンドフェイズの手札上限が2枚から3枚になる' },
-    { key: 'freezer', name: '冷蔵庫', cost: 3, imageFile: 'fridge-girl.png', description: 'セット上限が3枚になる' },
+    { key: 'ecoBag', name: 'エコバッグ', cost: 2, imageFile: 'eco-bag-boy.png', description: 'エンドフェイズの手札上限が2枚から3枚になり、補充枚数も1枚増える' },
+    { key: 'freezer', name: '冷蔵庫', cost: 2, imageFile: 'fridge-girl.png', description: 'セット上限が3枚になる' },
     { key: 'board', name: 'まな板', cost: 3, imageFile: 'board-girl.png', description: 'ドロー時に手札6枚まで補充' }
 ];
 

@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Battle a la carte - Smartphone Field UI</title>
-    <link rel="stylesheet" href="style-sp.css?v=20260927-surrender1">
-    <link rel="stylesheet" href="../online.css?v=20260918-match1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style-sp.css?v=20260928-stage2">
+    <link rel="stylesheet" href="../online.css?v=20260928-stage2">
 </head>
 <body>
-    <dialog id="surrender-dialog" aria-labelledby="surrender-question">
+<div id="app-stage" data-stage-width="432" data-stage-height="768">
+    <dialog id="surrender-dialog" aria-modal="true" aria-labelledby="surrender-question">
         <p id="surrender-question">降参しますか？ この対戦は敗北になります。</p>
         <div class="surrender-actions">
             <button id="confirm-surrender-button" class="hud-button">降参する</button>
@@ -278,7 +282,7 @@
                     <div class="mini-rule-title">かんたんルール</div>
                     <div class="mini-rule-text" id="mini-rule-simple">
                         ・先に10点獲得したら勝利<br>
-                        ・イベントカードは1ターンに1回まで使用可能<br>
+・イベントカードは1ターンに1回まで使用可能（試合の最初のターンは先攻のみ使用不可）<br>
                         ・ターン終了時、手札は通常2枚まで、エコバッグ所持時は3枚まで残せます<br>
                         ・セットカードも料理の材料に使えます<br>
                         ・山札がなくなったら捨て札を混ぜて再利用します
@@ -290,9 +294,11 @@
                     <div class="mini-rule-text" id="mini-rule-detail">
                         ・手札は「材料カード」と「イベントカード」を合わせた合計枚数で管理します<br>
                         ・ドローフェイズでは、通常は合計5枚になるまで補充します<br>
-                        ・「まな板」を持っている場合、合計6枚まで補充します<br>
+・補充は通常5枚、エコバッグで6枚、まな板で6枚、両方所持で7枚までです<br>
                         ・材料カードはセットできますが、イベントカードはセットできません<br>
                         ・セット上限は通常2枚、「冷蔵庫」があれば3枚です<br>
+                        ・セットした食材は次のターン以降の料理に使えます<br>
+                        ・イベントカードは中央の発動ゾーンへドラッグして使います<br>
                         ・セットカードも自由に確認でき、料理時に優先して使われます<br>
                         ・「エコバッグ」を持っている場合、エンドフェイズの手札上限は3枚になります（通常は2枚）<br>
                         ・料理を作っても、そのままメインフェイズを続けられます<br>
@@ -306,7 +312,7 @@
                 <div class="mini-rule-box">
                     <div class="mini-rule-title">特殊勝利条件</div>
                     <div class="mini-rule-text" id="mini-rule-special">
-                        ・料理の達人: 鶏肉・豚肉・牛肉・魚を使った料理をそれぞれ1つ以上作り、合計6点以上で即勝利<br>
+                        ・料理の達人: 鶏肉・豚肉・牛肉・魚を使った料理をそれぞれ1つ以上作り、合計7点以上で即勝利<br>
                         ・満腹マスター: ターン開始時に自分の点数が負けている状態から、その1ターン中に3つ以上料理を完成すると即勝利
                     </div>
                 </div>
@@ -321,7 +327,7 @@
             <div class="pack-shop-header">
                 <div>
                     <h2 id="pack-shop-title">加工アイテム交換</h2>
-                    <p id="pack-shop-score">現在の点数: 0点 / 交換には各3点必要です</p>
+<p id="pack-shop-score">現在の点数: 0点 / エコバッグ・冷蔵庫2点、まな板3点</p>
                 </div>
                 <button id="pack-shop-close-button" type="button">閉じる</button>
             </div>
@@ -417,6 +423,7 @@
                         <label class="start-field-label" for="start-cpu-personality">CPU性格</label>
                         <select id="start-cpu-personality" class="start-select-input"></select>
                         <label class="start-field-label">バトルスキルを6個から1つ選択！</label>
+                        <p class="skill-recommendation">★はおすすめ度（多いほど扱いやすい）</p>
                         <div id="start-skill-list" class="start-skill-list"></div>
                         <div id="start-skill-detail" class="start-skill-detail"></div>
                         <p id="start-skill-message" class="start-menu-message"></p>
@@ -576,8 +583,10 @@
                         <option value="akatsuki">暁</option>
                     </select>
 
-                    <label class="start-field-label" for="user-favorite-skill">お気に入りスキル</label>
-                    <select id="user-favorite-skill" class="start-select-input"></select>
+<label class="start-field-label" for="user-favorite-skill">お気に入りスキル</label>
+<p class="skill-recommendation">★はおすすめ度（多いほど扱いやすい）</p>
+<select id="user-favorite-skill" class="start-select-input"></select>
+<p id="user-favorite-skill-recommendation" class="skill-recommendation"></p>
 
                     <div class="start-user-stats">
                         <div class="start-user-stat-row"><span>対戦回数</span><strong id="user-matches-value">0</strong></div>
@@ -602,25 +611,28 @@
             </div>
         </div>
     </div>
+</div>
 
-    <script src="cards-sp.js?v=20260419d"></script>
-    <script src="state-sp.js?v=20260927-surrender1"></script>
-    <script src="../profile.js?v=20260927-surrender1"></script>
-    <script src="rules-sp.js?v=20260918-final1"></script>
-    <script src="player-sp.js?v=20260927-surrender1"></script>
-    <script src="cpu-sp.js?v=20260919-ui2"></script>
+<script src="../stage-layout.js?v=20260928-stage1"></script>
+<script src="cards-sp.js?v=20260927-balance1"></script>
+<script src="state-sp.js?v=20260928-stars1"></script>
+<script src="../profile.js?v=20260927-surrender1"></script>
+<script src="../quick-confirm.js?v=20260928-quick1"></script>
+<script src="rules-sp.js?v=20260927-balance1"></script>
+<script src="player-sp.js?v=20260928-quick1"></script>
+<script src="cpu-sp.js?v=20260927-balance1"></script>
     <script src="../battle-view-model.js?v=20260916"></script>
     <script src="../battle-images.js?v=20260916"></script>
-    <script src="render-sp.js?v=20260927-surrender1"></script>
+<script src="render-sp.js?v=20260928-stage1"></script>
     <script src="audio-sp.js?v=20260918-match1"></script>
     <script src="../supabase-config.js?v=20260912"></script>
     <script src="../battle-protocol.js?v=20260927-surrender1"></script>
     <script src="../battle-chat.js?v=20260916"></script>
     <script src="../battle-metrics.js?v=20260916"></script>
-    <script src="../network.js?v=20260927-surrender1"></script>
-    <script src="main-sp.js?v=20260927-surrender1"></script>
-    <script src="../card-drag.js?v=20260917-drag1"></script>
-    <script src="../story-mode.js?v=20260927-surrender1"></script>
+<script src="../network.js?v=20260928-stage1"></script>
+<script src="main-sp.js?v=20260928-stage1"></script>
+<script src="../card-drag.js?v=20260928-stage1"></script>
+<script src="../story-mode.js?v=20260928-quick1"></script>
 </body>
 </html>
 

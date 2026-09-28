@@ -33,7 +33,8 @@
             postWin: [
                 { speaker: 'mai', text: '完璧！ 1ターンの基本の流れはこれでOKだよ。' },
                 { speaker: 'takumi', text: '実際にやるとすごく分かりやすいね！' },
-                { speaker: 'mai', text: '次はスキルの使い方をやってみよう。' }
+                { speaker: 'mai', text: '次はスキルの使い方をやってみよう。' },
+                { speaker: 'mai', text: '慣れてきたら、設定で『クイック』にするとターン終了などの確認を省けるよ。いつでも戻せるからね。' }
             ]
         },
         {
@@ -474,6 +475,8 @@
             window.setPlayerSelectedSkill(c, 'kitchenInfiltration');
         }
 
+        // Return the opening deal before assigning fixed lesson cards.
+        gs.deck.push(...p.hand, ...p.events, ...c.hand, ...c.events);
         p.hand = []; p.events = []; p.set = []; p.packs = [];
         p.score = 0; p.cookedRecipes = []; p.cookedMeatTypes = []; p.skillUseCounts = {};
         c.hand = []; c.events = []; c.set = []; c.packs = [];
@@ -499,7 +502,7 @@
         gs.gameEnded = false;
         gs.winner = null;
         gs.specialWinReason = null;
-        gs.currentTurn = 'player';
+        gs.currentTurn = ep.id === 'episode1' ? 'cpu' : 'player';
         gs.currentPhase = 'メインフェイズ';
 
         if (ep.id === 'episode1') {
@@ -605,6 +608,9 @@
         if (!ep) return;
 
         if (ep.id === 'episode1') {
+            if (window.GameState?.currentTurn === 'cpu' && window.GameState?.turnNumber === 1) {
+                return setHudText(ep.title, '舞依の先攻です。相手のターンが終わるまで待とう。');
+            }
             if (!S.objectives.setCard) return setHudText(ep.title, 'まずは材料カードを1枚セットしよう。');
             if (!S.objectives.useEvent) return setHudText(ep.title, '次はイベントカードを1回使ってみよう。');
             if (!S.objectives.cookDish) return setHudText(ep.title, '料理作成ボタンで1回料理を作ってみよう。');
@@ -812,7 +818,6 @@
         S.pendingWinner = null;
         setStoryActiveEpisodeContext(ep.id);
         setHudVisible(true);
-        setHudText(ep.title, ep.note || '');
         refreshObjectiveViews();
 
         if (typeof window.addLog === 'function') window.addLog(`ストーリーモード開始: ${ep.title}`);
@@ -820,8 +825,11 @@
             window.addLog('チュートリアル: 中盤から再開。暁が1点リード、千鶴は通常料理あと1品でMode発動。');
             window.addLog('まずは1点料理を1つ完成させて、Battle à la carte Mode に入ろう。');
         }
-        if (typeof window.enablePlayerControls === 'function') window.enablePlayerControls();
         if (typeof window.updateUI === 'function') window.updateUI();
+        if (ep.id === 'episode1') {
+            if (typeof window.markTurnStartStatus === 'function') window.markTurnStartStatus(window.GameState.players.cpu, window.GameState.players.player);
+            if (typeof window.cpuTurn === 'function') window.cpuTurn();
+        } else if (typeof window.enablePlayerControls === 'function') window.enablePlayerControls();
     }
 
     function beginPost(episodeId, winner) {

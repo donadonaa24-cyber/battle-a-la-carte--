@@ -276,7 +276,7 @@ function getDetailedEventEffectText(eventName) {
         case 'ゴミ収集車': return '捨て札の材料カードを1枚選び、手札に加えます。';
         case '物々交換': return '相手の手札1枚を受け取り、自分の手札1枚を渡します。';
         case 'やっぱやめた': return '自分のセットカードをすべて手札に戻します。';
-        case 'やり直し': return '自分の手札（材料）をすべて捨て、同枚数引き直します。';
+        case 'やり直し': return '自分の手札（材料・イベント）をすべて捨て、同枚数引き直します。';
         case '創作料理': return '点数6点以下で使用可能。材料2枚を捨てて3点獲得。このターンは通常料理できず、このターンで料理後は使用できません。';
         case '爆買い': return '山札から3枚引きます。';
         case '食材探索': return '山札の上3枚を見て、0〜2枚を手札に加えます。';
@@ -289,7 +289,7 @@ function getDetailedEventEffectText(eventName) {
 function getDetailedPackEffectText(packKey) {
     switch (packKey) {
         case 'ecoBag':
-            return 'エンドフェイズの手札上限が2枚から3枚になります。';
+            return 'エンドフェイズの手札上限が2枚から3枚になり、補充枚数も1枚増えます。';
         case 'freezer':
             return 'セットカード上限が2枚から3枚になります。';
         case 'board':
@@ -408,6 +408,16 @@ function bindSettingsOverlayControls() {
     const bgmTrackSelect = byId('settings-bgm-track');
     const bgmVolumeRange = byId('settings-bgm-volume');
     const bgmVolumeValue = byId('settings-bgm-volume-value');
+    const operationConfirmSelect = byId('settings-operation-confirm');
+
+    if (operationConfirmSelect) {
+        operationConfirmSelect.value = window.QuickConfirm?.mode() || 'standard';
+        operationConfirmSelect.addEventListener('change', () => {
+            const next = window.QuickConfirm?.setMode(operationConfirmSelect.value) || 'standard';
+            operationConfirmSelect.value = next;
+            addLog(`設定: 操作確認を「${next === 'quick' ? 'クイック' : '確認あり（標準）'}」に変更しました。`);
+        });
+    }
 
     if (resetButton) {
         resetButton.addEventListener('click', () => {
@@ -645,7 +655,7 @@ function enableHorizontalDragScroll(container) {
         if (container.scrollWidth <= container.clientWidth + 1) return;
 
         activePointerId = event.pointerId;
-        startX = event.clientX;
+        startX = StageLayout.toStagePoint({ x: event.clientX, y: event.clientY }).x;
         startLeft = container.scrollLeft;
         moved = false;
         container.classList.add('is-drag-scrolling');
@@ -662,7 +672,7 @@ function enableHorizontalDragScroll(container) {
     container.addEventListener('pointermove', event => {
         if (activePointerId === null || event.pointerId !== activePointerId) return;
 
-        const dx = event.clientX - startX;
+        const dx = StageLayout.toStagePoint({ x: event.clientX, y: event.clientY }).x - startX;
         if (Math.abs(dx) > 4) moved = true;
         if (!moved) return;
 
@@ -691,7 +701,7 @@ function enableHorizontalDragScroll(container) {
         if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
         if (container.scrollWidth <= container.clientWidth + 1) return;
 
-        container.scrollLeft += event.deltaY;
+        container.scrollLeft += event.deltaY / StageLayout.getScale();
         event.preventDefault();
     }, { passive: false });
 }
@@ -752,7 +762,7 @@ function renderInfoOverlay() {
         title.textContent = 'ルール';
         const s = byId('mini-rule-simple')?.innerHTML || [
             '・先に10点獲得したら勝利',
-            '・イベントカードは1ターンに1回まで使用可能',
+        '・イベントカードは1ターンに1回まで使用可能（試合の最初のターンは先攻のみ使用不可）',
             '・ターン終了時、手札は通常2枚まで。エコバッグ所持時は3枚まで残せます',
             '・セットカードも料理の材料に使えます',
             '・山札がなくなったら捨て札を混ぜて再利用します'
@@ -760,9 +770,11 @@ function renderInfoOverlay() {
         const d = byId('mini-rule-detail')?.innerHTML || [
             '・手札は「材料カード」と「イベントカード」を合わせた合計枚数で管理します',
             '・ドローフェイズでは通常、合計5枚になるまで補充します',
-            '・「まな板」を持っている場合、合計6枚まで補充します',
+        '・補充は通常5枚、エコバッグで6枚、まな板で6枚、両方所持で7枚までです',
             '・材料カードはセットできますが、イベントカードはセットできません',
             '・セット上限は通常2枚、「冷蔵庫」があれば3枚です',
+            '・セットした食材は次のターン以降の料理に使えます',
+            '・イベントカードは中央の発動ゾーンへドラッグして使います',
             '・「緊急料理」は3点以下、「創作料理」は6点以下でのみ使用できます'
         ].join('<br>');
         const sp = byId('mini-rule-special')?.innerHTML || [
@@ -829,6 +841,15 @@ function renderInfoOverlay() {
         title.textContent = '設定';
         content.innerHTML = `
             <div class="settings-group">
+                <div class="reference-item">
+                    <div class="reference-title">操作確認</div>
+                    <label class="settings-label" for="settings-operation-confirm">操作確認</label>
+                    <select id="settings-operation-confirm" class="settings-select">
+                        <option value="standard"${window.QuickConfirm?.mode() !== 'quick' ? ' selected' : ''}>確認あり（標準）</option>
+                        <option value="quick"${window.QuickConfirm?.mode() === 'quick' ? ' selected' : ''}>クイック</option>
+                    </select>
+                    <div class="settings-note">クイック：ターン終了・セット・ドラッグでのイベント発動の確認を省きます。スキル・加工アイテム・降参は常に確認します。使い忘れや置き間違いが起きやすく、操作ミスは取り消せません。いつでも「確認あり」に戻せます。</div>
+                </div>
                 <div class="reference-item" data-cpu-only>
                     <div class="reference-title">リセット</div>
                     <button id="settings-reset-button" class="settings-reset-button">ゲームをリセット</button>
@@ -978,6 +999,7 @@ function createImageCard(card, cardEl, imagePath, fallbackClassName = '') {
         cardEl.innerHTML = '';
         cardEl.classList.remove('has-image');
         if (fallbackClassName) cardEl.className = `card ${fallbackClassName}`;
+        if (card.romanReserved === true) cardEl.classList.add('roman-reserved-card');
         createCardTextBlock(card, cardEl);
     };
 
@@ -998,6 +1020,10 @@ function createImageCard(card, cardEl, imagePath, fallbackClassName = '') {
 function createFaceCard(card, extraClass) {
     const cardEl = document.createElement('div');
     cardEl.className = `card ${extraClass || ''}`;
+    if (card.romanReserved === true) {
+        cardEl.classList.add('roman-reserved-card');
+        cardEl.title = '10点専用：ロマン仕込みの食材は10点料理にしか使えません。';
+    }
     if (card?.id != null) cardEl.dataset.cardId = String(card.id);
 
     if (card.type === 'ingredient') {
@@ -1059,7 +1085,7 @@ function beginCardMotionFrame() {
     for (const element of document.querySelectorAll('[data-card-id]')) {
         const id = element.dataset.cardId;
         if (!id || previousNodes.has(id)) continue;
-        const rect = element.getBoundingClientRect();
+        const rect = StageLayout.toStageRect(element.getBoundingClientRect());
         if (rect.width > 0 && rect.height > 0) previousNodes.set(id, { rect, clone: element.cloneNode(true) });
     }
 
@@ -1129,11 +1155,11 @@ function markCardDrawArrival(element, order, intervalMs) {
 
 function animateCookingFusion(fusion) {
     if (!fusion?.dish || !Array.isArray(fusion.transfers) || fusion.transfers.length === 0) return;
-    const discardTarget = byId('discard-pile-button')?.getBoundingClientRect();
+    const discardTarget = StageLayout.toStageRect(byId('discard-pile-button')?.getBoundingClientRect());
     if (!discardTarget || discardTarget.width <= 0 || discardTarget.height <= 0) return;
     const fallbackElement = byId(fusion.side === 'opponent' ? 'cpu-hand-mixed' : 'player-hand-mixed');
-    const fallbackRect = fallbackElement?.getBoundingClientRect() || byId('deck-pile-button')?.getBoundingClientRect() || discardTarget;
-    const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const fallbackRect = StageLayout.toStageRect(fallbackElement?.getBoundingClientRect() || byId('deck-pile-button')?.getBoundingClientRect() || byId('discard-pile-button').getBoundingClientRect());
+    const center = { x: StageLayout.logical.width / 2, y: StageLayout.logical.height / 2 };
 
     fusion.transfers.forEach((transfer, index) => {
         const sourceRect = transfer.source?.rect || fallbackRect;
@@ -1148,7 +1174,7 @@ function animateCookingFusion(fusion) {
         material.style.setProperty('--fusion-x', `${center.x - (sourceRect.left + sourceRect.width / 2)}px`);
         material.style.setProperty('--fusion-y', `${center.y - (sourceRect.top + sourceRect.height / 2)}px`);
         material.style.setProperty('--fusion-delay', `${index * 70}ms`);
-        document.body.appendChild(material);
+        StageLayout.stage.appendChild(material);
         setTimeout(() => material.remove(), 720 + index * 70);
     });
 
@@ -1168,16 +1194,16 @@ function animateCookingFusion(fusion) {
         result.style.height = `${height}px`;
         result.style.setProperty('--fusion-discard-x', `${discardTarget.left + discardTarget.width / 2 - center.x}px`);
         result.style.setProperty('--fusion-discard-y', `${discardTarget.top + discardTarget.height / 2 - center.y}px`);
-        document.body.appendChild(result);
+        StageLayout.stage.appendChild(result);
         setTimeout(() => result.remove(), 1050);
     }, 520 + Math.max(0, fusion.transfers.length - 1) * 70);
 }
 
 function animateDiscardTransfers(transfers) {
     if (!Array.isArray(transfers) || transfers.length === 0) return;
-    const target = byId('discard-pile-button')?.getBoundingClientRect();
+    const target = StageLayout.toStageRect(byId('discard-pile-button')?.getBoundingClientRect());
     if (!target || target.width <= 0 || target.height <= 0) return;
-    const fallback = byId('deck-pile-button')?.getBoundingClientRect() || target;
+    const fallback = StageLayout.toStageRect(byId('deck-pile-button')?.getBoundingClientRect() || byId('discard-pile-button').getBoundingClientRect());
 
     transfers.forEach((transfer, index) => {
         const sourceRect = transfer.source?.rect || fallback;
@@ -1192,7 +1218,7 @@ function animateDiscardTransfers(transfers) {
         ghost.style.setProperty('--discard-flight-x', `${target.left + target.width / 2 - (sourceRect.left + sourceRect.width / 2)}px`);
         ghost.style.setProperty('--discard-flight-y', `${target.top + target.height / 2 - (sourceRect.top + sourceRect.height / 2)}px`);
         ghost.style.setProperty('--discard-flight-delay', `${index * 90}ms`);
-        document.body.appendChild(ghost);
+        StageLayout.stage.appendChild(ghost);
         setTimeout(() => ghost.remove(), 900 + index * 90);
     });
 }
@@ -1216,7 +1242,7 @@ function renderPlayerMixedHand() {
         ...player.events.map(card => ({ ...card, zoneType: 'event' }))
     ];
     const signature = [
-        cards.map(card => `${card.id}:${card.type}:${card.name}`).join('|'),
+        cards.map(card => `${card.id}:${card.type}:${card.name}:${card.romanReserved === true ? 1 : 0}`).join('|'),
         GameState.selectionMode || '',
         (GameState.selectedCardIds || []).join(','),
         getBattleViewModel().turn || '',
@@ -1255,7 +1281,7 @@ function renderPlayerSet() {
 
     const player = getBattleViewModel().me;
     const signature = [
-        player.set.map(card => `${card.id}:${card.name}:${card.trapLocked === true ? 1 : 0}:${card.blockedByTrap === true ? 1 : 0}`).join('|'),
+        player.set.map(card => `${card.id}:${card.name}:${card.trapLocked === true ? 1 : 0}:${card.blockedByTrap === true ? 1 : 0}:${card.romanReserved === true ? 1 : 0}`).join('|'),
         GameState.selectionMode || '',
         GameState.gameEnded ? '1' : '0'
     ].join('::');
@@ -1269,7 +1295,7 @@ function renderPlayerSet() {
         const isTrap = card.trapLocked === true || card.blockedByTrap === true;
         const description = isTrap
             ? 'トラップ状態のため料理に使えません。'
-            : 'セット中の材料カード';
+            : card.romanReserved === true ? '10点専用：10点料理にしか使えません。' : 'セット中の材料カード';
         const className = isTrap ? 'ingredient-card trap-locked-card' : 'ingredient-card';
         const el = createFaceCard({ ...card, description }, className);
         if (!GameState.selectionMode && !GameState.gameEnded && !isTrap) {
@@ -1649,9 +1675,9 @@ function getPlayerEventConditionWarning(eventCard) {
                 : '戻すセットカードがありません。';
 
         case 'やり直し':
-            return player.hand.length > 0
+            return getCurrentTotalHandCount(player) > 1
                 ? ''
-                : '捨てる手札材料がありません。';
+                : '引き直す手札がありません。';
 
         case '大掃除':
             return (cpu.hand.length + cpu.events.length + cpu.set.length) > 0
@@ -1705,7 +1731,7 @@ function renderSetViewPanel() {
     if (!card) { panel.classList.add('hidden'); desc.textContent = ''; return; }
 
     panel.classList.remove('hidden');
-    desc.textContent = `このセットカードは「${card.name}」です。料理の材料に使えます。`;
+    desc.textContent = `このセットカードは「${card.name}」です。${card.romanReserved === true ? '10点料理にしか使えません。' : '料理の材料に使えます。'}`;
 }
 
 function getPendingIngredientCard() {
@@ -2105,7 +2131,7 @@ function renderPackShopModal() {
     const player = getBattleViewModel().me;
     const canOperate = getBattleViewModel().turn === 'me' && !GameState.gameEnded &&
         (!GameState.selectionMode || GameState.selectionMode === 'pack-confirm');
-    score.textContent = `現在の点数: ${player.score}点 / 交換には各3点必要です`;
+    score.textContent = `現在の点数: ${player.score}点 / 交換に必要な点数: エコバッグ・冷蔵庫2点、まな板3点`;
     if (closeButton) closeButton.disabled = GameState.selectionMode === 'pack-resolving';
     list.innerHTML = '';
 

@@ -38,6 +38,8 @@ const SKILL_DEFINITIONS = [
     {
         key: 'lastOrder',
         name: 'ラストオーダー',
+        recommendStars: 1,
+        recommendTag: '上級者向け',
         condition: '相手が8点以上で、自分より得点が高い',
         effect: 'イベント1枚を捨てる。このターン、イベントカードを追加で1回使える。',
         maxUses: 1,
@@ -46,22 +48,28 @@ const SKILL_DEFINITIONS = [
     {
         key: 'kitchenInfiltration',
         name: '厨房潜入',
-        condition: '自分の得点が相手より低く、かつ5点以下',
-        effect: 'イベント1枚を捨てる。相手セット1枚と自分手札1枚を交換する。',
+        recommendStars: 2,
+        recommendTag: '逆転向け',
+        condition: '自分が劣勢かつ5点以下',
+        effect: '相手セットと自分の食材手札を1枚ずつ交換。',
         maxUses: 1,
-        requiresEventDiscard: true
+        requiresEventDiscard: false
     },
     {
         key: 'makanaiSupply',
-        name: 'まかない補給',
-        condition: '相手が5点以上で、自分の料理履歴が0件',
-        effect: '山札から2枚引く。',
-        maxUses: 1,
+        name: 'ロマン仕込み',
+        recommendStars: 2,
+        recommendTag: 'ロマン向け',
+        condition: '自分が7点以下',
+        effect: '山札の上から7枚を公開し、10点料理（満腹カレー・爆弾おにぎり）の食材を2枚まで手札に加える（残りは捨て札）。加えた食材は10点料理にしか使えない。',
+        maxUses: 2,
         requiresEventDiscard: false
     },
     {
         key: 'foodTrap',
         name: '食材トラップ',
+        recommendStars: 2,
+        recommendTag: '妨害向け',
         condition: '自分が3点以下で、相手セットに空きがある',
         effect: '自分の材料1枚を相手セットに公開配置（相手は料理に使えない）。',
         maxUses: 1,
@@ -70,6 +78,8 @@ const SKILL_DEFINITIONS = [
     {
         key: 'aceProcurement',
         name: '切り札調達',
+        recommendStars: 3,
+        recommendTag: '初心者向け',
         condition: '相手が8点以上',
         effect: '山札から材料カード1枚を選んで手札に加える。',
         maxUses: 1,
@@ -78,12 +88,18 @@ const SKILL_DEFINITIONS = [
     {
         key: 'tasteThief',
         name: '味見泥棒',
+        recommendStars: 3,
+        recommendTag: '初心者向け',
         condition: '自分の得点が0点で、相手が1点以上',
         effect: 'イベント1枚を捨てる。相手-1点、自分+1点。',
         maxUses: 2,
         requiresEventDiscard: true
     }
 ];
+
+function skillRecommendationText(skill) {
+    return '★'.repeat(skill.recommendStars) + '☆'.repeat(3 - skill.recommendStars) + '  ' + skill.recommendTag;
+}
 
 const CPU_PERSONALITY_OPTIONS = [
     { key: 'default', label: '標準' },
@@ -174,6 +190,7 @@ const GameState = {
     },
     currentTurn: 'player',
     currentPhase: 'メインフェイズ',
+    turnNumber: 1,
     selectionMode: null,
     discardNeedCount: 0,
     selectedCardIds: [],
@@ -247,6 +264,7 @@ function resetPlayerState(player) {
 }
 
 function resetUiState() {
+    GameState.turnNumber = 1;
     GameState.selectionMode = null;
     GameState.discardNeedCount = 0;
     GameState.selectedCardIds = [];
@@ -319,7 +337,7 @@ function drawOneResolved(player) {
 }
 
 function getTargetTotalHandSize(player) {
-    return hasPack(player, 'board') ? 6 : 5;
+    return 5 + (hasPack(player, 'board') ? 1 : 0) + (hasPack(player, 'ecoBag') ? 1 : 0);
 }
 
 function getCurrentTotalHandCount(player) {
@@ -345,8 +363,17 @@ function drawUntilTargetHand(player) {
     }
 }
 
+function clearTrapLock(card) {
+    if (!card) return;
+    delete card.trapLocked;
+    delete card.blockedByTrap;
+    delete card.trapOwner;
+}
+
 function moveCardToDiscard(card) {
     if (!card) return;
+    clearTrapLock(card);
+    delete card.romanReserved;
     GameState.discard.push(card);
 }
 

@@ -15,8 +15,6 @@ let startMenuFloatTimer = null;
 let selectedGalleryType = 'characters';
 let startCpuSetupStep = 1;
 let startOverlayAudioUnlockBound = false;
-let webViewportFitBound = false;
-let webViewportFitRaf = null;
 const START_MENU_CARD_VISIBLE_MS = 5000;
 const START_MENU_CARD_FADE_MS = 600;
 const START_MENU_CARD_CYCLE_MS = START_MENU_CARD_VISIBLE_MS + (START_MENU_CARD_FADE_MS * 2);
@@ -67,6 +65,7 @@ const START_STAGE_IDS = [
 let matchExitGuardBound = false;
 let matchExitBackArmedUntil = 0;
 let matchExitBypassOnce = false;
+let matchExitPromptOpen = false;
 const MATCH_EXIT_DOUBLE_BACK_WINDOW_MS = 6000;
 const MATCH_EXIT_CONFIRM_TEXT = '対戦を途中で放棄しますか？';
 const MATCH_EXIT_SECOND_BACK_TEXT = 'もう一度「戻る」を押すと対戦を終了して前のページへ移動します。';
@@ -174,6 +173,7 @@ function applySavedMatchSnapshot(snapshot) {
         cpu: normalizeSavedPlayerState(nextPlayers.cpu, GameState.players?.cpu)
     };
     GameState.currentTurn = source.currentTurn || 'player';
+    GameState.turnNumber = Number.isSafeInteger(source.turnNumber) ? source.turnNumber : 2;
     GameState.currentPhase = source.currentPhase || 'メインフェイズ';
     GameState.selectionMode = source.selectionMode || null;
     GameState.discardNeedCount = Number(source.discardNeedCount || 0);
@@ -236,7 +236,6 @@ function resumeSavedMatch() {
 
         const overlay = document.getElementById('start-overlay');
         if (overlay) overlay.classList.add('hidden');
-        scheduleWebViewportFit();
         matchExitBackArmedUntil = 0;
         pushMatchExitGuardHistory();
 
@@ -299,7 +298,7 @@ function setupMatchExitGuardOnce() {
         event.returnValue = '';
     });
 
-    window.addEventListener('popstate', () => {
+    window.addEventListener('popstate', async () => {
         if (matchExitBypassOnce) {
             matchExitBypassOnce = false;
             return;
@@ -307,6 +306,11 @@ function setupMatchExitGuardOnce() {
 
         if (!shouldGuardMatchExit()) {
             matchExitBackArmedUntil = 0;
+            return;
+        }
+
+        if (matchExitPromptOpen) {
+            pushMatchExitGuardHistory();
             return;
         }
 
@@ -319,66 +323,17 @@ function setupMatchExitGuardOnce() {
             return;
         }
 
-        const confirmed = window.confirm(MATCH_EXIT_CONFIRM_TEXT);
         pushMatchExitGuardHistory();
+        matchExitPromptOpen = true;
+        const confirmed = await StageLayout.confirm(MATCH_EXIT_CONFIRM_TEXT);
         if (confirmed) {
-            matchExitBackArmedUntil = now + MATCH_EXIT_DOUBLE_BACK_WINDOW_MS;
-            window.alert(MATCH_EXIT_SECOND_BACK_TEXT);
+            matchExitBackArmedUntil = Date.now() + MATCH_EXIT_DOUBLE_BACK_WINDOW_MS;
+            await StageLayout.alert(MATCH_EXIT_SECOND_BACK_TEXT);
         } else {
             matchExitBackArmedUntil = 0;
         }
+        matchExitPromptOpen = false;
     });
-}
-
-function applyWebViewportFit() {
-    const container = document.getElementById('game-container');
-    if (!container) return;
-    if (container.classList.contains('mobile-field-ui')) return;
-
-    const overlay = document.getElementById('start-overlay');
-    const inBattleScreen = !overlay || overlay.classList.contains('hidden');
-    if (document.body) {
-        document.body.classList.toggle('web-battle-fixed', inBattleScreen);
-    }
-
-    if (!inBattleScreen) {
-        container.style.setProperty('--web-fit-scale', '1');
-        return;
-    }
-
-    container.style.setProperty('--web-fit-scale', '1');
-    const naturalWidth = Math.max(container.scrollWidth || 0, container.offsetWidth || 0, 1);
-    const naturalHeight = Math.max(container.scrollHeight || 0, container.offsetHeight || 0, 1);
-    const viewportWidth = Math.max((window.innerWidth || 0) - 4, 1);
-    const viewportHeight = Math.max((window.innerHeight || 0) - 4, 1);
-    const fittedScale = Math.min(1, viewportWidth / naturalWidth, viewportHeight / naturalHeight);
-    container.style.setProperty('--web-fit-scale', String(fittedScale));
-}
-
-function scheduleWebViewportFit() {
-    if (webViewportFitRaf && typeof window.cancelAnimationFrame === 'function') {
-        window.cancelAnimationFrame(webViewportFitRaf);
-        webViewportFitRaf = null;
-    }
-
-    const run = () => {
-        webViewportFitRaf = null;
-        applyWebViewportFit();
-    };
-
-    if (typeof window.requestAnimationFrame === 'function') {
-        webViewportFitRaf = window.requestAnimationFrame(run);
-    } else {
-        setTimeout(run, 16);
-    }
-}
-
-function setupWebViewportFitOnce() {
-    if (webViewportFitBound) return;
-    webViewportFitBound = true;
-    window.addEventListener('resize', scheduleWebViewportFit);
-    window.addEventListener('orientationchange', scheduleWebViewportFit);
-    scheduleWebViewportFit();
 }
 
 function getStartCharacterOptionById(id) {
@@ -408,6 +363,8 @@ function getSkillDefinitionsSafe() {
     return [{
         key: 'lastOrder',
         name: 'ラストオーダー',
+        recommendStars: 1,
+        recommendTag: '上級者向け',
         condition: '相手が8点以上で自分より高得点',
         effect: 'イベントを1枚捨て、このターンにイベントを追加で1回使用可能',
         maxUses: 1
@@ -526,11 +483,18 @@ function renderUserStageProfile() {
     if (favoriteSkillSelect) {
         const defs = getSkillDefinitionsSafe();
         favoriteSkillSelect.innerHTML = defs
-            .map(skill => `<option value="${escapeHtmlText(skill.key)}">${escapeHtmlText(skill.name)}</option>`)
+            .map(skill => `<option value="${escapeHtmlText(skill.key)}">${escapeHtmlText(skill.name)}  ${escapeHtmlText(skillRecommendationText(skill))}</option>`)
             .join('');
         favoriteSkillSelect.value = defs.some(skill => skill.key === profile.favoriteSkillKey)
             ? profile.favoriteSkillKey
             : (defs[0]?.key || 'lastOrder');
+        const recommendation = document.getElementById('user-favorite-skill-recommendation');
+        const showRecommendation = () => {
+            const selected = defs.find(skill => skill.key === favoriteSkillSelect.value);
+            if (recommendation) recommendation.textContent = selected ? skillRecommendationText(selected) : '';
+        };
+        favoriteSkillSelect.onchange = showRecommendation;
+        showRecommendation();
     }
     if (matchesEl) matchesEl.textContent = String(profile.stats?.matches || 0);
     if (winsEl) winsEl.textContent = String(profile.stats?.wins || 0);
@@ -741,7 +705,6 @@ function showStartStage(activeId) {
     if ((activeId === 'start-title-stage' || activeId === 'start-menu-stage') && typeof playTitleBGM === 'function') {
         playTitleBGM();
     }
-    scheduleWebViewportFit();
 }
 
 function setStartMenuMessage(text) {
@@ -1223,7 +1186,6 @@ function beginMatchByRole(role) {
 
     const overlay = document.getElementById('start-overlay');
     if (overlay) overlay.classList.add('hidden');
-    scheduleWebViewportFit();
 
     if (role === '先攻') {
         GameState.currentTurn = 'player';
@@ -1282,11 +1244,9 @@ function onTurnCardSelected(side) {
 function setupStartOverlay() {
     setupMatchAutosaveOnce();
     setupMatchExitGuardOnce();
-    setupWebViewportFitOnce();
     const overlay = document.getElementById('start-overlay');
     if (!overlay) {
         safeStartGame();
-        scheduleWebViewportFit();
         return;
     }
 
@@ -1467,6 +1427,7 @@ function setupStartOverlay() {
             return `
                 <button type="button" class="start-skill-tile${selected ? ' active' : ''}" data-pick-skill-key="${escapeHtmlText(skill.key)}" aria-pressed="${selected ? 'true' : 'false'}">
                     <span class="start-skill-tile-name">${escapeHtmlText(skill.name)}</span>
+                    <span class="skill-recommendation">${escapeHtmlText(skillRecommendationText(skill))}</span>
                     <span class="start-skill-tile-uses">${maxUses}回</span>
                 </button>
             `;
@@ -1480,6 +1441,7 @@ function setupStartOverlay() {
                 const maxUses = Number.isFinite(Number(picked.maxUses)) ? Math.max(1, Math.floor(Number(picked.maxUses))) : 1;
                 startSkillDetail.innerHTML = `
                     <div class="start-skill-detail-name">${escapeHtmlText(picked.name)}</div>
+                    <div class="skill-recommendation">${escapeHtmlText(skillRecommendationText(picked))}</div>
                     <div class="start-skill-detail-row"><span>条件</span><strong>${escapeHtmlText(picked.condition || 'なし')}</strong></div>
                     <div class="start-skill-detail-row"><span>効果</span><strong>${escapeHtmlText(picked.effect || 'なし')}</strong></div>
                     <div class="start-skill-detail-row"><span>使用回数</span><strong>${maxUses}回</strong></div>
@@ -1501,6 +1463,7 @@ function setupStartOverlay() {
             return `
                 <div class="start-skill-rule-item">
                     <div class="start-skill-rule-name">${escapeHtmlText(skill.name || 'スキル')}</div>
+                    <div class="skill-recommendation">${escapeHtmlText(skillRecommendationText(skill))}</div>
                     <div>条件: ${escapeHtmlText(skill.condition || 'なし')}</div>
                     <div>効果: ${escapeHtmlText(skill.effect || 'なし')}</div>
                     <div>使用回数: ${maxUses}回</div>
@@ -2369,6 +2332,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const button = document.getElementById('battle-menu-button');
     const panel = document.getElementById('battle-menu-panel');
     const dialog = document.getElementById('surrender-dialog');
+    dialog.addEventListener('close', () => {
+        document.getElementById('game-container').inert = false;
+        const onlineBar = document.getElementById('online-bar');
+        if (onlineBar) onlineBar.inert = false;
+    });
     button.addEventListener('click', () => {
         updateBattleMenu();
         if (button.disabled) return;
@@ -2378,7 +2346,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('open-surrender-button').addEventListener('click', () => {
         panel.hidden = true;
         button.setAttribute('aria-expanded', 'false');
-        if (shouldGuardMatchExit()) dialog.showModal();
+        if (shouldGuardMatchExit()) {
+            dialog.show();
+            document.getElementById('game-container').inert = true;
+            const onlineBar = document.getElementById('online-bar');
+            if (onlineBar) onlineBar.inert = true;
+        }
     });
     document.getElementById('cancel-surrender-button').addEventListener('click', () => dialog.close());
     document.getElementById('confirm-surrender-button').addEventListener('click', () => {
@@ -2392,6 +2365,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && dialog.open) {
+            dialog.close();
+            return;
+        }
         if (event.key === 'Escape' && !panel.hidden) {
             panel.hidden = true;
             button.setAttribute('aria-expanded', 'false');

@@ -48,19 +48,20 @@ function canRecipeBeMadeWithCounts(recipe, counts) {
     return true;
 }
 
-function isCardUsableForCooking(card) {
+function isCardUsableForCooking(card, recipe = null) {
     if (!card || card.type !== 'ingredient') return false;
-    return !(card.trapLocked === true || card.blockedByTrap === true);
+    return !(card.trapLocked === true || card.blockedByTrap === true) &&
+        (!recipe || recipe.points >= 10 || card.romanReserved !== true);
 }
 
-function getUsableIngredientCards(player) {
-    const handCards = Array.isArray(player?.hand) ? player.hand.filter(isCardUsableForCooking) : [];
-    const setCards = Array.isArray(player?.set) ? player.set.filter(isCardUsableForCooking) : [];
+function getUsableIngredientCards(player, recipe = null) {
+    const handCards = Array.isArray(player?.hand) ? player.hand.filter(card => isCardUsableForCooking(card, recipe)) : [];
+    const setCards = Array.isArray(player?.set) ? player.set.filter(card => isCardUsableForCooking(card, recipe)) : [];
     return [...handCards, ...setCards];
 }
 
 function getRecipePlan(player, recipe) {
-    const allCards = getUsableIngredientCards(player);
+    const allCards = getUsableIngredientCards(player, recipe);
     const counts = countNamesFromCards(allCards);
     return canRecipeBeMadeWithCounts(recipe, counts)
         ? { recipe, doubledName: null, isValid: true }
@@ -87,10 +88,10 @@ function buildRequiredCountsForConsumption(recipe, doubledName) {
     return requiredCounts;
 }
 
-function consumeCardsFromZone(zone, requiredCounts, usedCards) {
+function consumeCardsFromZone(zone, requiredCounts, usedCards, recipe) {
     for (let i = zone.length - 1; i >= 0; i--) {
         const card = zone[i];
-        if (!isCardUsableForCooking(card)) continue;
+        if (!isCardUsableForCooking(card, recipe)) continue;
         if (requiredCounts[card.name] && requiredCounts[card.name] > 0) {
             requiredCounts[card.name]--;
             usedCards.push(zone.splice(i, 1)[0]);
@@ -341,13 +342,13 @@ function processBattleALaCarteModeAfterDish(player, dishPoints, dishName, ownerK
 }
 
 function applyRecipePlan(player, plan) {
-    if (!plan || !plan.isValid) return false;
+    if (!plan || !plan.isValid || !getRecipePlan(player, plan.recipe).isValid) return false;
 
     const usedCards = [];
     const requiredCounts = buildRequiredCountsForConsumption(plan.recipe, plan.doubledName);
 
-    consumeCardsFromZone(player.set, requiredCounts, usedCards);
-    consumeCardsFromZone(player.hand, requiredCounts, usedCards);
+    consumeCardsFromZone(player.set, requiredCounts, usedCards, plan.recipe);
+    consumeCardsFromZone(player.hand, requiredCounts, usedCards, plan.recipe);
 
     const remain = Object.values(requiredCounts).some(value => value > 0);
     if (remain) {

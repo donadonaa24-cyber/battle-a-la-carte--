@@ -14,6 +14,7 @@
     let matchFoundNotifiedRoomId = null;
     const saveWaiters = [];
     const accepted = new Set(), unsavedActions = new Map(), originals = new Map();
+    let quickConfirm = null;
     const metrics = window.BattleMetrics;
     const recoveryKey = 'aniani:battle:checkpoint:v2';
     const previewActions = new Set(['playerSetCard', 'confirmSetCard', 'cancelSetCard', 'viewSetCard', 'closeSetCardView',
@@ -90,12 +91,14 @@
             return;
         }
         const rows = [
+            ['おすすめ度', skillRecommendationText(skill)],
             ['発動条件', skill.condition || 'なし'],
             ['効果', skill.effect || 'なし'],
             ['使用回数', `${Math.max(1, Number(skill.maxUses) || 1)}回`]
         ];
         for (const [label, value] of rows) {
             const row = document.createElement('p');
+            if (label === 'おすすめ度') row.className = 'skill-recommendation';
             const title = document.createElement('strong');
             title.textContent = `${label}: `;
             row.append(title, document.createTextNode(value));
@@ -291,7 +294,7 @@
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20260927-surrender1', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20260928-stars1', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;
@@ -356,6 +359,16 @@
         }
         if (GameState.gameEnded && !wasEnded) window.prepareMatchFinale?.(GameState.winner);
         status();
+        if (acknowledgement && quickConfirm?.request === row.payload.request) {
+            const followUp = quickConfirm;
+            quickConfirm = null;
+            const state = GameState;
+            const matching = row.revision > followUp.revision && state.selectionMode === followUp.mode &&
+                (followUp.action === 'confirmEndTurn' ||
+                    (followUp.action === 'confirmSetCard' && state.pendingSetCardId === followUp.cardId) ||
+                    (followUp.action === 'confirmEventCard' && state.pendingEventCardId === followUp.cardId));
+            if (matching) dispatch(followUp.action, []);
+        }
     }
     async function sync() {
         if (!room || stopped) return;
@@ -676,12 +689,16 @@
         const action = { name, args };
         if (!protocol.validAction(action)) return;
         pending = { id: protocol.randomUUID(), room: room.id, user: user.id, revision, action };
+        const quickAction = window.QuickConfirm?.autoAction(name);
+        quickConfirm = quickAction ? { request: pending.id, revision, action: quickAction,
+            mode: quickAction === 'confirmEndTurn' ? 'end-turn-confirm' : quickAction === 'confirmSetCard' ? 'set-confirm' : 'event-confirm',
+            cardId: args[0] } : null;
         if (fastMode) pending.trace = metrics?.mark(pending.id, 'input') || { id: pending.id };
         try { sessionStorage.setItem(pendingKey, JSON.stringify(pending)); }
         catch (error) { pending = null; fail(error); return; }
         if (fastMode) {
             pending.trace.id = pending.id;
-            if (previewActions.has(name)) {
+            if (previewActions.has(name) && !quickAction) {
                 const log = window.addLog;
                 window.addLog = () => {};
                 try { originals.get(name)?.(...args); } finally { window.addLog = log; }
@@ -772,12 +789,12 @@
         const selection = document.createElement('div');
         selection.className = 'online-account-box';
         selection.id = 'online-selection';
-        selection.innerHTML = '<label>対戦キャラクター<select id="online-character"><option value="chizuru">千鶴</option><option value="mai">舞依</option><option value="takumi">拓海</option><option value="akatsuki">暁</option></select></label><label>対戦スキル<select id="online-skill" aria-describedby="online-skill-details"></select></label><div id="online-skill-details" class="online-skill-details" aria-live="polite"></div>';
+        selection.innerHTML = '<label>対戦キャラクター<select id="online-character"><option value="chizuru">千鶴</option><option value="mai">舞依</option><option value="takumi">拓海</option><option value="akatsuki">暁</option></select></label><label>対戦スキル<select id="online-skill" aria-describedby="online-skill-details"></select></label><p class="skill-recommendation">★はおすすめ度（多いほど扱いやすい）</p><div id="online-skill-details" class="online-skill-details" aria-live="polite"></div>';
         lobby.insertBefore(selection, lobby.querySelector('.start-user-form'));
         const hint = document.createElement('p'); hint.id = 'online-selection-hint';
         selection.appendChild(hint);
         for (const skill of window.getSkillDefinitions?.() || []) {
-            const option = document.createElement('option'); option.value = skill.key; option.textContent = skill.name;
+            const option = document.createElement('option'); option.value = skill.key; option.textContent = `${skill.name}  ${skillRecommendationText(skill)}`;
             selection.querySelector('#online-skill').appendChild(option);
         }
         const profile = window.getUserProfile?.() || {};
@@ -811,7 +828,7 @@
         rematch.id = 'online-rematch'; rematch.textContent = '再戦'; rematch.hidden = true;
         rematch.onclick = () => requestRematch().catch(fail);
         bar.appendChild(rematch);
-        document.body.appendChild(bar);
+        document.getElementById('app-stage').appendChild(bar);
         window.BattleChat?.mount(bar);
         $('online-login-form').addEventListener('submit', async event => {
             event.preventDefault(); if (busy || room) return; busy = true; controls();
@@ -832,7 +849,7 @@
             catch (error) { fail(error); }
         };
         $('online-leave').onclick = async () => {
-            if (!confirm('部屋から退出しますか？ この対戦は終了します。')) return;
+            if (!await StageLayout.confirm('部屋から退出しますか？ この対戦は終了します。')) return;
             try { await leaveRoom(); location.reload(); } catch (error) { fail(error); }
         };
         // Replace only public player entry points. CPU mode still calls the original functions.
