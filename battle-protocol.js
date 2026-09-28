@@ -4,7 +4,7 @@
         'playerSurrender', 'playerSetCard', 'confirmSetCard', 'cancelSetCard', 'viewSetCard', 'closeSetCardView',
         'openIngredientAction', 'closeIngredientAction', 'showIngredientCombinations',
         'backIngredientAction', 'confirmIngredientSetFromAction', 'playerShowRecipeCandidates',
-        'playerCancelRecipeCandidates', 'playerCookSelectedRecipe', 'playerUseEvent',
+        'playerCancelRecipeCandidates', 'playerCookSelectedRecipe', 'playerUseEvent', 'playerUseBoardCycle',
         'playerUseSkill', 'confirmSkillActivation', 'cancelSkillActivation', 'confirmEventCard',
         'cancelEventCard', 'playerBuyPack', 'confirmPackPurchase', 'cancelPackPurchase',
         'playerEndTurn', 'confirmEndTurn', 'cancelEndTurn', 'toggleDiscardSelection',
@@ -46,6 +46,9 @@
     }
     function view(snapshot, role) {
         const result = role === 'host' ? clone(snapshot) : swap(snapshot);
+        for (const player of Object.values(result.players)) {
+            player.boardCycleUsed = Number.isSafeInteger(player.boardCycleUsed) ? player.boardCycleUsed : 0;
+        }
         // Hidden cards carry neither their original IDs nor their type/name.
         const backs = (count, zone) => Array.from({ length: count }, (_, i) => ({ id: `${zone}-${i}`, hidden: true }));
         result.deck = backs(result.deck.length, 'deck');

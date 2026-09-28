@@ -5,6 +5,7 @@
         events: [],
         packs: [],
         score: 0,
+        boardCycleUsed: 0,
         knifeSelectedName: null,
         knifeUsedThisTurn: false,
         usedEventThisTurn: false,
@@ -247,6 +248,7 @@ function resetPlayerState(player) {
     player.events = [];
     player.packs = [];
     player.score = 0;
+    player.boardCycleUsed = 0;
     player.knifeSelectedName = null;
     player.knifeUsedThisTurn = false;
     player.usedEventThisTurn = false;

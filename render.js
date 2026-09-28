@@ -25,6 +25,7 @@ let cardMotionState = {
 };
 let activeCardMotionFrame = null;
 let packShopOpen = false;
+let packPreviewKey = null;
 const HORIZONTAL_SCROLL_ROW_IDS = [
     'player-hand-mixed',
     'cpu-hand-mixed',
@@ -289,11 +290,11 @@ function getDetailedEventEffectText(eventName) {
 function getDetailedPackEffectText(packKey) {
     switch (packKey) {
         case 'ecoBag':
-            return 'エンドフェイズの手札上限が2枚から3枚になり、補充枚数も1枚増えます。';
+            return 'ターン終了時に残せる手札が3枚になる（残した分、次の補充で引く枚数は減らない）';
         case 'freezer':
             return 'セットカード上限が2枚から3枚になります。';
         case 'board':
-            return 'ドローフェイズの補充上限が手札合計6枚になります。';
+            return '毎ターン、山札から引く枚数が1枚増える。さらに対戦中1回、負けているときに手札のイベント1枚を捨てて1枚引ける';
         default:
             return '加工アイテム効果説明なし';
     }
@@ -587,6 +588,14 @@ function bindSettingsOverlayControls() {
 function bindRenderEventsOnce() {
     if (renderEventsBound) return;
     renderEventsBound = true;
+    const stage = byId('game-container');
+    if (stage) {
+        for (const panel of stage.querySelectorAll('.selection-panel')) {
+            if (panel.id !== 'pack-confirm-panel' && panel.parentElement !== stage) stage.appendChild(panel);
+        }
+        const backdrop = byId('modal-input-backdrop');
+        if (backdrop && backdrop.parentElement !== stage) stage.appendChild(backdrop);
+    }
 
     const deckButton = byId('deck-pile-button');
     const discardButton = byId('discard-pile-button');
@@ -605,6 +614,10 @@ function bindRenderEventsOnce() {
     const realtimeLogPanel = byId('realtime-log-panel');
     const infoOverlay = byId('info-overlay');
     const infoOverlayClose = byId('info-overlay-close-button');
+    for (const overlay of [packShopOverlay, byId('board-cycle-overlay'), infoOverlay, byId('result-overlay'), byId('spotlight-overlay')]) {
+        overlay?.addEventListener('pointerdown', e => e.stopPropagation());
+        overlay?.addEventListener('click', e => e.stopPropagation());
+    }
 
     if (deckButton) deckButton.addEventListener('click', () => requestPileView('deck'));
     if (discardButton) discardButton.addEventListener('click', () => requestPileView('discard'));
@@ -612,7 +625,16 @@ function bindRenderEventsOnce() {
     if (dishHistoryClose) dishHistoryClose.addEventListener('click', closeDishHistory);
     if (packShopButton) packShopButton.addEventListener('click', openPackShop);
     if (packShopClose) packShopClose.addEventListener('click', closePackShop);
-    if (packShopOverlay) packShopOverlay.addEventListener('click', e => { if (e.target === packShopOverlay) closePackShop(); });
+    if (packShopOverlay) packShopOverlay.addEventListener('click', e => { if (e.target === packShopOverlay) e.stopPropagation(); });
+    byId('modal-input-backdrop')?.addEventListener('pointerdown', e => e.stopPropagation());
+    byId('modal-input-backdrop')?.addEventListener('click', e => e.stopPropagation());
+    byId('pack-confirm-no-button')?.addEventListener('click', () => { if (packPreviewKey) { packPreviewKey = null; closePackShop(); } });
+    const skillName = byId('player-skill-name');
+    if (skillName) {
+        const inspect = () => window.showPlayerSkillDetails?.();
+        skillName.addEventListener('click', inspect);
+        skillName.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspect(); } });
+    }
 
     if (recipesTab) recipesTab.addEventListener('click', () => openInfoOverlay('recipes'));
     if (eventsTab) eventsTab.addEventListener('click', () => openInfoOverlay('events'));
@@ -630,7 +652,7 @@ function bindRenderEventsOnce() {
         });
     }
     if (infoOverlayClose) infoOverlayClose.addEventListener('click', closeInfoOverlay);
-    if (infoOverlay) infoOverlay.addEventListener('click', e => { if (e.target === infoOverlay) closeInfoOverlay(); });
+    if (infoOverlay) infoOverlay.addEventListener('click', e => { if (e.target === infoOverlay) e.stopPropagation(); });
 
     setupHorizontalScrollRows();
 }
@@ -763,14 +785,15 @@ function renderInfoOverlay() {
         const s = byId('mini-rule-simple')?.innerHTML || [
             '・先に10点獲得したら勝利',
         '・イベントカードは1ターンに1回まで使用可能（試合の最初のターンは先攻のみ使用不可）',
-            '・ターン終了時、手札は通常2枚まで。エコバッグ所持時は3枚まで残せます',
+            '・エコバッグ: ターン終了時に残せる手札が3枚になる（残した分、次の補充で引く枚数は減らない）',
             '・セットカードも料理の材料に使えます',
             '・山札がなくなったら捨て札を混ぜて再利用します'
         ].join('<br>');
         const d = byId('mini-rule-detail')?.innerHTML || [
             '・手札は「材料カード」と「イベントカード」を合わせた合計枚数で管理します',
             '・ドローフェイズでは通常、合計5枚になるまで補充します',
-        '・補充は通常5枚、エコバッグで6枚、まな板で6枚、両方所持で7枚までです',
+            '・補充は通常5枚、エコバッグで6枚、まな板で6枚、両方所持で7枚までです',
+            '・まな板: 毎ターン、山札から引く枚数が1枚増える。さらに対戦中1回、負けているときに手札のイベント1枚を捨てて1枚引ける',
             '・材料カードはセットできますが、イベントカードはセットできません',
             '・セット上限は通常2枚、「冷蔵庫」があれば3枚です',
             '・セットした食材は次のターン以降の料理に使えます',
@@ -998,7 +1021,7 @@ function createImageCard(card, cardEl, imagePath, fallbackClassName = '') {
         cardEl.dataset.imageFallbackApplied = '1';
         cardEl.innerHTML = '';
         cardEl.classList.remove('has-image');
-        if (fallbackClassName) cardEl.className = `card ${fallbackClassName}`;
+        if (fallbackClassName) cardEl.className = `card ${fallbackClassName}${cardEl.classList.contains('unowned-pack') ? ' unowned-pack' : ''}`;
         if (card.romanReserved === true) cardEl.classList.add('roman-reserved-card');
         createCardTextBlock(card, cardEl);
     };
@@ -1355,20 +1378,23 @@ function renderOpponentSet() {
 
 function renderPacks(player, container) {
     if (!container) return;
+    const ownPacks = container.id === 'player-packs';
     const sectionKey = `packs:${container.id || 'unknown'}`;
-    const signature = player.packs.map(pack => `${pack.key}:${pack.name}`).join('|');
+    const signature = player.packs.map(pack => `${pack.key}:${pack.name}`).join('|') + (ownPacks ? ':all' : '');
     if (shouldSkipSectionRender(sectionKey, signature)) return;
 
     container.innerHTML = '';
-    if (player.packs.length === 0) { container.textContent = 'なし'; return; }
+    if (!ownPacks && player.packs.length === 0) { container.textContent = 'なし'; return; }
 
-    player.packs.forEach(pack => {
+    (ownPacks ? packDefinitions : player.packs).forEach(def => {
+        const pack = ownPacks ? (player.packs.find(item => item.key === def.key) || def) : def;
+        const owned = !ownPacks || hasPack(player, def.key);
         const card = {
             name: pack.name,
-            description: pack.description || '加工アイテム'
+            description: getPackDefinition(pack.key)?.description || '加工アイテム'
         };
         const el = document.createElement('div');
-        el.className = 'card pack-card';
+        el.className = `card pack-card${owned ? '' : ' unowned-pack'}`;
         const imagePath = getPackImagePath(pack.key);
         if (imagePath) {
             createImageCard(card, el, imagePath, 'pack-card');
@@ -1378,8 +1404,22 @@ function renderPacks(player, container) {
         el.classList.add('inspectable-card');
         el.setAttribute('role', 'button');
         el.setAttribute('tabindex', '0');
-        el.setAttribute('aria-label', `${pack.name}の効果を確認`);
-        const inspect = () => window.showFieldPackDetails?.(pack);
+        el.setAttribute('aria-label', owned ? `${pack.name}の効果を確認` : `${pack.name}を交換する（${def.cost}点）`);
+        const inspect = () => {
+            if (owned) {
+                if (ownPacks && def.key === 'board') window.openBoardCycleDetails?.();
+                else window.showFieldPackDetails?.(pack);
+                return;
+            }
+            if (GameState.selectionMode || packShopOpen) return;
+            openPackShop();
+            if (getBattleViewModel().turn === 'me' && !GameState.gameEnded && canBuyPack(player, def.key)) {
+                window.playerBuyPack?.(def.key);
+            } else {
+                packPreviewKey = def.key;
+                updateUI();
+            }
+        };
         el.addEventListener('click', inspect);
         el.addEventListener('keydown', event => {
             if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -1476,7 +1516,7 @@ function renderDishHistoryPanel() {
     const label = ownerKey === 'player' ? (getBattleViewModel().online ? 'あなた' : 'プレイヤー') : getBattleViewModel().opponentLabel;
 
     panel.classList.remove('hidden');
-    title.textContent = `${label}の料理履歴`;
+    title.textContent = `${label}の料理履歴（全${p.cookedRecipes?.length || 0}枚）`;
     desc.textContent = '新しい料理が上に表示されます。';
     list.innerHTML = '';
 
@@ -1513,8 +1553,8 @@ function renderPileViewPanel() {
     const cards = isDeck ? [...GameState.deck] : [...GameState.discard];
 
     panel.classList.remove('hidden');
-    title.textContent = isDeck ? '山札一覧' : '捨て札一覧';
-    desc.textContent = `${cards.length}枚あります。`;
+    title.textContent = `${isDeck ? '山札一覧' : '捨て札一覧'}（全${cards.length}枚）`;
+    desc.textContent = isDeck ? 'カードの種類ごとの枚数です。' : '捨て札を1枚ずつ表示しています。';
     list.innerHTML = '';
 
     if (cards.length === 0) {
@@ -1522,6 +1562,22 @@ function renderPileViewPanel() {
         empty.className = 'latest-dish-empty';
         empty.textContent = 'カードはありません';
         list.appendChild(empty);
+        return;
+    }
+
+    if (!isDeck) {
+        [...cards].reverse().forEach(card => {
+            const item = document.createElement('div');
+            item.className = `pile-card-item ${card.type === 'event' ? 'event-item' : 'ingredient-item'}`;
+            const name = document.createElement('div');
+            name.className = 'pile-card-name';
+            name.textContent = card.name;
+            const type = document.createElement('div');
+            type.className = 'pile-card-type';
+            type.textContent = card.type === 'event' ? 'イベント' : '材料';
+            item.append(name, type);
+            list.appendChild(item);
+        });
         return;
     }
 
@@ -1570,42 +1626,137 @@ function renderSelectionPanel() {
     const desc = byId('selection-description');
     const options = byId('selection-options');
     const confirmButton = byId('selection-confirm-button');
-    if (!panel || !title || !desc || !options || !confirmButton) return;
+    const cancelButton = byId('selection-cancel-button');
+    if (!panel || !title || !desc || !options || !confirmButton ||
+        (GameState.selectionMode === 'board-cycle-select' && !cancelButton)) {
+        if (GameState.selectionMode === 'board-cycle-select') {
+            panel?.classList.add('hidden');
+            GameState.selectionMode = 'board-details';
+        }
+        return;
+    }
 
     if (GameState.selectionMode === 'knife-select') {
         panel.classList.add('hidden');
+        panel.dataset.selectionKey = '';
         options.innerHTML = '';
         return;
     }
 
+    if (GameState.selectionMode === 'board-cycle-select') {
+        const cards = getBattleViewModel().me.events;
+        const scrollTop = panel.dataset.selectionKey === 'board-cycle-select' ? options.scrollTop : 0;
+        panel.dataset.selectionKey = 'board-cycle-select';
+        panel.classList.remove('hidden');
+        if (cancelButton) cancelButton.classList.remove('hidden');
+        title.textContent = `まな板：捨てるイベントを選択（全${cards.length}枚）`;
+        desc.textContent = 'イベントを1枚捨てて1枚引きます。';
+        options.innerHTML = '';
+        cards.forEach(card => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'selection-choice';
+            item.textContent = card.name;
+            item.classList.toggle('active', GameState.selectedTargetIds[0] === card.id);
+            item.addEventListener('click', () => toggleBoardCycleSelection(card.id));
+            options.appendChild(item);
+        });
+        options.scrollTop = scrollTop;
+        confirmButton.textContent = '確定';
+        confirmButton.disabled = GameState.selectedTargetIds.length !== 1;
+        return;
+    }
+
+    const isDiscardMode = GameState.selectionMode === 'discard';
     const isEventTargetMode = GameState.selectionMode === 'event-target' && !!GameState.pendingEventContext;
     const isSkillTargetMode = GameState.selectionMode === 'skill-target' && !!GameState.pendingSkillContext;
-    if (!isEventTargetMode && !isSkillTargetMode) {
+    if (!isDiscardMode && !isEventTargetMode && !isSkillTargetMode) {
         panel.classList.add('hidden');
+        panel.dataset.selectionKey = '';
         options.innerHTML = '';
         return;
     }
 
     panel.classList.remove('hidden');
+    if (cancelButton) cancelButton.classList.toggle('hidden', isDiscardMode);
+
+    if (isDiscardMode) {
+        const player = getBattleViewModel().me;
+        const cards = [...player.hand, ...player.events];
+        const scrollTop = panel.dataset.selectionKey === 'discard' ? options.scrollTop : 0;
+        panel.dataset.selectionKey = 'discard';
+        title.textContent = `手札調整（全${cards.length}枚）`;
+        desc.textContent = `捨てるカードを${GameState.discardNeedCount}枚選んでください（選択中${GameState.selectedCardIds.length}枚）。`;
+        options.innerHTML = '';
+        cards.forEach(card => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'selection-choice';
+            item.textContent = `${card.name}${card.type === 'event' ? '（イベント）' : ''}`;
+            item.classList.toggle('active', GameState.selectedCardIds.includes(card.id));
+            item.addEventListener('click', () => toggleDiscardSelection(card.id));
+            options.appendChild(item);
+        });
+        options.scrollTop = scrollTop;
+        confirmButton.textContent = '捨てる';
+        confirmButton.disabled = GameState.selectedCardIds.length !== GameState.discardNeedCount;
+        return;
+    }
 
     const ctx = isSkillTargetMode ? GameState.pendingSkillContext : GameState.pendingEventContext;
+    const selectionKey = `${GameState.selectionMode}:${ctx.skillName || ctx.eventName}:${ctx.step || 0}`;
+    const scrollTop = panel.dataset.selectionKey === selectionKey ? options.scrollTop : 0;
+    panel.dataset.selectionKey = selectionKey;
     title.textContent = isSkillTargetMode
-        ? `スキル対象選択: ${ctx.skillName}`
-        : `イベント対象選択: ${ctx.eventName}`;
+        ? `スキル対象選択: ${ctx.skillName}（全${ctx.options.length}枚）`
+        : `イベント対象選択: ${ctx.eventName}（全${ctx.options.length}枚）`;
     desc.textContent = ctx.description || '';
     options.innerHTML = '';
+    confirmButton.textContent = '確定';
 
     ctx.options.forEach(option => {
-        const item = document.createElement('div');
+        const item = document.createElement('button');
+        item.type = 'button';
         item.className = 'selection-choice';
         item.textContent = option.label;
         if (GameState.selectedTargetIds.includes(option.id)) item.classList.add('active');
         item.addEventListener('click', () => toggleEventTargetSelection(option.id));
         options.appendChild(item);
     });
+    options.scrollTop = scrollTop;
 
     const selectedCount = GameState.selectedTargetIds.length;
     confirmButton.disabled = selectedCount < ctx.minSelect || selectedCount > ctx.maxSelect;
+}
+
+function renderBoardCycleDetailsPanel() {
+    const overlay = byId('board-cycle-overlay');
+    const panel = byId('board-cycle-panel');
+    const closeButton = byId('board-cycle-close-button');
+    const button = byId('board-cycle-start-button');
+    const description = byId('board-cycle-description');
+    const reasonText = byId('board-cycle-reason');
+    if (!overlay || !panel || !closeButton || !button || !description || !reasonText) {
+        overlay?.classList.add('hidden');
+        panel?.classList.add('hidden');
+        if (GameState.selectionMode === 'board-details') GameState.selectionMode = null;
+        return;
+    }
+    const open = GameState.selectionMode === 'board-details';
+    overlay.classList.toggle('hidden', !open);
+    panel.classList.toggle('hidden', !open);
+    if (!open) return;
+    const player = getBattleViewModel().me;
+    const firstEvent = player.events[0];
+    const error = getBoardCycleError('player', firstEvent?.id);
+    const reason = !error ? '' : error === 'まな板の使用回数が残っていません。' ? '使用済み' :
+        error === '相手より点数が低いときだけ使用できます。' ? '負けているときに使えます' :
+        error === '手札のイベントを選んでください。' ? '手札にイベントが必要です' :
+        error === '今は使用できません。' ? '自分のメインフェイズに使えます' : error;
+    description.textContent = getDetailedPackEffectText('board');
+    reasonText.textContent = reason;
+    button.textContent = `イベントを1枚捨てて1枚引く（残り${Math.max(0, 1 - Number(player.boardCycleUsed || 0))}回）`;
+    button.disabled = !!error;
 }
 
 function renderSetConfirmPanel() {
@@ -1627,14 +1778,16 @@ function renderPackConfirmPanel() {
     const desc = byId('pack-confirm-description');
     if (!panel || !desc) return;
 
-    if (GameState.selectionMode !== 'pack-confirm' || !GameState.pendingPackKey) {
+    const preview = !!packPreviewKey && GameState.selectionMode !== 'pack-confirm';
+    const packKey = preview ? packPreviewKey : GameState.pendingPackKey;
+    if ((GameState.selectionMode !== 'pack-confirm' && !preview) || !packKey) {
         panel.classList.add('hidden');
         desc.innerHTML = '';
         return;
     }
 
     const player = getBattleViewModel().me;
-    const def = getPackDefinition(GameState.pendingPackKey);
+    const def = getPackDefinition(packKey);
     if (!def) {
         panel.classList.add('hidden');
         desc.innerHTML = '';
@@ -1643,12 +1796,17 @@ function renderPackConfirmPanel() {
 
     const effectText = getDetailedPackEffectText(def.key);
     const conditionWarning = getPackConditionWarning(player, def.key);
-    const warningHtml = conditionWarning
-        ? `<br><span class="condition-warning">交換条件が満たせません（${escapeHtml(conditionWarning)}）</span>`
+    const unavailableReason = preview ? (GameState.gameEnded ? '対戦終了後は交換できません' :
+        getBattleViewModel().turn !== 'me' ? '自分のターン中のみ交換できます' :
+        player.score < def.cost ? `あと${def.cost - player.score}点必要です` :
+        conditionWarning || '現在は交換できません') : conditionWarning;
+    const warningHtml = unavailableReason
+        ? `<br><span class="condition-warning">交換条件が満たせません（${escapeHtml(unavailableReason)}）</span>`
         : '';
 
     panel.classList.remove('hidden');
     desc.innerHTML = `<strong>加工アイテム「${escapeHtml(def.name)}」を交換しますか？</strong><br>効果: ${escapeHtml(effectText)}<br>コスト: ${def.cost}点${warningHtml}`;
+    byId('pack-confirm-yes-button').disabled = preview;
 }
 
 function getPlayerEventConditionWarning(eventCard) {
@@ -2106,7 +2264,7 @@ function renderShopButtons() {
 }
 
 function openPackShop() {
-    if (GameState.selectionMode || GameState.gameEnded) return;
+    if (GameState.selectionMode) return;
     packShopOpen = true;
     updateUI();
 }
@@ -2117,6 +2275,7 @@ function closePackShop() {
         window.cancelPackPurchase();
     }
     packShopOpen = false;
+    packPreviewKey = null;
     updateUI();
 }
 
@@ -2126,8 +2285,9 @@ function renderPackShopModal() {
     const list = byId('pack-shop-list');
     const closeButton = byId('pack-shop-close-button');
     if (!overlay || !score || !list) return;
-    overlay.classList.toggle('hidden', !packShopOpen);
-    if (!packShopOpen) return;
+    const showShop = packShopOpen && GameState.selectionMode !== 'board-cycle-select';
+    overlay.classList.toggle('hidden', !showShop);
+    if (!showShop) return;
 
     const player = getBattleViewModel().me;
     const canOperate = getBattleViewModel().turn === 'me' && !GameState.gameEnded &&
@@ -2178,7 +2338,9 @@ function renderPackShopModal() {
 function renderDiscardButton() {
     const button = byId('confirm-discard-button');
     if (!button) return;
-    button.disabled = GameState.selectionMode !== 'discard';
+    const discarding = GameState.selectionMode === 'discard';
+    button.disabled = !discarding || GameState.selectedCardIds.length !== GameState.discardNeedCount;
+    button.textContent = `捨てる（${GameState.discardNeedCount || 0}枚）`;
 }
 
 function renderRealtimeLog() {
@@ -2320,6 +2482,7 @@ function performUIRender() {
         renderDishHistoryPanel();
         renderRealtimeLog();
         renderSelectionPanel();
+        renderBoardCycleDetailsPanel();
         renderSetConfirmPanel();
         renderPackConfirmPanel();
         renderEventConfirmPanel();

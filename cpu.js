@@ -71,6 +71,32 @@ function cpuPreferredSkillCost(cpu) {
     })[0] || null;
 }
 
+function cpuTryBoardCycle(cpu, player) {
+    if (!cpu.lockedCookingThisTurn && findPossibleRecipesForPlayer(cpu).length > 0) return false;
+    const order = getCpuEventPriorityNames();
+    const protectedEvents = new Set(['緊急料理', '創作料理', '爆買い']);
+    const eventUnusable = card => {
+        if (!canUseEventThisTurn(cpu)) return true;
+        if (card.name === 'ゴミ収集車') return !GameState.discard.some(item => item.type === 'ingredient');
+        if (card.name === '物々交換') return cpu.hand.length === 0 || player.hand.length === 0;
+        if (card.name === 'やっぱやめた') return cpu.set.length === 0;
+        if (card.name === 'やり直し') return getCurrentTotalHandCount(cpu) <= 1;
+        return false;
+    };
+    const candidates = cpu.events.filter(card => !protectedEvents.has(card.name) &&
+        getBoardCycleError('cpu', card.id) === null)
+        .map(card => ({ card, priority: order.length - order.indexOf(card.name),
+            unusable: eventUnusable(card) }))
+        .sort((a, b) => Number(b.unusable) - Number(a.unusable) || a.priority - b.priority);
+    const candidate = candidates[0];
+    if (!candidate || (!candidate.unusable && candidate.priority > 2)) return false;
+    moveCardToDiscard(cpu.events.splice(cpu.events.indexOf(candidate.card), 1)[0]);
+    cpu.boardCycleUsed = Number(cpu.boardCycleUsed || 0) + 1;
+    drawOneResolved(cpu);
+    addLog('まな板：イベントを1枚捨てて1枚引いた');
+    return true;
+}
+
 function cpuRomanMissing(cpu, recipe) {
     const pool = getUsableIngredientCards(cpu, recipe).map(card => card.name);
     let missing = 0;
@@ -160,6 +186,13 @@ async function cpuTurn() {
             await cpuPause(CPU_BIG_ACTION_DELAY);
             if (GameState.gameEnded) return;
         }
+    }
+
+    if (cpuTryBoardCycle(cpu, player)) {
+        setCPUStatus('CPUまな板使用中...');
+        updateUI();
+        await cpuPause(CPU_ACTION_DELAY);
+        if (GameState.gameEnded) return;
     }
 
     for (let i = 0; i < 2; i++) {

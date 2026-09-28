@@ -10,8 +10,8 @@ test('PC and mobile declare their fixed logical stages', () => {
     const mobile = fs.readFileSync(path.join(root, 'mobile/mobile.html'), 'utf8');
     assert.match(pc, /id="app-stage" data-stage-width="1440" data-stage-height="810"/);
     assert.match(mobile, /id="app-stage" data-stage-width="432" data-stage-height="768"/);
-    assert.match(pc, /<\/div>\s*<script src="stage-layout\.js\?v=20260928-stage1"/);
-    assert.match(mobile, /<\/div>\s*<script src="\.\.\/stage-layout\.js\?v=20260928-stage1"/);
+    assert.match(pc, /<\/div>\s*<script src="stage-layout\.js\?v=20260929-ui1"/);
+    assert.match(mobile, /<\/div>\s*<script src="\.\.\/stage-layout\.js\?v=20260929-ui1"/);
 });
 
 test('uniform scale fits both dimensions and can grow', () => {

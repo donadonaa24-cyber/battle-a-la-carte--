@@ -222,3 +222,39 @@ button, input, select, textarea, dialog { font-family: 'Noto Sans JP', sans-seri
     #online-bar button { padding: 5px 7px; }
     #online-status { font-size: 11px; }
 }
+
+/* Keep the redesigned mobile field in online matches and reserve the connection bar. */
+.online-session .mobile-field-ui .duel-field { display: flex; flex-direction: column; justify-content: space-between; gap: 4px; padding: 52px 8px 80px; }
+.online-session .mobile-field-ui .field-side { display: flex; flex-direction: column; flex: 0 0 auto; gap: 4px; }
+.online-session .mobile-field-ui .cpu-top-row { height: 64px; }
+.online-session .mobile-field-ui .realtime-log-panel { height: 64px; overflow: visible; }
+.online-session .mobile-field-ui .cpu-hand-zone { height: 56px; }
+.online-session .mobile-field-ui .cpu-middle-row { height: 66px; }
+.online-session .mobile-field-ui .player-middle-row { height: 82px; }
+.online-session .mobile-field-ui .player-hand-zone { height: 92px; }
+.online-session .mobile-field-ui .player-bottom-row { height: 164px; display: flex; gap: 6px; align-items: stretch; }
+.online-session .mobile-field-ui .card-row,
+.online-session .mobile-field-ui .pack-row { flex: 0 0 auto; }
+.online-session .mobile-field-ui .cpu-hand-zone .card-row { height: 34px; }
+.online-session .mobile-field-ui .cpu-hand-zone .card-row .card { height: 34px; min-height: 34px; max-height: 34px; }
+.online-session .mobile-field-ui .cpu-middle-row .card-row,
+.online-session .mobile-field-ui .cpu-middle-row .pack-row { height: 44px; }
+.online-session .mobile-field-ui .player-middle-row .card-row,
+.online-session .mobile-field-ui .player-middle-row .pack-row { height: 60px; }
+.online-session .mobile-field-ui .player-hand-row { height: 70px; }
+.online-session .mobile-field-ui .player-hand-row .card { width: 54px; min-width: 54px; height: 70px; max-height: 70px; aspect-ratio: auto; }
+.online-session .mobile-field-ui .player-middle-row .card-row .card { width: 43px; min-width: 43px; height: 60px; max-height: 60px; aspect-ratio: auto; }
+.online-session .mobile-field-ui .player-middle-row .pack-row .pack-card { width: 43px; min-width: 43px; height: 60px; max-height: 60px; aspect-ratio: auto; }
+.online-session .mobile-field-ui .center-field { flex: 0 0 86px; min-height: 86px; grid-template-columns: minmax(0,1fr) 62px 62px minmax(0,1fr); grid-template-rows: 86px; gap: 6px; }
+.online-session .mobile-field-ui .center-field:has(.candidate-recipes-panel.expanded) { z-index: 30; }
+.online-session .mobile-field-ui .cpu-dish-mini { grid-column: 1; grid-row: 1; }
+.online-session .mobile-field-ui .player-dish-mini { grid-column: 4; grid-row: 1; }
+.online-session .mobile-field-ui .center-field > .dish-mini-panel { height: 86px; min-height: 86px; }
+.online-session .mobile-field-ui .center-field .latest-dish-slot,
+.online-session .mobile-field-ui .center-field .dish-card { height: 64px; min-height: 64px; flex: 0 0 auto; }
+.online-session .mobile-field-ui .deck-discard-cluster { grid-column: 2 / 4; grid-row: 1; align-self: center; justify-self: center; gap: 6px; }
+.online-session .mobile-field-ui .deck-discard-cluster .pile { width: 62px; height: 82px; max-height: 82px; aspect-ratio: auto; }
+.online-session .mobile-field-ui .field-center-actions { position: static; display: flex; flex-direction: column; width: 190px; flex: 0 0 190px; min-height: 164px; gap: 4px; }
+.online-session .mobile-field-ui .field-center-actions .main-action { min-height: 52px; flex: 1 1 52px; padding: 6px 4px; font-size: 15px; }
+.online-session .mobile-field-ui .player-main-hud { width: 212px; max-width: 212px; align-self: flex-end; }
+.online-session .final-field-actions { bottom: 82px; }

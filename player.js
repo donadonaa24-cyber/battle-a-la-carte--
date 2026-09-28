@@ -1034,6 +1034,77 @@ function confirmKnifeSelection() {
     addLog('エコバッグは常時効果です。選択操作は不要です。');
 }
 
+function getBoardCycleError(side, eventId) {
+    const player = GameState.players[side];
+    const opponent = GameState.players[side === 'player' ? 'cpu' : 'player'];
+    if (!player || !hasPack(player, 'board')) return 'まな板を持っていません。';
+    if (Number(player.boardCycleUsed || 0) >= 1) return 'まな板の使用回数が残っていません。';
+    if (GameState.gameEnded || GameState.currentTurn !== side || GameState.currentPhase !== 'メインフェイズ') return '今は使用できません。';
+    if (!player.events.some(card => card.id === eventId && card.type === 'event')) return '手札のイベントを選んでください。';
+    if (player.score >= opponent.score) return '相手より点数が低いときだけ使用できます。';
+    return null;
+}
+
+function playerUseBoardCycle(eventId) {
+    const error = getBoardCycleError('player', eventId);
+    if (error) { addLog(error); return false; }
+    const player = GameState.players.player;
+    const index = player.events.findIndex(card => card.id === eventId);
+    moveCardToDiscard(player.events.splice(index, 1)[0]);
+    player.boardCycleUsed = Number(player.boardCycleUsed || 0) + 1;
+    drawOneResolved(player);
+    addLog('まな板：イベントを1枚捨てて1枚引いた');
+    updateUI();
+    return true;
+}
+
+function openBoardCycleDetails() {
+    if (GameState.selectionMode) return;
+    GameState.selectionMode = 'board-details';
+    updateUI();
+}
+
+function closeBoardCycleDetails() {
+    if (GameState.selectionMode !== 'board-details') return;
+    GameState.selectionMode = null;
+    updateUI();
+}
+
+function beginBoardCycleSelection() {
+    if (GameState.selectionMode !== 'board-details') return;
+    const firstEvent = GameState.players.player.events[0];
+    const error = getBoardCycleError('player', firstEvent?.id);
+    if (error) { addLog(error); updateUI(); return; }
+    GameState.selectionMode = 'board-cycle-select';
+    GameState.selectedTargetIds = [];
+    updateUI();
+}
+
+function toggleBoardCycleSelection(eventId) {
+    if (GameState.selectionMode !== 'board-cycle-select') return;
+    if (!GameState.players.player.events.some(card => card.id === eventId)) return;
+    GameState.selectedTargetIds = GameState.selectedTargetIds[0] === eventId ? [] : [eventId];
+    updateUI();
+}
+
+function confirmBoardCycleSelection() {
+    if (GameState.selectionMode !== 'board-cycle-select') return;
+    const eventId = GameState.selectedTargetIds[0];
+    const error = getBoardCycleError('player', eventId);
+    if (error) { addLog(error); updateUI(); return; }
+    GameState.selectionMode = null;
+    GameState.selectedTargetIds = [];
+    window.playerUseBoardCycle(eventId);
+    updateUI();
+}
+
+function cancelBoardCycleSelection() {
+    if (GameState.selectionMode !== 'board-cycle-select') return;
+    GameState.selectionMode = 'board-details';
+    GameState.selectedTargetIds = [];
+    updateUI();
+}
+
 function playerUseEvent(eventId) {
     if (GameState.gameEnded) return;
     if (GameState.currentTurn !== 'player') return;
@@ -1396,12 +1467,6 @@ function cancelEventSelection() {
         GameState.selectedTargetIds = [];
         addLog('加工アイテム選択をキャンセルしました。');
         updateUI();
-        return;
-    }
-
-    if (!canUseEventThisTurn(selfPlayer) ||
-        (isSpecialCookingEvent(context.eventName) && !canActivateSpecialCookingEvent(selfPlayer, context.eventName).ok)) {
-        addLog(GameState.turnNumber === 1 ? '最初のターンはイベントを使用できません。' : 'イベントの使用条件を満たしていません。');
         return;
     }
 
@@ -1938,6 +2003,14 @@ window.playerShowRecipeCandidates = playerShowRecipeCandidates;
 window.playerCancelRecipeCandidates = playerCancelRecipeCandidates;
 window.playerCookSelectedRecipe = playerCookSelectedRecipe;
 window.playerUseEvent = playerUseEvent;
+window.playerUseBoardCycle = playerUseBoardCycle;
+window.getBoardCycleError = getBoardCycleError;
+window.openBoardCycleDetails = openBoardCycleDetails;
+window.closeBoardCycleDetails = closeBoardCycleDetails;
+window.beginBoardCycleSelection = beginBoardCycleSelection;
+window.toggleBoardCycleSelection = toggleBoardCycleSelection;
+window.confirmBoardCycleSelection = confirmBoardCycleSelection;
+window.cancelBoardCycleSelection = cancelBoardCycleSelection;
 window.playerUseSkill = playerUseSkill;
 window.confirmSkillActivation = confirmSkillActivation;
 window.cancelSkillActivation = cancelSkillActivation;

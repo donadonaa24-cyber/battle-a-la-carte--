@@ -197,6 +197,117 @@ function fixture(c, state, ingredients = ['ごはん','のり'], event) {
     s.selectionMode=null; s.candidateRecipes=[]; s.gameEnded=false; s.winner=null;
     return s;
 }
+test('board cycle validates Unity conditions and consumes one event for one draw once', async () => {
+    const c = runtime();
+    const base = (await initial(c)).snapshot;
+    assert.ok(c.BattleProtocol.actions.includes('playerUseBoardCycle'));
+    let s = fixture(c, base, ['魚', '牛肉'], 'やり直し');
+    const event = s.players.player.events[0];
+    const before = clone(s);
+    let r = await action(c, s, 'playerUseBoardCycle', [event.id]);
+    assert.equal(r.views.host.logs[0], 'まな板を持っていません。');
+    assert.deepEqual(clone(r.snapshot.players.player.events), before.players.player.events);
+    s.players.player.packs.push({key: 'board', name: 'まな板'});
+    r = await action(c, s, 'playerUseBoardCycle', [event.id]);
+    assert.equal(r.views.host.logs[0], '相手より点数が低いときだけ使用できます。');
+    assert.equal(r.snapshot.players.player.boardCycleUsed, 0);
+    s.players.cpu.score = 3;
+    r = await action(c, s, 'playerUseBoardCycle', [s.players.player.hand[0].id]);
+    assert.equal(r.views.host.logs[0], '手札のイベントを選んでください。');
+    assert.equal(r.snapshot.players.player.boardCycleUsed, 0);
+    s.currentPhase = 'エンドフェイズ';
+    r = await action(c, s, 'playerUseBoardCycle', [event.id]);
+    assert.equal(r.views.host.logs[0], '今は使用できません。');
+    s.currentPhase = 'メインフェイズ';
+    delete s.players.player.boardCycleUsed; // older save
+    event.romanReserved = true; event.trapLocked = true; event.blockedByTrap = true; event.trapOwner = 'cpu';
+    const handCount = s.players.player.hand.length + s.players.player.events.length;
+    r = await action(c, s, 'playerUseBoardCycle', [event.id]);
+    assert.equal(r.views.host.logs[0], 'まな板：イベントを1枚捨てて1枚引いた');
+    assert.equal(r.snapshot.players.player.boardCycleUsed, 1);
+    assert.equal(r.snapshot.players.player.hand.length + r.snapshot.players.player.events.length, handCount);
+    assert.equal(r.snapshot.discard.at(-1).id, event.id);
+    for (const flag of ['romanReserved', 'trapLocked', 'blockedByTrap', 'trapOwner'])
+        assert.equal(r.snapshot.discard.at(-1)[flag], undefined);
+    assert.equal(r.snapshot.players.player.usedEventThisTurn, false);
+    assert.equal(total(r.snapshot), 54);
+    const again = await action(c, r.snapshot, 'playerUseBoardCycle', [r.snapshot.players.player.events[0]?.id || event.id]);
+    assert.equal(again.views.host.logs[0], 'まな板の使用回数が残っていません。');
+    assert.equal(again.snapshot.players.player.boardCycleUsed, 1);
+});
+
+test('guest board cycle executes on host worker and projects counter to both sides', async () => {
+    const c = runtime();
+    const s = fixture(c, (await initial(c)).snapshot, ['魚', '牛肉']);
+    const event = s.deck.splice(s.deck.findIndex(card => card.name === 'やり直し'), 1)[0];
+    s.players.cpu.events = [event];
+    s.players.cpu.packs.push({key: 'board', name: 'まな板'});
+    s.players.player.score = 3;
+    s.currentTurn = 'cpu';
+    const r = await action(c, s, 'playerUseBoardCycle', [event.id], 'guest');
+    assert.equal(r.snapshot.players.cpu.boardCycleUsed, 1);
+    assert.equal(r.snapshot.players.cpu.events.some(card => card.id === event.id), false);
+    assert.equal(r.views.guest.state.players.player.boardCycleUsed, 1);
+    assert.equal(r.views.host.state.players.cpu.boardCycleUsed, 1);
+    assert.equal(r.views.host.state.players.cpu.events.length, 0);
+    assert.ok(r.views.host.state.players.cpu.hand.every(card => !card.name && !card.type));
+    assert.equal(total(r.snapshot), 54);
+    const legacy = clone(s);
+    delete legacy.players.player.boardCycleUsed;
+    delete legacy.players.cpu.boardCycleUsed;
+    const legacyViews = await c.execute({kind: 'project', snapshot: legacy});
+    assert.equal(legacyViews.guest.state.players.player.boardCycleUsed, 0);
+    assert.equal(legacyViews.host.state.players.cpu.boardCycleUsed, 0);
+});
+
+test('CPU board cycle saves emergency cooking when another event qualifies', async () => {
+    const c = runtime();
+    c.importScripts('cpu.js');
+    const s = fixture(c, (await initial(c)).snapshot, ['魚', '牛肉']);
+    const deck = s.deck;
+    const take = name => deck.splice(deck.findIndex(card => card.name === name), 1)[0];
+    const emergency = take('緊急料理');
+    const low = take('やり直し');
+    s.players.cpu.events = [emergency, low];
+    s.players.cpu.packs.push({key: 'board', name: 'まな板'});
+    s.players.player.score = 3;
+    s.currentTurn = 'cpu';
+    c.loadSnapshot(s);
+    assert.equal(c.cpuTryBoardCycle(c.GameState.players.cpu, c.GameState.players.player), true);
+    assert.equal(c.GameState.players.cpu.boardCycleUsed, 1);
+    assert.ok(c.GameState.players.cpu.events.some(card => card.id === emergency.id));
+    assert.equal(c.GameState.discard.at(-1).id, low.id);
+    const protectedOnly = clone(s);
+    protectedOnly.players.cpu.events = [emergency];
+    protectedOnly.deck.push(low);
+    c.loadSnapshot(protectedOnly);
+    assert.equal(c.cpuTryBoardCycle(c.GameState.players.cpu, c.GameState.players.player), false);
+});
+
+test('board cycle draw reshuffles the discard when the deck is empty', async () => {
+    const c = runtime();
+    const s = fixture(c, (await initial(c)).snapshot, ['魚', '牛肉'], 'やり直し');
+    s.players.player.packs.push({key: 'board', name: 'まな板'});
+    s.players.cpu.score = 3;
+    s.discard = s.deck.splice(0);
+    const eventId = s.players.player.events[0].id;
+    const r = await action(c, s, 'playerUseBoardCycle', [eventId]);
+    assert.equal(r.snapshot.players.player.boardCycleUsed, 1);
+    assert.equal(r.snapshot.players.player.hand.length + r.snapshot.players.player.events.length, 3);
+    assert.equal(r.snapshot.deck.length, s.discard.length);
+    assert.equal(total(r.snapshot), 54);
+});
+
+test('older PC and mobile autosaves normalize a missing board counter to zero', () => {
+    for (const file of ['main.js', 'mobile/main-sp.js']) {
+        const source = fs.readFileSync(path.join(root, file), 'utf8');
+        const fn = source.slice(source.indexOf('function normalizeSavedPlayerState('), source.indexOf('function applySavedMatchSnapshot('));
+        const c = vm.createContext({cloneForAutosave: clone});
+        vm.runInContext(fn, c);
+        assert.equal(c.normalizeSavedPlayerState({score: 2}, {boardCycleUsed: 1}).boardCycleUsed, 0);
+        assert.equal(c.normalizeSavedPlayerState({boardCycleUsed: 1}, {}).boardCycleUsed, 1);
+    }
+});
 test('Web/mobile core rules are identical and CPU mode is still available', () => {
     for (const name of ['cards','state','rules','player','cpu']) {
         assert.equal(fs.readFileSync(path.join(root,`${name}.js`),'utf8'),fs.readFileSync(path.join(root,`mobile/${name}-sp.js`),'utf8'));

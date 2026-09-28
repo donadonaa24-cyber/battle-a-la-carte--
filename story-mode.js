@@ -2,6 +2,7 @@
     'use strict';
 
     const STORY_PROGRESS_KEY = 'battleAlaCarteStoryProgressV1';
+    let storyResultTimer = null;
 
     const SPEAKERS = {
         mai: { name: '舞依', cls: 'char-mai' },
@@ -310,6 +311,8 @@
     }
 
     function openSelection(message) {
+        if (storyResultTimer) { clearTimeout(storyResultTimer); storyResultTimer = null; }
+        window.__storyResultPending = false;
         const overlay = byId('start-overlay');
         if (overlay) overlay.classList.remove('hidden');
         showStartStage('start-story-stage');
@@ -874,11 +877,14 @@
         const episodeId = S.episodeId;
         S.battleActive = false;
         S.pendingWinner = winner;
+        window.__storyResultPending = true;
         setStoryActiveEpisodeContext(null);
         setHudVisible(false);
 
-        setTimeout(() => {
-            if (window.GameState?.surrenderedBy) window.hideResultOverlay?.();
+        storyResultTimer = setTimeout(() => {
+            storyResultTimer = null;
+            window.__storyResultPending = false;
+            window.hideResultOverlay?.();
             const overlay = byId('start-overlay');
             if (overlay) overlay.classList.remove('hidden');
             showStartStage('start-story-stage');

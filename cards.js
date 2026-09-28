@@ -29,9 +29,9 @@ const eventDefinitions = [
 ];
 
 const packDefinitions = [
-    { key: 'ecoBag', name: 'エコバッグ', cost: 2, imageFile: 'eco-bag-boy.png', description: 'エンドフェイズの手札上限が2枚から3枚になり、補充枚数も1枚増える' },
+    { key: 'ecoBag', name: 'エコバッグ', cost: 2, imageFile: 'eco-bag-boy.png', description: 'ターン終了時に残せる手札が3枚になる（残した分、次の補充で引く枚数は減らない）' },
     { key: 'freezer', name: '冷蔵庫', cost: 2, imageFile: 'fridge-girl.png', description: 'セット上限が3枚になる' },
-    { key: 'board', name: 'まな板', cost: 3, imageFile: 'board-girl.png', description: 'ドロー時に手札6枚まで補充' }
+    { key: 'board', name: 'まな板', cost: 3, imageFile: 'board-girl.png', description: '毎ターン、山札から引く枚数が1枚増える。さらに対戦中1回、負けているときに手札のイベント1枚を捨てて1枚引ける' }
 ];
 
 function buildDeck() {

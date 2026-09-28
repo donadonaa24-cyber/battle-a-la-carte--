@@ -1,3 +1,8 @@
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
 html, body {
     margin: 0;
     width: 100%;
@@ -8,6 +13,8 @@ html, body {
     color: #fff;
     touch-action: manipulation;
 }
+
+button { line-height: 1.35; }
 
 .hidden {
     display: none !important;
@@ -121,7 +128,7 @@ html, body {
 #cpu-status {
     font-size: 11px;
     font-weight: bold;
-    line-height: 1.2;
+    line-height: 1.35;
 }
 
 #cpu-status {
@@ -432,6 +439,7 @@ html, body {
 }
 
 .zone-label {
+    line-height: 1.35;
     font-size: 9px;
     font-weight: 900;
     color: #9fd5ff;
@@ -455,7 +463,7 @@ html, body {
     flex: 1;
     min-width: 0;
     max-width: 45cqw;
-    padding: 5px 6px;
+    padding: 4px 6px;
     border-radius: 12px;
     border: 1px solid rgba(133, 196, 255, 0.3);
     background: rgba(4, 10, 30, 0.72);
@@ -470,23 +478,26 @@ html, body {
 }
 
 .realtime-log-title {
-    font-size: 9px;
+    font-size: 11px;
+    line-height: 1.3;
     font-weight: 900;
     color: #9fd5ff;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
 }
 
 .realtime-log-list {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    max-height: 64px;
+    max-height: 33px;
     overflow: hidden;
 }
 
 .realtime-log-entry {
-    font-size: 9px;
-    line-height: 1.2;
+    flex: 0 0 auto;
+    min-height: 1.4em;
+    font-size: 11px;
+    line-height: 1.4;
     color: #dff2ff;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -562,11 +573,13 @@ html, body {
     font-size: 10px;
     font-weight: 900;
     margin-bottom: 4px;
+    line-height: 1.35;
 }
 
 .pile-count {
     font-size: 18px;
     font-weight: 900;
+    line-height: 1.3;
 }
 
 .field-center-actions {
@@ -829,13 +842,13 @@ html, body {
 .card-title {
     font-size: 9px;
     font-weight: 900;
-    line-height: 1.15;
+    line-height: 1.3;
     margin-bottom: 2px;
 }
 
 .card-desc {
     font-size: 8px;
-    line-height: 1.15;
+    line-height: 1.35;
     color: #5f5447;
 }
 
@@ -874,7 +887,7 @@ html, body {
     color: #412000;
     font-size: 8px;
     font-weight: 900;
-    line-height: 1.1;
+    line-height: 1.3;
     box-shadow: 0 1px 4px rgba(0,0,0,0.16);
 }
 
@@ -1380,6 +1393,7 @@ html, body {
     gap: 6px;
     max-height: 260px;
     overflow-y: auto;
+    line-height: 1.4;
     margin-bottom: 8px;
 }
 
@@ -1531,7 +1545,7 @@ html, body {
 .dish-title {
     font-size: 10px;
     font-weight: 900;
-    line-height: 1.2;
+    line-height: 1.3;
 }
 
 .dish-title.text-only {
@@ -1960,6 +1974,7 @@ html, body {
     padding: 7px 10px;
     font-size: 11px;
     font-weight: 900;
+    line-height: 1.35;
 }
 
 .start-setup-step {
@@ -2970,7 +2985,8 @@ html, body {
     background: linear-gradient(180deg, #48bf8e, #22785a) !important;
 }
 
-.pack-shop-overlay {
+.pack-shop-overlay,
+.board-cycle-overlay {
     position: fixed;
     inset: 0;
     z-index: 55;
@@ -2982,6 +2998,8 @@ html, body {
     background: rgba(1, 7, 24, 0.82);
     backdrop-filter: blur(4px);
 }
+
+.board-cycle-overlay { z-index: 56; }
 
 .pack-shop-modal {
     position: relative;
@@ -3001,6 +3019,10 @@ html, body {
     top: 50%;
     z-index: 4;
     width: min(88%, 420px);
+    max-height: calc(88cqh - 24px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    line-height: 1.4;
     transform: translate(-50%, -50%);
     padding: 12px;
     border: 2px solid #ffc95d;
@@ -3048,7 +3070,7 @@ html, body {
 .pack-shop-art { width: 50px; height: 68px; border-radius: 7px; background: #16376e center / cover no-repeat; box-shadow: 0 3px 9px #0008; }
 .pack-shop-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .pack-shop-body strong { font-size: 13px; color: #fff1a8; }
-.pack-shop-body span { font-size: 9px; line-height: 1.2; }
+.pack-shop-body span { font-size: 9px; line-height: 1.35; }
 .pack-shop-cost { font-weight: 900; color: #ffca66; }
 .pack-shop-status { width: fit-content; padding: 2px 6px; border-radius: 999px; font-weight: 900; }
 .pack-shop-status.is-owned { background: #d1f4e4; color: #126245; }
@@ -3068,7 +3090,7 @@ html, body {
 .battle-menu { position: relative; flex-shrink: 0; }
 #battle-menu-panel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 100; padding: 10px; min-width: 110px; border-radius: 12px; background: #152139; border: 1px solid #91b9dd; box-shadow: 0 6px 20px #0008; }
 #battle-menu-button:disabled { opacity: .45; cursor: default; }
-#surrender-dialog { box-sizing: border-box; max-width: min(420px, 92cqw); padding: 22px; border: 1px solid #91b9dd; border-radius: 14px; background: #152139; color: #fff; }
+#surrender-dialog { box-sizing: border-box; max-width: min(420px, 92cqw); max-height: 88cqh; overflow-y: auto; padding: 22px; border: 1px solid #91b9dd; border-radius: 14px; background: #152139; color: #fff; line-height: 1.4; }
 #surrender-dialog::backdrop { background: #0009; }
 .surrender-actions { display: flex; justify-content: flex-end; gap: 12px; }
 
@@ -3088,7 +3110,7 @@ html, body {
 
 #turn-indicator, #phase-indicator, #cpu-status {
     font-size: 9px;
-    line-height: 1.2;
+    line-height: 1.35;
     white-space: nowrap;
 }
 
@@ -3110,9 +3132,8 @@ html, body {
 .cpu-hud { width: 205px; max-width: none; flex: 0 0 205px; box-sizing: border-box; }
 .cpu-hud .character-icon { width: 44px; height: 44px; }
 .cpu-hud .hud-info { gap: 1px; }
-.cpu-hud .hud-info > div { font-size: 9px; line-height: 1.1; }
-.realtime-log-panel { max-width: none; min-width: 0; box-sizing: border-box; }
-.realtime-log-list { max-height: 40px; }
+.cpu-hud .hud-info > div { font-size: 9px; line-height: 1.3; }
+.realtime-log-panel { max-width: none; min-width: 0; height: 65px; box-sizing: border-box; overflow: hidden; }
 
 .cpu-hand-zone { height: 66px; min-height: 0; }
 .enemy-hand-row { min-height: 40px; height: 40px; justify-content: flex-start; }
@@ -3168,10 +3189,81 @@ html, body {
     position: fixed;
     left: 8px;
     right: 8px;
-    top: 235px;
+    top: 80px;
+    bottom: 80px;
     z-index: 30;
-    max-height: 290px;
+    display: flex;
+    flex-direction: column;
+    max-height: none;
+    padding: 10px;
+    box-sizing: border-box;
+    border-radius: 16px;
+    background: rgba(5, 17, 44, 0.98);
     box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.42);
+}
+.candidate-recipes-panel.expanded > .zone-label {
+    flex: 0 0 auto;
+    font-size: 16px;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+.candidate-recipes-panel.expanded .candidate-recipes-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding-right: 4px;
+}
+.candidate-recipes-panel.expanded .recipe-option {
+    flex: 0 0 156px;
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) 68px;
+    gap: 8px;
+    min-height: 156px;
+    box-sizing: border-box;
+    padding: 8px;
+}
+.candidate-recipes-panel.expanded .recipe-option-art {
+    width: 90px;
+    height: 132px;
+    border-radius: 8px;
+    background-color: #20365c;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+.candidate-recipes-panel.expanded .recipe-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+.candidate-recipes-panel.expanded .recipe-option-name { font-size: 17px; line-height: 1.3; }
+.candidate-recipes-panel.expanded .recipe-option-points { font-size: 15px; font-weight: 900; color: #ffdb8d; }
+.candidate-recipes-panel.expanded .recipe-option-required { color: #e8f5ff; }
+.candidate-recipes-panel.expanded .recipe-option button {
+    min-width: 68px;
+    min-height: 52px;
+    padding: 6px;
+    font-size: 15px;
+    cursor: pointer;
+}
+.candidate-recipes-panel.expanded .recipe-cancel-row {
+    position: static;
+    flex: 0 0 auto;
+    margin-top: 8px;
+    padding: 0;
+    background: none;
+}
+.candidate-recipes-panel.expanded .recipe-cancel-button {
+    width: 100%;
+    min-height: 48px;
+    font-size: 14px;
 }
 
 .center-dish-panels {
@@ -3193,8 +3285,120 @@ html, body {
 .player-main-hud { width: 242px; max-width: none; box-sizing: border-box; padding: 4px; }
 .player-main-hud .character-icon { width: 49px; height: 49px; }
 .player-main-hud .hud-info { gap: 1px; }
-.player-main-hud .hud-info > div { font-size: 9px; line-height: 1.1; }
+.player-main-hud .hud-info > div { font-size: 9px; line-height: 1.3; }
 .player-main-hud .hud-skill-button { margin-top: 1px; padding: 2px 6px; font-size: 9px; }
 .player-pack-actions { width: 156px; max-width: 156px; margin: 0; }
 .player-pack-actions .open-pack-shop-button { min-width: 0; padding: 7px 4px; font-size: 9px; }
 .story-hud-panel { box-sizing: border-box; max-height: calc(100cqh - 64px); overflow-y: auto; }
+
+/* 432 x 768 battle field: histories flank the piles; actions sit beside player info. */
+.duel-field { padding: 52px 8px 8px; gap: 6px; justify-content: space-between; }
+.cpu-top-row { height: 65px; }
+.realtime-log-panel { height: 65px; overflow: visible; }
+.realtime-log-list { max-height: 38px; overflow: hidden; gap: 2px; }
+.realtime-log-entry { min-height: 1.45em; line-height: 1.45; padding: 1px 0; box-sizing: border-box; }
+.cpu-hand-zone { height: 59px; }
+.enemy-hand-row { height: 36px; min-height: 36px; }
+.enemy-hand-row .card { height: 36px; }
+.cpu-middle-row { height: 76px; }
+.cpu-middle-row .card-row, .cpu-middle-row .pack-row { height: 47px; min-height: 47px; }
+.cpu-middle-row .card { height: 47px; width: 38px; min-width: 38px; }
+.center-field { flex: 0 0 94px; grid-template-columns: minmax(0,1fr) 62px 62px minmax(0,1fr); grid-template-rows: 94px; gap: 6px; z-index: 4; }
+.center-field:has(.candidate-recipes-panel.expanded) { z-index: 30; }
+.center-field > .dish-mini-panel { height: 94px; min-height: 0; padding: 4px; overflow: visible; box-sizing: border-box; }
+.cpu-dish-mini { grid-column: 1; grid-row: 1; }
+.player-dish-mini { grid-column: 4; grid-row: 1; }
+.center-field .dish-mini-title { font-size: 10px; line-height: 1.35; white-space: nowrap; }
+.center-field .latest-dish-slot { height: 72px; min-height: 72px; overflow: hidden; }
+.center-field .latest-dish-slot .dish-card { height: 72px; min-height: 72px; }
+.center-field .latest-dish-empty { min-height: 70px; line-height: 1.35; }
+.deck-discard-cluster { grid-column: 2 / 4; grid-row: 1; align-self: center; justify-self: center; gap: 6px; }
+.deck-discard-cluster .pile { width: 62px; height: 82px; }
+.candidate-recipes-panel { display: none; }
+.candidate-recipes-panel.expanded { grid-column: auto; grid-row: auto; }
+.candidate-recipes-panel > .zone-label { line-height: 1.3; }
+.player-middle-row { height: 100px; }
+.player-middle-row .card-row, .player-middle-row .pack-row { height: 76px; min-height: 76px; }
+.player-middle-row .card { height: 76px; width: 53px; min-width: 53px; }
+.player-pack-zone #player-packs { gap: 3px; }
+.player-pack-zone #player-packs .pack-card { width: 43px; min-width: 43px; height: 76px; }
+.player-hand-zone { height: 116px; }
+.player-hand-row { height: 94px; min-height: 94px; }
+.player-hand-row .card { height: 94px; width: 67px; min-width: 67px; }
+.player-bottom-row { height: 164px; align-items: stretch; gap: 6px; }
+.player-main-hud { width: 212px; max-width: 212px; align-self: flex-end; }
+.player-main-hud .hud-info > div { line-height: 1.4; }
+.player-main-hud .hud-skill-name[role="button"] { cursor: pointer; }
+.player-main-hud .hud-skill-name[role="button"]::after { content: ' ⓘ'; }
+.field-center-actions { position: static; transform: none; width: 190px; flex: 0 0 190px; display: flex; gap: 4px; }
+.field-center-actions .main-action { min-height: 52px; flex: 1 1 52px; padding: 6px 4px; font-size: 15px; line-height: 1.35; border-radius: 10px; }
+.field-center-actions .main-action.skill-action.ready { border: 2px solid #ffda76; background: linear-gradient(180deg,#fff0a6,#ed9b22); color: #553000; box-shadow: 0 0 13px #ffcf69; animation: mobile-skill-ready-glow 1.6s ease-in-out infinite; }
+.field-center-actions .main-action:disabled { opacity: .44; animation: none; }
+.unowned-pack { filter: grayscale(1) brightness(.68); opacity: .72; }
+.modal-input-backdrop { display: none; position: fixed; inset: 0; z-index: 59; background: rgba(0,0,0,.4); pointer-events: auto; touch-action: none; }
+#game-container:has(.selection-panel:not(.hidden):not(#pack-confirm-panel)) .modal-input-backdrop { display: block; }
+#game-container:has(.candidate-recipes-panel.expanded) .modal-input-backdrop { display: block; z-index: 29; }
+#game-container:has(.selection-panel:not(.hidden):not(#pack-confirm-panel)) .modal-input-backdrop { z-index: 59; }
+.selection-panel { display: flex; flex-direction: column; line-height: 1.4; overflow-y: auto; max-height: 82cqh; }
+.selection-panel h3 { flex: 0 0 auto; line-height: 1.35; margin-bottom: 8px; }
+.selection-panel .selection-description { flex: 0 0 auto; min-height: 1.45em; line-height: 1.45; overflow: visible; margin-bottom: 8px; padding: 2px 0; }
+.selection-panel .selection-actions { position: static; flex: 0 0 auto; padding-top: 8px; }
+.selection-panel .selection-actions button { min-height: 44px; line-height: 1.35; }
+.selection-panel { min-height: 0; overflow: visible; }
+.selection-panel > .selection-description { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+.selection-panel > .selection-options,
+.selection-panel > .pile-view-list,
+.selection-panel > .dish-history-list,
+.selection-panel > .ingredient-combo-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    box-sizing: border-box;
+    margin-bottom: 0;
+    padding: 2px 2px 18px;
+}
+.selection-panel > .selection-options { align-content: flex-start; }
+.selection-panel > .pile-view-list,
+.selection-panel > .dish-history-list {
+    grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr));
+    align-content: start;
+}
+.selection-panel > .dish-history-list { grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); }
+.selection-panel .selection-choice { box-sizing: border-box; max-width: 100%; white-space: normal; overflow-wrap: anywhere; cursor: pointer; touch-action: manipulation; }
+.selection-panel .selection-actions { margin-top: 8px; background: #0b1e4e; }
+.pack-shop-modal { display: flex; flex-direction: column; }
+.pack-shop-header { flex: 0 0 auto; }
+.pack-shop-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    align-content: start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    box-sizing: border-box;
+    padding-bottom: 18px;
+}
+.info-overlay-content { min-height: 0; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+.candidate-recipes-panel.expanded .candidate-recipes-list { padding-bottom: 18px; touch-action: pan-y; }
+.pack-shop-modal:has(.pack-shop-confirm:not(.hidden))::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: auto; }
+.pack-shop-confirm { display: flex; flex-direction: column; overflow: hidden; max-height: calc(88cqh - 24px); }
+.pack-shop-confirm h3 { flex: 0 0 auto; }
+.pack-shop-confirm .selection-description { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 3px 0 8px; }
+.pack-shop-confirm .selection-actions { flex: 0 0 auto; }
+.result-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.result-actions button { min-height: 52px; margin: 0; padding: 7px; font-size: 13px; line-height: 1.35; }
+.result-exit-button { border: 1px solid #b7d5f4; border-radius: 12px; background: #24446f; color: #fff; font-weight: 900; }
+.final-field-actions { position: fixed; z-index: 200050; left: 50%; bottom: 52px; transform: translateX(-50%); display: flex; gap: 8px; width: 96cqw; }
+.final-field-actions button { position: static; transform: none; min-height: 52px; flex: 1 1 0; padding: 7px; font-size: 13px; line-height: 1.35; }
+.stage-prompt-overlay { position: absolute; inset: 0; z-index: 200200; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box; background: #0009; pointer-events: auto; }
+.stage-prompt-panel { width: min(390px, 94%); max-height: 88%; overflow-y: auto; box-sizing: border-box; border-radius: 14px; border: 1px solid #b7d5f4; padding: 14px; background: #152139; color: #fff; line-height: 1.4; }
+.stage-prompt-panel p { margin: 0 0 12px; }
+.stage-prompt-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.stage-prompt-actions button { min-height: 44px; }

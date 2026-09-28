@@ -160,6 +160,8 @@ function normalizeSavedPlayerState(input, fallback) {
     if (!merged.skillUseCounts || typeof merged.skillUseCounts !== 'object' || Array.isArray(merged.skillUseCounts)) {
         merged.skillUseCounts = {};
     }
+    merged.boardCycleUsed = Number.isSafeInteger(source.boardCycleUsed)
+        ? Math.max(0, source.boardCycleUsed) : 0;
     return merged;
 }
 
@@ -920,20 +922,28 @@ function bindMainEvents() {
     });
 
     bindIfExists('result-field-button', returnToFinalField);
+    bindIfExists('result-exit-button', finishCompletedMatch);
+    bindIfExists('final-field-exit-button', finishCompletedMatch);
 
     bindIfExists('spotlight-close-button', hideSpotlightCard);
 
     bindIfExists('selection-confirm-button', () => {
         unlockAudio();
         startBgmOnce();
-        confirmEventSelection();
+        if (GameState.selectionMode === 'board-cycle-select') confirmBoardCycleSelection();
+        else if (GameState.selectionMode === 'discard') confirmDiscardSelection();
+        else confirmEventSelection();
     });
 
     bindIfExists('selection-cancel-button', () => {
         unlockAudio();
         startBgmOnce();
-        cancelEventSelection();
+        if (GameState.selectionMode === 'board-cycle-select') cancelBoardCycleSelection();
+        else cancelEventSelection();
     });
+
+    bindIfExists('board-cycle-start-button', beginBoardCycleSelection);
+    bindIfExists('board-cycle-close-button', closeBoardCycleDetails);
 
     bindIfExists('set-confirm-yes-button', () => {
         unlockAudio();
@@ -1827,7 +1837,7 @@ function showResultOverlay(text, type) {
     overlay.classList.add(type);
     resultText.textContent = text;
     renderMatchResultSummary();
-    document.getElementById('show-match-result-button')?.classList.add('hidden');
+    document.getElementById('final-field-actions')?.classList.add('hidden');
     if (typeof playResultBGM === 'function') playResultBGM();
 }
 
@@ -1888,8 +1898,39 @@ function renderMatchResultSummary() {
 function returnToFinalField() {
     const overlay = document.getElementById('result-overlay');
     if (overlay) overlay.classList.add('hidden');
-    document.getElementById('show-match-result-button')?.classList.remove('hidden');
+    document.getElementById('final-field-actions')?.classList.remove('hidden');
     if (typeof stopBGM === 'function') stopBGM();
+}
+
+async function finishCompletedMatch() {
+    if (!GameState.gameEnded) return;
+    const exitButtons = [document.getElementById('result-exit-button'), document.getElementById('final-field-exit-button')];
+    exitButtons.forEach(button => { if (button) button.disabled = true; });
+    try {
+        if (isFriendBattleActive()) await window.FriendBattle.leaveRoom();
+    } catch (error) {
+        exitButtons.forEach(button => { if (button) button.disabled = false; });
+        const text = document.getElementById('result-text');
+        if (text) text.textContent = '退出できませんでした。もう一度お試しください。';
+        await window.StageLayout?.alert?.('部屋を退出できませんでした。通信を確認してもう一度お試しください。');
+        return;
+    }
+    clearSavedMatch();
+    hideResultOverlay();
+    hideSpotlightCard();
+    if (typeof closePackShop === 'function') closePackShop();
+    if (typeof stopBGM === 'function') stopBGM();
+    gameStartedOnce = false;
+    if (typeof initGame === 'function') initGame();
+    updateUI();
+    const overlay = document.getElementById('start-overlay');
+    overlay?.classList.remove('hidden');
+    updateResumeMatchButtonVisibility();
+    if (typeof window.openStoryStage === 'function' && window.__storyResultPending) {
+        window.openStoryStage();
+    } else {
+        showStartStage('start-menu-stage');
+    }
 }
 
 function showPlayerSkillDetails() {
@@ -1915,7 +1956,7 @@ function showFieldPackDetails(packDef) {
     showSpotlightCard({
         badge: '加工アイテム効果',
         name: packDef.name,
-        sub: packDef.description || (typeof getDetailedPackEffectText === 'function' ? getDetailedPackEffectText(packDef.key) : '加工アイテム'),
+        sub: typeof getDetailedPackEffectText === 'function' ? getDetailedPackEffectText(packDef.key) : (packDef.description || '加工アイテム'),
         imagePath,
         kind: 'pack',
         durationMs: 6000
@@ -1932,7 +1973,7 @@ function prepareMatchFinale(winner) {
     }
     if (matchFinaleTimer) clearTimeout(matchFinaleTimer);
     const overlay = document.getElementById('result-overlay');
-    const button = document.getElementById('show-match-result-button');
+    const button = document.getElementById('final-field-actions');
     overlay?.classList.add('hidden');
     button?.classList.add('hidden');
     const finalDish = !GameState.surrenderedBy && GameState.lastCookedRecipe?.side === winner ? GameState.lastCookedRecipe : null;
@@ -1961,7 +2002,7 @@ function hideResultOverlay() {
 
     overlay.classList.add('hidden');
     overlay.classList.remove('win', 'lose');
-    document.getElementById('show-match-result-button')?.classList.add('hidden');
+    document.getElementById('final-field-actions')?.classList.add('hidden');
 
     if (matchFinaleTimer) {
         clearTimeout(matchFinaleTimer);
@@ -2306,6 +2347,7 @@ window.showSpotlightRecipeCardAsync = showSpotlightRecipeCardAsync;
 window.showFieldPackDetails = showFieldPackDetails;
 window.showPlayerSkillDetails = showPlayerSkillDetails;
 window.prepareMatchFinale = prepareMatchFinale;
+window.hideResultOverlay = hideResultOverlay;
 window.showSpotlightPackCard = showSpotlightPackCard;
 window.showSpotlightPackCardAsync = showSpotlightPackCardAsync;
 window.__battleSafeStartGame = safeStartGame;

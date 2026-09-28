@@ -7,8 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260928-stage3">
-    <link rel="stylesheet" href="online.css?v=20260928-stage2">
+<link rel="stylesheet" href="style.css?v=20260929-board3">
+    <link rel="stylesheet" href="online.css?v=20260929-ui1">
 </head>
 <body>
 <div id="app-stage" data-stage-width="1440" data-stage-height="810">
@@ -60,7 +60,7 @@
                     <div class="character-name-row">
                         <div id="player-hud-name" class="character-name">プレイヤー</div>
                         <div class="side-score">現在の点数: <span id="player-side-score">0</span></div>
-                        <div id="player-skill-name" class="side-skill-name">スキル: 未選択</div>
+                        <div id="player-skill-name" class="side-skill-name" role="button" tabindex="0" aria-label="スキル詳細">スキル: 未選択 ⓘ</div>
                         <div id="player-skill-state" class="side-skill-state">未使用</div>
                         <button id="player-skill-button" class="side-skill-button">スキル発動</button>
                     </div>
@@ -76,18 +76,9 @@
                     <div id="player-set" class="card-row compact-row"></div>
                 </div>
 
-                <div class="player-pack-actions">
-                    <div class="panel-box">
-                        <h3>加工アイテム</h3>
-                        <div id="player-packs" class="pack-row"></div>
-                    </div>
-
-                    <div class="panel-box">
-                        <h3>加工アイテム交換</h3>
-                        <div class="shop-buttons">
-                            <button id="open-pack-shop-button" class="open-pack-shop-button">加工アイテム交換 0/3</button>
-                        </div>
-                    </div>
+                <div class="panel-box player-pack-zone">
+                    <h3>加工アイテム</h3>
+                    <div id="player-packs" class="pack-row"></div>
                 </div>
             </section>
 
@@ -134,93 +125,6 @@
                     </div>
                 </div>
 
-                <div id="dish-history-panel" class="panel-box selection-panel hidden">
-                    <h3 id="dish-history-title">料理履歴</h3>
-                    <div id="dish-history-description" class="selection-description"></div>
-                    <div id="dish-history-list" class="dish-history-list"></div>
-                    <div class="selection-actions">
-                        <button id="dish-history-close-button">閉じる</button>
-                    </div>
-                </div>
-
-                <div id="selection-panel" class="panel-box selection-panel hidden">
-                    <h3 id="selection-title">イベント対象選択</h3>
-                    <div id="selection-description" class="selection-description"></div>
-                    <div id="selection-options" class="selection-options"></div>
-                    <div class="selection-actions">
-                        <button id="selection-confirm-button" disabled>確定</button>
-                        <button id="selection-cancel-button">キャンセル</button>
-                    </div>
-                </div>
-
-                <div id="set-confirm-panel" class="panel-box selection-panel hidden">
-                    <h3>カードセット確認</h3>
-                    <div id="set-confirm-description" class="selection-description"></div>
-                    <div class="selection-actions">
-                        <button id="set-confirm-yes-button">はい</button>
-                        <button id="set-confirm-no-button">いいえ</button>
-                    </div>
-                </div>
-
-                <div id="ingredient-action-panel" class="panel-box selection-panel hidden">
-                    <h3 id="ingredient-action-title">材料アクション</h3>
-                    <div id="ingredient-action-description" class="selection-description"></div>
-                    <div id="ingredient-combo-list" class="ingredient-combo-list hidden"></div>
-                    <div class="selection-actions">
-                        <button id="ingredient-action-set-button" class="hidden">セットする</button>
-                        <button id="ingredient-action-combo-button">組み合わせ</button>
-                        <button id="ingredient-action-back-button" class="hidden">戻る</button>
-                        <button id="ingredient-action-close-button">閉じる</button>
-                    </div>
-                </div>
-
-                <div id="event-confirm-panel" class="panel-box selection-panel hidden">
-                    <h3>イベントカード使用確認</h3>
-                    <div id="event-confirm-description" class="selection-description"></div>
-                    <div class="selection-actions">
-                        <button id="event-confirm-yes-button">使用する</button>
-                        <button id="event-confirm-no-button">やめる</button>
-                    </div>
-                </div>
-
-                <div id="skill-confirm-panel" class="panel-box selection-panel hidden">
-                    <h3>スキル確認</h3>
-                    <div id="skill-confirm-name" class="selection-description">スキル: -</div>
-                    <div id="skill-confirm-condition" class="selection-description">条件: -</div>
-                    <div id="skill-confirm-effect" class="selection-description">効果: -</div>
-                    <div id="skill-confirm-usage" class="selection-description">使用回数: -</div>
-                    <div id="skill-confirm-status" class="selection-description">発動判定: -</div>
-                    <div class="selection-actions">
-                        <button id="skill-confirm-yes-button">このスキルを発動</button>
-                        <button id="skill-confirm-no-button">閉じる</button>
-                    </div>
-                </div>
-
-                <div id="set-view-panel" class="panel-box selection-panel hidden">
-                    <h3>セットカード確認</h3>
-                    <div id="set-view-description" class="selection-description"></div>
-                    <div class="selection-actions">
-                        <button id="set-view-close-button">確認して閉じる</button>
-                    </div>
-                </div>
-
-                <div id="pile-view-panel" class="panel-box selection-panel hidden">
-                    <h3 id="pile-view-title">一覧</h3>
-                    <div id="pile-view-description" class="selection-description"></div>
-                    <div id="pile-view-list" class="pile-view-list"></div>
-                    <div class="selection-actions">
-                        <button id="pile-view-close-button">閉じる</button>
-                    </div>
-                </div>
-
-                <div id="end-turn-confirm-panel" class="panel-box selection-panel hidden">
-                    <h3>ターン終了確認</h3>
-                    <div id="end-turn-confirm-description" class="selection-description">ターン終了を実行しますか？</div>
-                    <div class="selection-actions">
-                        <button id="end-turn-confirm-yes-button">終了する</button>
-                        <button id="end-turn-confirm-no-button">キャンセル</button>
-                    </div>
-                </div>
             </section>
 
             <section class="side-panel">
@@ -252,6 +156,95 @@
                 </div>
             </section>
         </main>
+
+        <div id="modal-input-backdrop" class="modal-input-backdrop" aria-hidden="true"></div>
+        <div id="dish-history-panel" class="panel-box selection-panel hidden">
+            <h3 id="dish-history-title">料理履歴</h3>
+            <div id="dish-history-description" class="selection-description"></div>
+            <div id="dish-history-list" class="dish-history-list"></div>
+            <div class="selection-actions">
+                <button id="dish-history-close-button">閉じる</button>
+            </div>
+        </div>
+
+        <div id="selection-panel" class="panel-box selection-panel hidden">
+            <h3 id="selection-title">イベント対象選択</h3>
+            <div id="selection-description" class="selection-description"></div>
+            <div id="selection-options" class="selection-options"></div>
+            <div class="selection-actions">
+                <button id="selection-confirm-button" disabled>確定</button>
+                <button id="selection-cancel-button">キャンセル</button>
+            </div>
+        </div>
+
+        <div id="set-confirm-panel" class="panel-box selection-panel hidden">
+            <h3>カードセット確認</h3>
+            <div id="set-confirm-description" class="selection-description"></div>
+            <div class="selection-actions">
+                <button id="set-confirm-yes-button">はい</button>
+                <button id="set-confirm-no-button">いいえ</button>
+            </div>
+        </div>
+
+        <div id="ingredient-action-panel" class="panel-box selection-panel hidden">
+            <h3 id="ingredient-action-title">材料アクション</h3>
+            <div id="ingredient-action-description" class="selection-description"></div>
+            <div id="ingredient-combo-list" class="ingredient-combo-list hidden"></div>
+            <div class="selection-actions">
+                <button id="ingredient-action-set-button" class="hidden">セットする</button>
+                <button id="ingredient-action-combo-button">組み合わせ</button>
+                <button id="ingredient-action-back-button" class="hidden">戻る</button>
+                <button id="ingredient-action-close-button">閉じる</button>
+            </div>
+        </div>
+
+        <div id="event-confirm-panel" class="panel-box selection-panel hidden">
+            <h3>イベントカード使用確認</h3>
+            <div id="event-confirm-description" class="selection-description"></div>
+            <div class="selection-actions">
+                <button id="event-confirm-yes-button">使用する</button>
+                <button id="event-confirm-no-button">やめる</button>
+            </div>
+        </div>
+
+        <div id="skill-confirm-panel" class="panel-box selection-panel hidden">
+            <h3>スキル確認</h3>
+            <div id="skill-confirm-name" class="selection-description">スキル: -</div>
+            <div id="skill-confirm-condition" class="selection-description">条件: -</div>
+            <div id="skill-confirm-effect" class="selection-description">効果: -</div>
+            <div id="skill-confirm-usage" class="selection-description">使用回数: -</div>
+            <div id="skill-confirm-status" class="selection-description">発動判定: -</div>
+            <div class="selection-actions">
+                <button id="skill-confirm-yes-button">このスキルを発動</button>
+                <button id="skill-confirm-no-button">閉じる</button>
+            </div>
+        </div>
+
+        <div id="set-view-panel" class="panel-box selection-panel hidden">
+            <h3>セットカード確認</h3>
+            <div id="set-view-description" class="selection-description"></div>
+            <div class="selection-actions">
+                <button id="set-view-close-button">確認して閉じる</button>
+            </div>
+        </div>
+
+        <div id="pile-view-panel" class="panel-box selection-panel hidden">
+            <h3 id="pile-view-title">一覧</h3>
+            <div id="pile-view-description" class="selection-description"></div>
+            <div id="pile-view-list" class="pile-view-list"></div>
+            <div class="selection-actions">
+                <button id="pile-view-close-button">閉じる</button>
+            </div>
+        </div>
+
+        <div id="end-turn-confirm-panel" class="panel-box selection-panel hidden">
+            <h3>ターン終了確認</h3>
+            <div id="end-turn-confirm-description" class="selection-description">ターン終了を実行しますか？</div>
+            <div class="selection-actions">
+                <button id="end-turn-confirm-yes-button">終了する</button>
+                <button id="end-turn-confirm-no-button">キャンセル</button>
+            </div>
+        </div>
 
         <section class="phase-guide-layout">
             <div class="panel-box phase-guide-box">
@@ -293,14 +286,26 @@
         </div>
     </section>
 
+    <section id="board-cycle-overlay" class="board-cycle-overlay hidden" aria-label="まな板の詳細">
+        <div id="board-cycle-panel" class="panel-box selection-panel hidden" role="dialog" aria-modal="true" aria-labelledby="board-cycle-title">
+            <h3 id="board-cycle-title">まな板</h3>
+            <div id="board-cycle-description" class="selection-description"></div>
+            <div id="board-cycle-reason" class="selection-description"></div>
+            <div class="selection-actions">
+                <button id="board-cycle-start-button" type="button">イベントを1枚捨てて1枚引く（残り1回）</button>
+                <button id="board-cycle-close-button" type="button">閉じる</button>
+            </div>
+        </div>
+    </section>
+
     <div id="result-overlay" class="result-overlay hidden">
         <div class="result-panel">
             <div id="result-text" class="result-text">勝利</div>
             <div id="result-summary" class="result-summary"></div>
-            <button id="result-field-button" class="result-field-button">フィールドを確認</button>
+            <div class="result-actions"><button id="result-field-button" class="result-field-button">フィールドを確認</button><button id="result-exit-button" class="result-exit-button">対戦を終わらせる</button></div>
         </div>
     </div>
-    <button id="show-match-result-button" class="show-match-result-button hidden">試合結果を見る</button>
+    <div id="final-field-actions" class="final-field-actions hidden"><button id="show-match-result-button" class="show-match-result-button">試合結果を見る</button><button id="final-field-exit-button" class="result-exit-button">対戦を終わらせる</button></div>
 
     <div id="spotlight-overlay" class="spotlight-overlay hidden">
         <div class="spotlight-card-shell">
@@ -563,26 +568,26 @@
     </div>
 </div>
 
-<script src="stage-layout.js?v=20260928-stage1"></script>
-<script src="cards.js?v=20260927-balance1"></script>
-<script src="state.js?v=20260928-stars1"></script>
+<script src="stage-layout.js?v=20260929-ui1"></script>
+<script src="cards.js?v=20260929-board1"></script>
+<script src="state.js?v=20260929-board1"></script>
 <script src="profile.js?v=20260927-surrender1"></script>
 <script src="quick-confirm.js?v=20260928-quick1"></script>
 <script src="rules.js?v=20260927-balance1"></script>
-<script src="player.js?v=20260928-quick1"></script>
-<script src="cpu.js?v=20260927-balance1"></script>
+<script src="player.js?v=20260929-board1"></script>
+<script src="cpu.js?v=20260929-board1"></script>
     <script src="battle-view-model.js?v=20260916"></script>
     <script src="battle-images.js?v=20260916"></script>
-<script src="render.js?v=20260928-stage1"></script>
+<script src="render.js?v=20260929-board2"></script>
     <script src="audio.js?v=20260918-match1"></script>
     <script src="supabase-config.js?v=20260912"></script>
-    <script src="battle-protocol.js?v=20260927-surrender1"></script>
+<script src="battle-protocol.js?v=20260929-board1"></script>
     <script src="battle-chat.js?v=20260916"></script>
     <script src="battle-metrics.js?v=20260916"></script>
-<script src="network.js?v=20260928-stage1"></script>
-<script src="main.js?v=20260928-stage1"></script>
+<script src="network.js?v=20260929-board1"></script>
+<script src="main.js?v=20260929-board1"></script>
 <script src="card-drag.js?v=20260928-stage1"></script>
-<script src="story-mode.js?v=20260928-quick1"></script>
+<script src="story-mode.js?v=20260929-ui1"></script>
 </body>
 </html>
 

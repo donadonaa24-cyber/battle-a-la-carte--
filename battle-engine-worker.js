@@ -1,6 +1,6 @@
 // HOST-only worker. Reuses the actual game rules without rendering or local coin rewards.
 self.window = self;
-importScripts('battle-protocol.js?v=20260927-balance1', 'cards.js?v=20260927-balance1', 'state.js?v=20260928-stars1', 'rules.js?v=20260927-balance1', 'player.js?v=20260927-balance1');
+importScripts('battle-protocol.js?v=20260929-board1', 'cards.js?v=20260929-board1', 'state.js?v=20260929-board1', 'rules.js?v=20260927-balance1', 'player.js?v=20260929-board1');
 // Rule timers only schedule presentation; deliver those cues with the committed action.
 self.setTimeout = callback => { callback(); return 0; };
 let effects = [], logs = [];

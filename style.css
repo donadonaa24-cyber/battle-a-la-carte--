@@ -1,3 +1,8 @@
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
 html,
 body {
     width: 100%;
@@ -186,6 +191,7 @@ body {
     padding: 8px 18px;
     font-size: 20px;
     font-weight: 900;
+    line-height: 1.35;
     letter-spacing: 1px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.22);
 }
@@ -754,13 +760,13 @@ body {
     font-size: 12px;
     font-weight: bold;
     margin-bottom: 4px;
-    line-height: 1.2;
+    line-height: 1.3;
 }
 
 .card-desc {
     font-size: 10px;
     color: #555;
-    line-height: 1.2;
+    line-height: 1.35;
 }
 
 .ingredient-card {
@@ -798,7 +804,7 @@ body {
     color: #6a3500;
     font-size: 10px;
     font-weight: bold;
-    line-height: 1.1;
+    line-height: 1.3;
     box-shadow: 0 1px 2px rgba(0,0,0,0.16);
 }
 
@@ -858,6 +864,7 @@ button {
     padding: 8px 10px;
     font-size: 12px;
     font-weight: bold;
+    line-height: 1.35;
     cursor: pointer;
 }
 
@@ -1013,13 +1020,13 @@ button:disabled {
     font-size: 12px;
     font-weight: bold;
     margin-bottom: 4px;
-    line-height: 1.1;
+    line-height: 1.35;
 }
 
 .pile-count {
     font-size: 22px;
     font-weight: bold;
-    line-height: 1;
+    line-height: 1.3;
 }
 
 .bottom-info-grid {
@@ -1251,6 +1258,7 @@ button:disabled {
     padding: 8px;
     background: #fffdf8;
     border: 2px solid #d8c3a0;
+    color: #3d2b1d;
     border-radius: 8px;
     cursor: pointer;
     text-align: center;
@@ -1258,9 +1266,27 @@ button:disabled {
     font-weight: bold;
 }
 
-.selection-choice.active {
+button.selection-choice:hover:not(:disabled) {
+    background: #fffdf8;
+    border-color: #b6976b;
+}
+
+.selection-choice.active,
+button.selection-choice.active:hover:not(:disabled) {
     border-color: #26a65b;
     background: #effcf4;
+}
+
+button.selection-choice:disabled {
+    background: #fffdf8;
+    color: #3d2b1d;
+    opacity: 0.6;
+    cursor: default;
+}
+
+button.selection-choice:focus-visible {
+    outline: 3px solid #2670b8;
+    outline-offset: 2px;
 }
 
 .selection-actions {
@@ -1638,6 +1664,7 @@ button:disabled {
     gap: 6px;
     max-height: 260px;
     overflow-y: auto;
+    line-height: 1.4;
     margin-bottom: 8px;
 }
 
@@ -3006,7 +3033,8 @@ button:disabled {
     background: linear-gradient(180deg, #45af83, #23765a);
 }
 
-.pack-shop-overlay {
+.pack-shop-overlay,
+.board-cycle-overlay {
     position: fixed;
     inset: 0;
     z-index: 3500;
@@ -3018,6 +3046,8 @@ button:disabled {
     background: rgba(5, 12, 30, 0.7);
     backdrop-filter: blur(4px);
 }
+
+.board-cycle-overlay { z-index: 3501; }
 
 .pack-shop-modal {
     position: relative;
@@ -3036,6 +3066,10 @@ button:disabled {
     top: 50%;
     z-index: 4;
     width: min(86%, 520px);
+    max-height: calc(86cqh - 32px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    line-height: 1.4;
     transform: translate(-50%, -50%);
     padding: 18px;
     border: 2px solid #d78b20;
@@ -3108,7 +3142,7 @@ button:disabled {
 .battle-menu { position: relative; flex-shrink: 0; }
 #battle-menu-panel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 100; padding: 10px; min-width: 110px; border-radius: 12px; background: #152139; border: 1px solid #91b9dd; box-shadow: 0 6px 20px #0008; }
 #battle-menu-button:disabled { opacity: .45; cursor: default; }
-#surrender-dialog { box-sizing: border-box; max-width: min(420px, 92cqw); padding: 22px; border: 1px solid #91b9dd; border-radius: 14px; background: #152139; color: #fff; }
+#surrender-dialog { box-sizing: border-box; max-width: min(420px, 92cqw); max-height: 88cqh; overflow-y: auto; padding: 22px; border: 1px solid #91b9dd; border-radius: 14px; background: #152139; color: #fff; line-height: 1.4; }
 #surrender-dialog::backdrop { background: #0009; }
 .surrender-actions { display: flex; justify-content: flex-end; gap: 12px; }
 
@@ -3116,8 +3150,8 @@ button:disabled {
 .phase-guide-layout { flex: 0 0 auto; margin-top: 5px; }
 .phase-guide-box { display: flex; align-items: center; gap: 14px; padding: 5px 10px; margin-bottom: 0; }
 .phase-guide-box h2 { margin: 0; font-size: 13px; white-space: nowrap; }
-.phase-guide-flow { margin: 0; font-size: 11px; line-height: 1.2; white-space: nowrap; }
-.phase-guide-note { font-size: 10px; line-height: 1.2; white-space: nowrap; }
+.phase-guide-flow { margin: 0; font-size: 11px; line-height: 1.35; white-space: nowrap; }
+.phase-guide-note { font-size: 10px; line-height: 1.35; white-space: nowrap; }
 .side-panel .character-panel { min-height: 84px; padding: 5px; margin-bottom: 6px; }
 .side-panel .character-icon { width: 74px; height: 74px; }
 .side-panel .character-name-row { gap: 2px; }
@@ -3141,3 +3175,87 @@ button:disabled {
 .player-side-panel .open-pack-shop-button { padding: 6px; font-size: 11px; white-space: nowrap; }
 .pile-count { min-height: 28px; display: flex; align-items: center; justify-content: center; line-height: 1.25; }
 .story-hud-panel { box-sizing: border-box; max-height: calc(100cqh - 94px); overflow-y: auto; }
+
+/* Field pack entry points and stage modal shield. */
+.player-pack-zone { min-width: 0; }
+.player-pack-zone #player-packs { min-height: 82px; gap: 5px; }
+.player-pack-zone #player-packs .pack-card { width: 62px; min-width: 62px; height: 82px; }
+.unowned-pack { filter: grayscale(1) brightness(.72); opacity: .74; }
+.modal-input-backdrop { display: none; position: fixed; inset: 0; z-index: 3999; background: rgba(0,0,0,.38); pointer-events: auto; touch-action: none; }
+#game-container:has(.selection-panel:not(.hidden):not(#pack-confirm-panel)) .modal-input-backdrop { display: block; }
+.selection-panel { line-height: 1.4; padding: 14px; box-sizing: border-box; }
+.selection-panel h3 { line-height: 1.35; margin-top: 0; }
+.selection-description { line-height: 1.45; min-height: 1.45em; overflow: visible; }
+.selection-actions { position: static; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px; }
+.selection-actions button { min-height: 42px; line-height: 1.35; }
+.selection-panel { display: flex; flex-direction: column; min-height: 0; max-height: 82cqh; overflow: visible; }
+.selection-panel > h3 { flex: 0 0 auto; }
+.selection-panel > .selection-description { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+.selection-panel > .selection-options,
+.selection-panel > .pile-view-list,
+.selection-panel > .dish-history-list,
+.selection-panel > .ingredient-combo-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    box-sizing: border-box;
+    margin-bottom: 0;
+    padding: 2px 2px 18px;
+}
+.selection-panel > .selection-options { align-content: flex-start; }
+.selection-panel > .pile-view-list,
+.selection-panel > .dish-history-list {
+    grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+    align-content: start;
+}
+.selection-panel .selection-choice { box-sizing: border-box; max-width: 100%; white-space: normal; overflow-wrap: anywhere; touch-action: manipulation; }
+.selection-panel .selection-actions { position: static; flex: 0 0 auto; margin-top: 8px; background: rgba(255,255,255,.98); }
+.pack-shop-modal { display: flex; flex-direction: column; }
+.pack-shop-header { flex: 0 0 auto; }
+.pack-shop-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    align-content: start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    box-sizing: border-box;
+    padding-bottom: 18px;
+}
+.info-overlay-content { min-height: 0; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+.candidate-recipes-panel.expanded { display: flex; flex-direction: column; }
+.candidate-recipes-panel.expanded .candidate-area {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding-bottom: 18px;
+}
+.candidate-recipes-panel.expanded .recipe-cancel-row { position: static; flex: 0 0 auto; }
+.pack-shop-modal:has(.pack-shop-confirm:not(.hidden))::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: auto; }
+.pack-shop-confirm { display: flex; flex-direction: column; overflow: hidden; line-height: 1.45; }
+.pack-shop-confirm h3 { flex: 0 0 auto; line-height: 1.35; }
+.pack-shop-confirm .selection-description { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 3px 0 8px; margin-bottom: 0; }
+.pack-shop-confirm .selection-actions { flex: 0 0 auto; }
+.side-skill-name[role="button"] { cursor: pointer; }
+.side-skill-name[role="button"]::after { content: ' ⓘ'; }
+.result-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.result-actions button { min-height: 52px; margin: 0; padding: 10px; font-size: 16px; line-height: 1.35; }
+.result-exit-button { border: 1px solid #b7d5f4; border-radius: 14px; background: #24446f; color: #fff; font-weight: 900; cursor: pointer; }
+.final-field-actions { position: fixed; z-index: 200050; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; gap: 12px; }
+.final-field-actions button { position: static; transform: none; min-height: 52px; white-space: nowrap; padding: 12px 20px; font-size: 17px; }
+.stage-prompt-overlay { position: absolute; inset: 0; z-index: 200200; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; background: #0009; pointer-events: auto; }
+.stage-prompt-panel { width: min(440px, 92%); max-height: 88%; overflow-y: auto; box-sizing: border-box; border-radius: 14px; border: 1px solid #b7d5f4; padding: 18px; background: #152139; color: #fff; line-height: 1.4; }
+.stage-prompt-panel p { margin: 0 0 14px; }
+.stage-prompt-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.stage-prompt-actions button { min-height: 44px; }

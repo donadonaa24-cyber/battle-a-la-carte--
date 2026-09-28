@@ -7,8 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style-sp.css?v=20260928-stage2">
-    <link rel="stylesheet" href="../online.css?v=20260928-stage2">
+<link rel="stylesheet" href="style-sp.css?v=20260929-board2">
+    <link rel="stylesheet" href="../online.css?v=20260929-ui1">
 </head>
 <body>
 <div id="app-stage" data-stage-width="432" data-stage-height="768">
@@ -85,6 +85,10 @@
             </section>
 
             <section class="center-field">
+                <div class="dish-mini-panel cpu-dish-mini">
+                    <div class="dish-mini-title" data-online-label="相手の料理">CPUの料理履歴</div>
+                    <div id="cpu-latest-dish" class="latest-dish-slot"></div>
+                </div>
                 <div class="deck-discard-cluster">
                     <div id="deck-pile-button" class="pile deck-pile clickable-pile" role="button" tabindex="0">
                         <div class="pile-title">山札</div>
@@ -96,29 +100,17 @@
                         <div class="pile-count" id="discard-count">0</div>
                     </div>
                 </div>
-
-                <div class="field-center-actions">
-                    <button id="cook-button" class="main-action">料理作成</button>
-                    <button id="confirm-discard-button" class="main-action" disabled>捨てる</button>
-                    <button id="end-turn-button" class="main-action accent">ターン終了</button>
+                <div class="dish-mini-panel player-dish-mini">
+                    <div class="dish-mini-title">自分の料理履歴</div>
+                    <div id="player-latest-dish" class="latest-dish-slot"></div>
                 </div>
 
                 <div class="candidate-recipes-panel zone-block">
                     <div class="zone-label">料理作成候補一覧</div>
                     <div id="candidate-recipes" class="candidate-recipes-list"></div>
+                    <div id="candidate-recipes-actions" class="recipe-cancel-row"></div>
                 </div>
 
-                <div class="center-dish-panels">
-                    <div class="dish-mini-panel">
-                        <div class="dish-mini-title">自分の料理</div>
-                        <div id="player-latest-dish" class="latest-dish-slot"></div>
-                    </div>
-
-                    <div class="dish-mini-panel">
-                        <div class="dish-mini-title" data-online-label="相手の料理">CPUの料理</div>
-                        <div id="cpu-latest-dish" class="latest-dish-slot"></div>
-                    </div>
-                </div>
             </section>
 
             <section class="field-side player-side">
@@ -145,14 +137,16 @@
                         <div class="hud-info">
                             <div id="player-hud-name" class="hud-name">千鶴</div>
                             <div class="hud-score">点数: <span id="player-side-score">0</span></div>
-                            <div id="player-skill-name" class="hud-skill-name">スキル: 未選択</div>
+                            <div id="player-skill-name" class="hud-skill-name" role="button" tabindex="0" aria-label="スキル詳細">スキル: 未選択 ⓘ</div>
                             <div id="player-skill-state" class="hud-skill-state">未使用</div>
-                            <button id="player-skill-button" class="hud-skill-button">スキル発動</button>
                         </div>
                     </div>
 
-                    <div class="player-pack-actions">
-                        <button id="open-pack-shop-button" class="open-pack-shop-button">加工アイテム交換 0/3</button>
+                    <div class="field-center-actions" aria-label="対戦操作">
+                        <button id="cook-button" class="main-action">料理作成</button>
+                        <button id="player-skill-button" class="main-action skill-action">スキル発動</button>
+                        <button id="confirm-discard-button" class="main-action discard-action hidden" disabled>捨てる（0枚）</button>
+                        <button id="end-turn-button" class="main-action accent">ターン終了</button>
                     </div>
                 </div>
             </section>
@@ -175,6 +169,7 @@
             </div>
         </section>
 
+        <div id="modal-input-backdrop" class="modal-input-backdrop" aria-hidden="true"></div>
         <div id="dish-history-panel" class="panel-box selection-panel hidden">
             <h3 id="dish-history-title">料理履歴</h3>
             <div id="dish-history-description" class="selection-description"></div>
@@ -283,7 +278,7 @@
                     <div class="mini-rule-text" id="mini-rule-simple">
                         ・先に10点獲得したら勝利<br>
 ・イベントカードは1ターンに1回まで使用可能（試合の最初のターンは先攻のみ使用不可）<br>
-                        ・ターン終了時、手札は通常2枚まで、エコバッグ所持時は3枚まで残せます<br>
+                        ・エコバッグ: ターン終了時に残せる手札が3枚になる（残した分、次の補充で引く枚数は減らない）<br>
                         ・セットカードも料理の材料に使えます<br>
                         ・山札がなくなったら捨て札を混ぜて再利用します
                     </div>
@@ -295,12 +290,12 @@
                         ・手札は「材料カード」と「イベントカード」を合わせた合計枚数で管理します<br>
                         ・ドローフェイズでは、通常は合計5枚になるまで補充します<br>
 ・補充は通常5枚、エコバッグで6枚、まな板で6枚、両方所持で7枚までです<br>
+                        ・まな板: 毎ターン、山札から引く枚数が1枚増える。さらに対戦中1回、負けているときに手札のイベント1枚を捨てて1枚引ける<br>
                         ・材料カードはセットできますが、イベントカードはセットできません<br>
                         ・セット上限は通常2枚、「冷蔵庫」があれば3枚です<br>
                         ・セットした食材は次のターン以降の料理に使えます<br>
                         ・イベントカードは中央の発動ゾーンへドラッグして使います<br>
                         ・セットカードも自由に確認でき、料理時に優先して使われます<br>
-                        ・「エコバッグ」を持っている場合、エンドフェイズの手札上限は3枚になります（通常は2枚）<br>
                         ・料理を作っても、そのままメインフェイズを続けられます<br>
                         ・「緊急料理」は3点以下、「創作料理」は6点以下でのみ使用できます<br>
                         ・「緊急料理」「創作料理」は手札だけでなくセットカードも使用します<br>
@@ -343,14 +338,26 @@
         </div>
     </section>
 
+    <section id="board-cycle-overlay" class="board-cycle-overlay hidden" aria-label="まな板の詳細">
+        <div id="board-cycle-panel" class="panel-box selection-panel hidden" role="dialog" aria-modal="true" aria-labelledby="board-cycle-title">
+            <h3 id="board-cycle-title">まな板</h3>
+            <div id="board-cycle-description" class="selection-description"></div>
+            <div id="board-cycle-reason" class="selection-description"></div>
+            <div class="selection-actions">
+                <button id="board-cycle-start-button" type="button">イベントを1枚捨てて1枚引く（残り1回）</button>
+                <button id="board-cycle-close-button" type="button">閉じる</button>
+            </div>
+        </div>
+    </section>
+
     <div id="result-overlay" class="result-overlay hidden">
         <div class="result-panel">
             <div id="result-text" class="result-text">勝利</div>
             <div id="result-summary" class="result-summary"></div>
-            <button id="result-field-button" class="result-field-button">フィールドを確認</button>
+            <div class="result-actions"><button id="result-field-button" class="result-field-button">フィールドを確認</button><button id="result-exit-button" class="result-exit-button">対戦を終わらせる</button></div>
         </div>
     </div>
-    <button id="show-match-result-button" class="show-match-result-button hidden">試合結果を見る</button>
+    <div id="final-field-actions" class="final-field-actions hidden"><button id="show-match-result-button" class="show-match-result-button">試合結果を見る</button><button id="final-field-exit-button" class="result-exit-button">対戦を終わらせる</button></div>
 
     <div id="spotlight-overlay" class="spotlight-overlay hidden">
         <div class="spotlight-card-shell">
@@ -613,26 +620,26 @@
     </div>
 </div>
 
-<script src="../stage-layout.js?v=20260928-stage1"></script>
-<script src="cards-sp.js?v=20260927-balance1"></script>
-<script src="state-sp.js?v=20260928-stars1"></script>
+<script src="../stage-layout.js?v=20260929-ui1"></script>
+<script src="cards-sp.js?v=20260929-board1"></script>
+<script src="state-sp.js?v=20260929-board1"></script>
 <script src="../profile.js?v=20260927-surrender1"></script>
 <script src="../quick-confirm.js?v=20260928-quick1"></script>
 <script src="rules-sp.js?v=20260927-balance1"></script>
-<script src="player-sp.js?v=20260928-quick1"></script>
-<script src="cpu-sp.js?v=20260927-balance1"></script>
+<script src="player-sp.js?v=20260929-board1"></script>
+<script src="cpu-sp.js?v=20260929-board1"></script>
     <script src="../battle-view-model.js?v=20260916"></script>
     <script src="../battle-images.js?v=20260916"></script>
-<script src="render-sp.js?v=20260928-stage1"></script>
+<script src="render-sp.js?v=20260929-board2"></script>
     <script src="audio-sp.js?v=20260918-match1"></script>
     <script src="../supabase-config.js?v=20260912"></script>
-    <script src="../battle-protocol.js?v=20260927-surrender1"></script>
+<script src="../battle-protocol.js?v=20260929-board1"></script>
     <script src="../battle-chat.js?v=20260916"></script>
     <script src="../battle-metrics.js?v=20260916"></script>
-<script src="../network.js?v=20260928-stage1"></script>
-<script src="main-sp.js?v=20260928-stage1"></script>
+<script src="../network.js?v=20260929-board1"></script>
+<script src="main-sp.js?v=20260929-board1"></script>
 <script src="../card-drag.js?v=20260928-stage1"></script>
-<script src="../story-mode.js?v=20260928-quick1"></script>
+<script src="../story-mode.js?v=20260929-ui1"></script>
 </body>
 </html>
 

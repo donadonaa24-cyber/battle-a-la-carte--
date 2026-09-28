@@ -53,6 +53,8 @@
             overlay.className = 'stage-prompt-overlay';
             overlay.setAttribute('role', 'dialog');
             overlay.setAttribute('aria-modal', 'true');
+            overlay.addEventListener('pointerdown', event => event.stopPropagation());
+            overlay.addEventListener('click', event => event.stopPropagation());
             const panel = root.document.createElement('div');
             panel.className = 'stage-prompt-panel';
             const text = root.document.createElement('p');
