@@ -1345,8 +1345,7 @@ function toggleEventTargetSelection(targetId) {
     } else {
         const maxSelect = context.maxSelections ?? context.maxSelect;
         if (GameState.selectedTargetIds.length >= maxSelect) {
-            addLog(`選択上限は${maxSelect}枚です。`);
-            return;
+            GameState.selectedTargetIds.shift();
         }
         GameState.selectedTargetIds.push(targetId);
     }
@@ -1880,8 +1879,7 @@ function toggleDiscardSelection(cardId) {
         GameState.selectedCardIds.splice(index, 1);
     } else {
         if (GameState.selectedCardIds.length >= GameState.discardNeedCount) {
-            addLog(`捨てる枚数は最大${GameState.discardNeedCount}枚です。`);
-            return;
+            GameState.selectedCardIds.shift();
         }
         GameState.selectedCardIds.push(cardId);
     }

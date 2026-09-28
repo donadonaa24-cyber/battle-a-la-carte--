@@ -294,7 +294,7 @@
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20260929-board1', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20260929-reselect1', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;
