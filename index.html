@@ -1,12 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta name="google-site-verification" content="EODaZVnp9Jx0SkJDQR-oyGH1baUfiHRkVlnkgVq0A0k" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Battle à la carte 公式サイト</title>
-    <meta name="description" content="Battle à la carte（バトルア・ラ・カルト）の公式ホームページ。ルール紹介、カード画像、ゲームプレイページへの案内を掲載。">
-    <link rel="stylesheet" href="home.css?v=20260418f">
+    <meta name="description" content="Battle à la carte（バトルア・ラ・カルト）の公式ホームページ。お知らせ、遊び方、ルール、カード紹介、Web版・モバイル版・Unity版への案内を掲載。">
+    <link rel="stylesheet" href="home.css?v=20260929a">
+    <script src="home.js?v=20260929a" defer></script>
 </head>
 <body>
     <header class="site-header">
@@ -17,8 +18,9 @@
                 <p class="tagline">選べ、盛れ、勝ち取れ！<br>料理を作って先に10点を目指すカードゲーム</p>
             </div>
 
-            <nav class="header-nav">
-                <a href="#about">ゲーム紹介</a>
+            <nav class="header-nav" aria-label="ページ内メニュー">
+                <a href="#news">お知らせ</a>
+                <a href="#demo">遊び方</a>
                 <a href="#rules">ルール</a>
                 <a href="#systems">システム</a>
                 <a href="#cards">カード紹介</a>
@@ -42,28 +44,110 @@
 
                     <div class="hero-buttons">
                         <a class="primary-button" href="web.html">Web版を遊ぶ</a>
-                        <a class="secondary-button" href="mobile/mobile.html">スマホ版を遊ぶ</a>
-                        <a class="secondary-button" href="#rules">ルールを見る</a>
+                        <a class="secondary-button" href="mobile/mobile.html">モバイル版を遊ぶ</a>
+                        <a class="secondary-button" href="#demo">遊び方を見る</a>
                     </div>
                 </div>
 
                 <div class="hero-visual">
-                    <div class="visual-card visual-main">
-                        <div class="visual-badge">おすすめ</div>
-                        <img src="assets/images/recipes/manpuku-curry.png" alt="満腹カレー">
-                        <div class="visual-name">満腹カレー</div>
-                    </div>
+                    <article class="menu-special" aria-labelledby="special-title">
+                        <p class="menu-special-label">Today's Special</p>
+                        <h3 id="special-title" class="menu-special-title">本日のおすすめ</h3>
+                        <img class="menu-special-image" data-special-image src="assets/battle-images/recipes/manpuku-curry.webp" alt="満腹カレー" width="256" height="384">
+                        <p class="menu-line menu-line-large"><span data-special-name>満腹カレー</span><span class="menu-dots" aria-hidden="true"></span><span class="menu-price">10点</span></p>
+                        <p class="menu-special-recipe">材料：<span data-special-recipe>ごはん・牛肉・たまねぎ・にんじん・じゃがいも・カレー粉</span></p>
+                        <p class="menu-special-note">10点料理は日替わりでご紹介。1品で勝利に届く、特別な一皿です。</p>
+                    </article>
+                </div>
+            </div>
+        </section>
 
-                    <div class="visual-side-group">
-                        <div class="visual-card small">
-                            <img src="assets/images/cards/rice.png" alt="ご飯">
-                            <div class="visual-name">ご飯</div>
-                        </div>
-                        <div class="visual-card small">
-                            <img src="assets/images/events/bakugai.png" alt="爆買い">
-                            <div class="visual-name">爆買い</div>
-                        </div>
+        <section id="news" class="content-section">
+            <div class="section-heading">
+                <p class="section-label">CHEF'S NEWS</p>
+                <h2>シェフ通信（お知らせ）</h2>
+            </div>
+
+            <div class="news-board">
+                <article class="news-item">
+                    <p class="news-date"><time datetime="2026-09-29">2026.09.29</time><span class="news-tag">Web版</span></p>
+                    <h3>モバイル版の画面を見やすく再配置</h3>
+                    <ul>
+                        <li>中央に「相手の料理履歴・山札・捨て札・自分の料理履歴」、右下に大きな「料理作成・スキル発動・ターン終了」ボタン（スキルは使えるときに光ります）</li>
+                        <li>まな板に新しい効果：負けているとき、対戦中に1回だけ手札のイベント1枚を捨てて1枚引けます</li>
+                        <li>捨て札一覧やゴミ収集車などの選択画面で、全部のカードをスクロールして選べるように</li>
+                        <li>カード選択は、確定前なら別のカードを押すだけで選び直せます</li>
+                        <li>確認画面を開いている間は、画面の外を押しても反応しません（誤操作防止）</li>
+                        <li>対戦終了後に「対戦を終わらせる」でメニューへ戻れます</li>
+                    </ul>
+                </article>
+
+                <article class="news-item">
+                    <p class="news-date"><time datetime="2026-09-28">2026.09.28</time><span class="news-tag">Web版</span></p>
+                    <h3>v0.5.0 ルールでバランス調整</h3>
+                    <ul>
+                        <li>先攻は1ターン目にイベントカードを使えません</li>
+                        <li>スキル「まかない補給」は「ロマン仕込み」に変わり、10点料理を狙いやすくなりました</li>
+                        <li>「厨房潜入」はイベントカードを捨てずに使えます</li>
+                        <li>加工アイテムの交換点数：エコバッグ・冷蔵庫 2点、まな板 3点</li>
+                        <li>食材トラップは、食材が相手のセットを離れると解除されます</li>
+                        <li>「やり直し」は使ったカード以外の手札をすべて引き直します</li>
+                        <li>スキル選択におすすめ度（★1〜3）と短い説明タグを表示</li>
+                        <li>設定で操作確認を「確認あり（標準）」と「クイック（確認なし）」から選べます</li>
+                        <li>画面比率を固定（PC 16:9、モバイル 縦9:16）。どの端末でも同じ配置で表示します</li>
+                    </ul>
+                </article>
+
+                <article class="news-item">
+                    <p class="news-date"><time datetime="2026-09-27">2026.09.27</time><span class="news-tag">Web版・Unity版</span></p>
+                    <h3>降参機能を追加／Unity版 v0.4.0 を公開</h3>
+                    <ul>
+                        <li>CPU戦・ストーリー・通信対戦で、対戦中にメニューから降参できるようになりました</li>
+                        <li>Unity版（3D版）v0.4.0 を Windows / Android（試験版）で公開しました</li>
+                    </ul>
+                </article>
+
+                <article class="news-item news-upcoming">
+                    <p class="news-date"><span class="news-tag news-tag-plan">今後の予定</span></p>
+                    <h3>準備中・追加予定のメニュー</h3>
+                    <ul>
+                        <li>Unity版（3D版）v0.5.0 を準備中です。公開日は決まりしだいお知らせします</li>
+                        <li>ミッション（クリア後に楽しめる縛りプレイ）と、報酬のカードスリーブを追加予定です</li>
+                    </ul>
+                    <p class="news-note">※ 予定の内容は変更になる場合があります。</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="demo" class="content-section alt-section">
+            <div class="section-heading">
+                <p class="section-label">HOW TO PLAY</p>
+                <h2>遊び方デモ</h2>
+            </div>
+
+            <div class="demo-layout">
+                <div class="demo-stage" data-demo-stage role="img" aria-label="手札のごはんと、セットしたのりでおにぎりを作り、1点を獲得する流れのアニメーション">
+                    <span class="demo-zone demo-zone-set">セット</span>
+                    <span class="demo-zone demo-zone-hand">手札</span>
+                    <img class="demo-card demo-deck" src="assets/battle-images/card-back.webp" alt="" width="256" height="384">
+                    <img class="demo-card demo-rice" src="assets/battle-images/cards/rice.webp" alt="" width="256" height="384">
+                    <img class="demo-card demo-nori" src="assets/battle-images/cards/nori.webp" alt="" width="256" height="384">
+                    <img class="demo-card demo-dish" src="assets/battle-images/recipes/onigiri.webp" alt="" width="256" height="384">
+                    <div class="demo-score" aria-hidden="true">
+                        <span class="demo-score-label">得点</span>
+                        <span class="demo-score-before">0点</span>
+                        <span class="demo-score-after">1点</span>
                     </div>
+                </div>
+
+                <div class="demo-side">
+                    <ol class="demo-steps">
+                        <li class="demo-step demo-step-1"><strong>ドロー</strong>山札から手札を補充</li>
+                        <li class="demo-step demo-step-2"><strong>セット</strong>材料をセット枠へ置いておく</li>
+                        <li class="demo-step demo-step-3"><strong>料理</strong>手札とセットの材料で料理を完成（おにぎり＝ごはん＋のり）</li>
+                        <li class="demo-step demo-step-4"><strong>得点</strong>料理の点数を獲得。先に10点以上で勝利</li>
+                    </ol>
+                    <button class="demo-toggle" type="button" data-demo-toggle aria-pressed="false">アニメを一時停止</button>
                 </div>
             </div>
         </section>
@@ -78,7 +162,7 @@
                 <article class="feature-card">
                     <h3>料理を作って得点</h3>
                     <p>
-                        ご飯、のり、肉、野菜などの材料を集めて料理を完成。
+                        ごはん、のり、肉、野菜などの材料を集めて料理を完成。
                         料理ごとに点数があり、合計10点以上で勝利を目指します。
                     </p>
                 </article>
@@ -94,22 +178,52 @@
                 <article class="feature-card">
                     <h3>加工アイテムで強化</h3>
                     <p>
-                        エコバッグ、冷蔵庫、まな板などの加工アイテムを交換して、
-                        手札上限やセット上限を有利に進められます。
+                        エコバッグ、冷蔵庫、まな板などの加工アイテムを点数と交換して、
+                        手札やセットの上限、ドロー枚数を有利に進められます。
                     </p>
                 </article>
 
                 <article class="feature-card">
-                    <h3>CPU対戦ですぐ遊べる</h3>
+                    <h3>ブラウザですぐ遊べる</h3>
                     <p>
-                        ブラウザ上でそのままプレイ可能。
+                        PCでもモバイルでも、ブラウザ上でそのままプレイ可能。
                         インストール不要で、公開ページからすぐに遊べます。
                     </p>
                 </article>
             </div>
         </section>
 
-        <section id="rules" class="content-section alt-section">
+        <section id="modes" class="content-section alt-section">
+            <div class="section-heading">
+                <p class="section-label">COURSE</p>
+                <h2>遊べるモード</h2>
+            </div>
+
+            <div class="course-grid">
+                <article class="course-card">
+                    <p class="course-number">01</p>
+                    <h3>CPU対戦</h3>
+                    <p>CPUを相手に、すぐに1戦。CPUの性格や速度を設定して遊べます。</p>
+                </article>
+                <article class="course-card">
+                    <p class="course-number">02</p>
+                    <h3>ストーリー</h3>
+                    <p>初心者向けチュートリアル（全3話）。会話を読みながら、ルールと操作を覚えられます。</p>
+                </article>
+                <article class="course-card">
+                    <p class="course-number">03</p>
+                    <h3>通信対戦</h3>
+                    <p>6桁の合言葉で友だちと対戦、または公開部屋で誰かと対戦。Unity版（3D版）からも、Web版で作った部屋に参加できます。</p>
+                </article>
+                <article class="course-card">
+                    <p class="course-number">04</p>
+                    <h3>降参・操作設定</h3>
+                    <p>対戦中はメニューから降参できます。設定で操作確認を「確認あり（標準）」と「クイック」から選べます。</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="rules" class="content-section">
             <div class="section-heading">
                 <p class="section-label">RULES</p>
                 <h2>かんたんルール</h2>
@@ -148,10 +262,37 @@
                     <ul>
                         <li>セットカードも料理の材料に使えます</li>
                         <li>イベントカードは1ターンに1枚まで使用可能</li>
-                        <li>まな板があるとドロー時に6枚まで補充できます</li>
-                        <li>エコバッグがあるとエンド時の手札上限が3枚になります</li>
+                        <li>先攻は1ターン目にイベントカードを使えません</li>
                     </ul>
                 </div>
+            </div>
+
+            <div class="pack-menu">
+                <h3 class="pack-menu-title">加工アイテム</h3>
+                <div class="pack-list">
+                    <article class="pack-item">
+                        <img src="assets/battle-images/packs/eco-bag-boy.webp" alt="エコバッグ" width="256" height="384" loading="lazy">
+                        <div>
+                            <p class="menu-line"><span>エコバッグ</span><span class="menu-dots" aria-hidden="true"></span><span class="menu-price">2点</span></p>
+                            <p>ターン終了時に残せる手札が3枚になる（残した分、次の補充で引く枚数は減らない）</p>
+                        </div>
+                    </article>
+                    <article class="pack-item">
+                        <img src="assets/battle-images/packs/fridge-girl.webp" alt="冷蔵庫" width="256" height="384" loading="lazy">
+                        <div>
+                            <p class="menu-line"><span>冷蔵庫</span><span class="menu-dots" aria-hidden="true"></span><span class="menu-price">2点</span></p>
+                            <p>セット上限が3枚になる</p>
+                        </div>
+                    </article>
+                    <article class="pack-item">
+                        <img src="assets/battle-images/packs/board-girl.webp" alt="まな板" width="256" height="384" loading="lazy">
+                        <div>
+                            <p class="menu-line"><span>まな板</span><span class="menu-dots" aria-hidden="true"></span><span class="menu-price">3点</span></p>
+                            <p>毎ターン、山札から引く枚数が1枚増える。さらに対戦中1回、負けているときに手札のイベント1枚を捨てて1枚引ける</p>
+                        </div>
+                    </article>
+                </div>
+                <p class="pack-note">点数は、自分の得点と引き換えに交換するときの必要点数です。</p>
             </div>
 
             <div class="rules-button-wrap">
@@ -159,7 +300,7 @@
             </div>
         </section>
 
-        <section id="systems" class="content-section">
+        <section id="systems" class="content-section alt-section">
             <div class="section-heading">
                 <p class="section-label">SYSTEM</p>
                 <h2>スキル &amp; Battle à la carte Mode</h2>
@@ -168,7 +309,7 @@
             <div class="mechanics-grid">
                 <article class="mechanic-card">
                     <div class="mechanic-media">
-                        <img src="assets/images/skill-cutins/takumi-skill-cutin.png" alt="スキル発動カットイン">
+                        <img src="assets/battle-images/skill-cutins/takumi-skill-cutin.webp" alt="スキル発動カットイン" width="1024" height="683" loading="lazy">
                     </div>
                     <div class="mechanic-body">
                         <h3>スキル</h3>
@@ -180,13 +321,14 @@
                             <li>発動条件つきの強力効果</li>
                             <li>使用回数は基本1回（スキルごとに例外あり）</li>
                             <li>試合中は「未使用 / 使用済み」を表示</li>
+                            <li>選択画面におすすめ度（★1〜3）と説明タグを表示</li>
                         </ul>
                     </div>
                 </article>
 
                 <article class="mechanic-card">
                     <div class="mechanic-media">
-                        <img src="assets/images/battle-mode-cutins/chizuru-battle-mode-cutin.png" alt="Battle à la carte Mode カットイン">
+                        <img src="assets/battle-images/battle-mode-cutins/chizuru-battle-mode-cutin.webp" alt="Battle à la carte Mode カットイン" width="1024" height="683" loading="lazy">
                     </div>
                     <div class="mechanic-body">
                         <h3>Battle à la carte Mode</h3>
@@ -202,77 +344,138 @@
                     </div>
                 </article>
             </div>
+
+            <div class="skill-menu">
+                <h3 class="skill-menu-title">スキル一覧</h3>
+                <ul class="skill-list">
+                    <li class="skill-item">
+                        <p class="menu-line"><span>切り札調達</span><span class="menu-dots" aria-hidden="true"></span><span class="skill-stars" aria-label="おすすめ度3">★★★</span></p>
+                        <p class="skill-tag">初心者向け</p>
+                        <p>条件：相手が8点以上<br>効果：山札から材料カード1枚を選んで手札に加える。</p>
+                    </li>
+                    <li class="skill-item">
+                        <p class="menu-line"><span>味見泥棒</span><span class="menu-dots" aria-hidden="true"></span><span class="skill-stars" aria-label="おすすめ度3">★★★</span></p>
+                        <p class="skill-tag">初心者向け</p>
+                        <p>条件：自分の得点が0点で、相手が1点以上<br>効果：イベント1枚を捨てる。相手-1点、自分+1点。</p>
+                    </li>
+                    <li class="skill-item">
+                        <p class="menu-line"><span>厨房潜入</span><span class="menu-dots" aria-hidden="true"></span><span class="skill-stars" aria-label="おすすめ度2">★★☆</span></p>
+                        <p class="skill-tag">逆転向け</p>
+                        <p>条件：自分が劣勢かつ5点以下<br>効果：相手セットと自分の食材手札を1枚ずつ交換。</p>
+                    </li>
+                    <li class="skill-item">
+                        <p class="menu-line"><span>ロマン仕込み</span><span class="menu-dots" aria-hidden="true"></span><span class="skill-stars" aria-label="おすすめ度2">★★☆</span></p>
+                        <p class="skill-tag">ロマン向け</p>
+                        <p>条件：自分が7点以下<br>効果：山札の上から7枚を公開し、10点料理（満腹カレー・爆弾おにぎり）の食材を2枚まで手札に加える（残りは捨て札）。加えた食材は10点料理にしか使えない。</p>
+                    </li>
+                    <li class="skill-item">
+                        <p class="menu-line"><span>食材トラップ</span><span class="menu-dots" aria-hidden="true"></span><span class="skill-stars" aria-label="おすすめ度2">★★☆</span></p>
+                        <p class="skill-tag">妨害向け</p>
+                        <p>条件：自分が3点以下で、相手セットに空きがある<br>効果：自分の材料1枚を相手セットに公開配置（相手は料理に使えない）。</p>
+                    </li>
+                    <li class="skill-item">
+                        <p class="menu-line"><span>ラストオーダー</span><span class="menu-dots" aria-hidden="true"></span><span class="skill-stars" aria-label="おすすめ度1">★☆☆</span></p>
+                        <p class="skill-tag">上級者向け</p>
+                        <p>条件：相手が8点以上で、自分より得点が高い<br>効果：イベント1枚を捨てる。このターン、イベントカードを追加で1回使える。</p>
+                    </li>
+                </ul>
+            </div>
         </section>
 
         <section id="cards" class="content-section">
             <div class="section-heading">
                 <p class="section-label">CARDS</p>
                 <h2>カード紹介</h2>
+                <p class="section-lead">カードを押すと裏返って説明が見られます。</p>
             </div>
 
             <div class="gallery-group">
                 <h3>材料カード</h3>
                 <div class="card-gallery">
-                    <div class="gallery-card">
-                        <img src="assets/images/cards/rice.png" alt="ご飯">
-                        <p>ご飯</p>
-                    </div>
-                    <div class="gallery-card">
-                        <img src="assets/images/cards/nori.png" alt="のり">
-                        <p>のり</p>
-                    </div>
-                    <div class="gallery-card">
-                        <img src="assets/images/cards/beef.png" alt="牛肉">
-                        <p>牛肉</p>
-                    </div>
-                    <div class="gallery-card">
-                        <img src="assets/images/cards/onion.png" alt="玉ねぎ">
-                        <p>玉ねぎ</p>
-                    </div>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/cards/rice.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">ごはん</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">ごはん</span><span class="flip-text">使う料理の例：おにぎり、チャーハン、満腹カレー、爆弾おにぎり</span></span>
+                        </span>
+                    </button>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/cards/nori.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">のり</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">のり</span><span class="flip-text">使う料理の例：おにぎり、鮭おにぎり、爆弾おにぎり</span></span>
+                        </span>
+                    </button>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/cards/beef.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">牛肉</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">牛肉</span><span class="flip-text">使う料理の例：キーマカレー、肉じゃが、カレー、満腹カレー</span></span>
+                        </span>
+                    </button>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/cards/onion.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">たまねぎ</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">たまねぎ</span><span class="flip-text">使う料理の例：チャーハン、オムライス、野菜炒め、カレー</span></span>
+                        </span>
+                    </button>
                 </div>
             </div>
 
             <div class="gallery-group">
                 <h3>イベントカード</h3>
                 <div class="card-gallery">
-                    <div class="gallery-card">
-                        <img src="assets/images/events/bakugai.png" alt="爆買い">
-                        <p>爆買い</p>
-                    </div>
-                    <div class="gallery-card">
-                        <img src="assets/images/events/osouji.png" alt="大掃除">
-                        <p>大掃除</p>
-                    </div>
-                    <div class="gallery-card">
-                        <img src="assets/images/events/shokuzai-tansaku.png" alt="食材探索">
-                        <p>食材探索</p>
-                    </div>
-                    <div class="gallery-card">
-                        <img src="assets/images/events/sousaku-ryouri.png" alt="創作料理">
-                        <p>創作料理</p>
-                    </div>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/events/bakugai.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">爆買い</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">爆買い</span><span class="flip-text">山札から3枚引く</span></span>
+                        </span>
+                    </button>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/events/osouji.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">大掃除</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">大掃除</span><span class="flip-text">相手の手札とセットをすべて捨てさせる</span></span>
+                        </span>
+                    </button>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/events/shokuzai-tansaku.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">食材探索</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">食材探索</span><span class="flip-text">3枚見て最大2枚を獲得する</span></span>
+                        </span>
+                    </button>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/events/sousaku-ryouri.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">創作料理</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">創作料理</span><span class="flip-text">6点以下で材料2枚を捨てて3点（このターン料理不可・このターン料理後は使用不可）</span></span>
+                        </span>
+                    </button>
                 </div>
             </div>
 
             <div class="gallery-group">
-                <h3>料理カードイメージ</h3>
+                <h3>料理カード</h3>
                 <div class="card-gallery">
-                    <div class="gallery-card">
-                        <img src="assets/images/recipes/onigiri.png" alt="おにぎり">
-                        <p>おにぎり</p>
-                    </div>
-                    <div class="gallery-card">
-                        <img src="assets/images/recipes/keema-curry.png" alt="キーマカレー">
-                        <p>キーマカレー</p>
-                    </div>
-                    <div class="gallery-card">
-                        <img src="assets/images/recipes/cream-stew.png" alt="クリームシチュー">
-                        <p>クリームシチュー</p>
-                    </div>
-                    <div class="gallery-card">
-                        <img src="assets/images/recipes/manpuku-curry.png" alt="満腹カレー">
-                        <p>満腹カレー</p>
-                    </div>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/recipes/onigiri.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">おにぎり</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">おにぎり（1点）</span><span class="flip-text">材料：ごはん・のり</span></span>
+                        </span>
+                    </button>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/recipes/keema-curry.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">キーマカレー</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">キーマカレー（4点）</span><span class="flip-text">材料：ごはん・たまねぎ・カレー粉・牛肉</span></span>
+                        </span>
+                    </button>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/recipes/cream-stew.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">クリームシチュー</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">クリームシチュー（7点）</span><span class="flip-text">材料：牛乳・牛肉・たまねぎ・にんじん・じゃがいも</span></span>
+                        </span>
+                    </button>
+                    <button class="flip-card" type="button" aria-pressed="false">
+                        <span class="flip-inner">
+                            <span class="flip-face flip-front"><img src="assets/battle-images/recipes/manpuku-curry.webp" alt="" width="256" height="384" loading="lazy"><span class="flip-name">満腹カレー</span></span>
+                            <span class="flip-face flip-back"><span class="flip-name">満腹カレー（10点）</span><span class="flip-text">材料：ごはん・牛肉・たまねぎ・にんじん・じゃがいも・カレー粉</span></span>
+                        </span>
+                    </button>
                 </div>
             </div>
         </section>
@@ -289,12 +492,11 @@
                     あにあにはプログラムが一切できませんが、ルール、キャラの元絵なんかを制作し、
                     AI協力のもと、なんとか時間をかけて形にすることができました。
                     まだまだ修正したい箇所やカード追加、ルール追加等考えておりますが、
-                    一旦バージョン1ということで遊べるカタチになりました。
+                    バージョン1から始まり、今もアップデートを続けています。
                 </p>
 
                 <p>
-                    そして、今回登場するキャラは フェニチルさん原作原案の「天涯比隣（てんがいひりん）」という作品のキャラクターを先行して使用しています。
-                    
+                    登場キャラクターは、フェニチルさん原作・原案の作品「天涯比隣（てんがいひりん）」のキャラクターをイメージして制作しました。
                 </p>
             </div>
 
@@ -310,13 +512,13 @@
 
             <div class="creator-gallery">
                 <div class="creator-gallery-card">
-                    <img src="assets/images/creator/chara-sheet-1.png" alt="キャラクター原案1">
+                    <img src="assets/images/creator/chara-sheet-1.png" alt="キャラクター原案1" loading="lazy">
                 </div>
                 <div class="creator-gallery-card">
-                    <img src="assets/images/creator/chara-sheet-2.png" alt="キャラクター原案2">
+                    <img src="assets/images/creator/chara-sheet-2.png" alt="キャラクター原案2" loading="lazy">
                 </div>
                 <div class="creator-gallery-card">
-                    <img src="assets/images/creator/chara-sheet-3.png" alt="キャラクター原案3">
+                    <img src="assets/images/creator/chara-sheet-3.png" alt="キャラクター原案3" loading="lazy">
                 </div>
             </div>
         </section>
@@ -334,8 +536,13 @@
                 </a>
 
                 <a class="link-card mobile-link" href="mobile/mobile.html">
-                    <span class="link-title">スマホ版で遊ぶ</span>
-                    <span class="link-text">スマホ向けUIの Battle à la carte をプレイ</span>
+                    <span class="link-title">モバイル版で遊ぶ</span>
+                    <span class="link-text">モバイル向けUIの Battle à la carte をプレイ</span>
+                </a>
+
+                <a class="link-card unity-link" href="https://donadonaa24-cyber.github.io/battle-a-la-carte-3d/" target="_blank" rel="noopener noreferrer">
+                    <span class="link-title">Unity版（3D版）</span>
+                    <span class="link-text">Windows / Android 向け。v0.4.0 公開中・v0.5.0 準備中。導入方法と通信対戦の参加手順はこちら</span>
                 </a>
 
                 <a class="link-card" href="https://donadonaa24-cyber.github.io/aniani-asobiba/">
@@ -348,16 +555,13 @@
                     <span class="link-text">制作ノート・関連情報はこちら</span>
                 </a>
 
-                    <a class="link-card x-link" href="https://x.com/aniani_asobiba" target="_blank" rel="noopener noreferrer">
+                <a class="link-card x-link" href="https://x.com/aniani_asobiba" target="_blank" rel="noopener noreferrer">
                     <span class="link-title">Xを見る</span>
-                        <span class="link-text">@aniani_asobiba のXアカウントはこちら</span>
+                    <span class="link-text">@aniani_asobiba のXアカウントはこちら</span>
                 </a>
             </div>
 
-           <p class="link-note">
-    ※ note と X で更新情報や制作に関する内容を発信しています。<br>
-    ※ 今後、別ゲームが完成したらこのページに作品リンクを追加していけます。
-           </p>
+            <p class="link-note">※ note と X で更新情報や制作に関する内容を発信しています。</p>
         </section>
     </main>
 
