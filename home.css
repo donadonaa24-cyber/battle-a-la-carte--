@@ -174,7 +174,7 @@ a {
     padding: 28px 28px 24px;
     text-align: center;
     background:
-        repeating-linear-gradient(0deg, rgba(160, 110, 50, 0.035) 0 2px, transparent 2px 6px),
+        url("assets/images/home/menu-paper.png") center / 512px repeat,
         #fffaf0;
     border: 3px double #d99a45;
     border-radius: 6px;
@@ -464,7 +464,7 @@ a {
 .flip-back {
     transform: rotateY(180deg);
     background:
-        repeating-linear-gradient(0deg, rgba(160, 110, 50, 0.035) 0 2px, transparent 2px 6px),
+        url("assets/images/home/menu-paper.png") center / 512px repeat,
         #fffaf0;
     border-style: double;
     border-width: 4px;
@@ -556,13 +556,10 @@ main section[id] {
 .section-heading h2::after {
     content: '';
     display: block;
-    width: 120px;
-    height: 10px;
-    margin-top: 10px;
-    background:
-        radial-gradient(circle, #d99a45 0 3px, transparent 4px) center / 10px 10px no-repeat,
-        linear-gradient(#d99a45, #d99a45) left center / 52px 2px no-repeat,
-        linear-gradient(#d99a45, #d99a45) right center / 52px 2px no-repeat;
+    width: 240px;
+    height: 24px;
+    margin-top: 8px;
+    background: url("assets/images/home/menu-ornament.png") left center / contain no-repeat;
 }
 
 /* Chef's news */
@@ -664,6 +661,33 @@ main section[id] {
     }
 }
 
+.news-banner {
+    position: relative;
+    margin: 0 0 16px;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 10px 24px rgba(126, 84, 30, 0.12);
+}
+
+.news-banner img {
+    width: 100%;
+    height: auto;
+}
+
+/* The generated banner has an empty ribbon; the label sits on it. */
+.news-banner-label {
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    transform: translate(-50%, -50%);
+    color: #7b3400;
+    font-size: clamp(14px, 3.2vw, 34px);
+    font-style: italic;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+}
+
 /* Shared modal (native <dialog>) for news details and extra demos. */
 .home-dialog {
     width: min(920px, calc(100% - 24px));
@@ -671,7 +695,7 @@ main section[id] {
     padding: 20px 22px;
     border: 3px double #d99a45;
     border-radius: 16px;
-    background: #fffaf0;
+    background: url("assets/images/home/menu-paper.png") center / 512px repeat, #fffaf0;
     color: #5e4738;
 }
 
@@ -1436,7 +1460,7 @@ body:has(dialog[open]) {
     margin-top: 26px;
     padding: 24px;
     background:
-        repeating-linear-gradient(0deg, rgba(160, 110, 50, 0.035) 0 2px, transparent 2px 6px),
+        url("assets/images/home/menu-paper.png") center / 512px repeat,
         #fffaf0;
     border: 3px double #d99a45;
     border-radius: 8px;
