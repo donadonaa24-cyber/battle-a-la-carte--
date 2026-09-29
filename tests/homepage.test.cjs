@@ -53,7 +53,10 @@ test('news details and extra demos open in dialogs', () => {
     for (const match of html.matchAll(/data-open-dialog="([^"]+)"/g)) {
         assert.match(html, new RegExp(`<dialog [^>]*id="${match[1]}"`), `dialog ${match[1]}`);
     }
-    assert.equal((html.match(/class="news-row/g) || []).length, 4);
+    assert.equal((html.match(/class="news-row/g) || []).length, 5);
+    // Missions shipped on 2026-09-29: no longer listed as "planned", all six sleeves shown.
+    assert.doesNotMatch(html, /カードスリーブを追加予定/);
+    assert.equal((html.match(/sleeves\/sleeve-[a-z-]+\.webp/g) || []).length, 6);
     assert.equal((html.match(/role="tab"/g) || []).length, 4);
     for (const n of [1, 2, 3, 4]) {
         assert.match(html, new RegExp(`aria-controls="demo-panel-${n}"`));

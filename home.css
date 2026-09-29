@@ -604,6 +604,66 @@ main section[id] {
     cursor: pointer;
 }
 
+.news-tag-new {
+    background: #e27b00;
+    color: #fffdf8;
+}
+
+.mission-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 14px 0 0;
+    padding: 0 !important;
+    list-style: none;
+}
+
+.mission-list li {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid #efc27d;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.mission-list img {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+
+.mission-list strong,
+.mission-list span,
+.mission-list small {
+    display: block;
+}
+
+.mission-list strong {
+    color: #7b3400;
+}
+
+.mission-list span {
+    font-size: 13px;
+}
+
+.mission-list small {
+    color: #a55a0c;
+    font-weight: 700;
+}
+
+.mission-dialog {
+    width: min(760px, calc(100% - 24px));
+}
+
+@media (max-width: 768px) {
+    .mission-list {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Shared modal (native <dialog>) for news details and extra demos. */
 .home-dialog {
     width: min(920px, calc(100% - 24px));

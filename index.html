@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Battle à la carte 公式サイト</title>
     <meta name="description" content="Battle à la carte（バトルア・ラ・カルト）の公式ホームページ。お知らせ、遊び方、ルール、カード紹介、Web版・モバイル版・Unity版への案内を掲載。">
-    <link rel="stylesheet" href="home.css?v=20260929b">
+    <link rel="stylesheet" href="home.css?v=20260930a">
     <script src="home.js?v=20260929b" defer></script>
 </head>
 <body>
@@ -70,6 +70,11 @@
             </div>
 
             <ul class="news-list">
+                <li class="news-row news-new">
+                    <p class="news-date"><time datetime="2026-09-29">2026.09.29</time><span class="news-tag">Web版</span><span class="news-tag news-tag-new">NEW</span></p>
+                    <h3 class="news-title">ミッションとカードスリーブを追加</h3>
+                    <button class="news-open" type="button" data-open-dialog="news-20260929-missions">詳しく見る</button>
+                </li>
                 <li class="news-row">
                     <p class="news-date"><time datetime="2026-09-29">2026.09.29</time><span class="news-tag">Web版</span></p>
                     <h3 class="news-title">モバイル版の画面を見やすく再配置</h3>
@@ -91,6 +96,24 @@
                     <button class="news-open" type="button" data-open-dialog="news-plan">詳しく見る</button>
                 </li>
             </ul>
+
+            <dialog class="home-dialog news-dialog mission-dialog" id="news-20260929-missions" aria-labelledby="news-20260929-missions-title">
+                <div class="dialog-head">
+                    <p class="news-date"><time datetime="2026-09-29">2026.09.29</time><span class="news-tag">Web版</span></p>
+                    <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+                </div>
+                <h3 id="news-20260929-missions-title">ミッションとカードスリーブを追加</h3>
+                <p>メニューの「ストーリー・ミッション」から、縛りつきの対戦「ミッション」に挑戦できます。ストーリー第1話をクリアすると解放され、条件を守って勝つと、カードの裏面デザイン「カードスリーブ」がもらえます。手に入れたスリーブは設定から選べます。</p>
+                <ul class="mission-list">
+                    <li><img src="assets/battle-images/sleeves/sleeve-no-items.webp" alt="" width="256" height="384" loading="lazy"><div><strong>素材で勝負</strong><span>加工アイテムを一度も交換しないで勝つ</span><small>報酬：まな板（木目）スリーブ</small></div></li>
+                    <li><img src="assets/battle-images/sleeves/sleeve-bakudan-onigiri.webp" alt="" width="256" height="384" loading="lazy"><div><strong>爆弾おにぎりで勝利</strong><span>爆弾おにぎりを1回以上完成させて勝つ</span><small>報酬：爆弾おにぎりスリーブ</small></div></li>
+                    <li><img src="assets/battle-images/sleeves/sleeve-manpuku-curry.webp" alt="" width="256" height="384" loading="lazy"><div><strong>満腹カレーで勝利</strong><span>満腹カレーを1回以上完成させて勝つ</span><small>報酬：満腹カレースリーブ</small></div></li>
+                    <li><img src="assets/battle-images/sleeves/sleeve-no-skill.webp" alt="" width="256" height="384" loading="lazy"><div><strong>スキル封印</strong><span>スキル発動ボタンのスキルを一度も使わないで勝つ</span><small>報酬：料理人の帽子スリーブ</small></div></li>
+                    <li><img src="assets/battle-images/sleeves/sleeve-no-event.webp" alt="" width="256" height="384" loading="lazy"><div><strong>イベント禁止</strong><span>イベントカードを1枚も使わないで勝つ（緊急料理・創作料理を含む）</span><small>報酬：真っ白なお皿スリーブ</small></div></li>
+                    <li><img src="assets/battle-images/sleeves/sleeve-comeback.webp" alt="" width="256" height="384" loading="lazy"><div><strong>大逆転</strong><span>相手に5点以上差をつけられた状態から勝つ</span><small>報酬：炎のスリーブ</small></div></li>
+                </ul>
+                <p class="news-note">※ クリア記録とスリーブは、遊んでいるブラウザに保存されます（アカウントへの保存は準備中）。ミッションは通信対戦では挑戦できません。</p>
+            </dialog>
 
             <dialog class="home-dialog news-dialog" id="news-20260929" aria-labelledby="news-20260929-title">
                 <div class="dialog-head">
@@ -147,7 +170,7 @@
                 <h3 id="news-plan-title">準備中・追加予定のメニュー</h3>
                 <ul>
                     <li>Unity版（3D版）v0.5.0 を準備中です。公開日は決まりしだいお知らせします</li>
-                    <li>ミッション（クリア後に楽しめる縛りプレイ）と、報酬のカードスリーブを追加予定です</li>
+                    <li>ミッションのクリア記録を、あにあにアカウントに保存できるよう準備中です</li>
                 </ul>
                 <p class="news-note">※ 予定の内容は変更になる場合があります。</p>
             </dialog>
@@ -365,7 +388,7 @@
                 <article class="course-card">
                     <p class="course-number">02</p>
                     <h3>ストーリー</h3>
-                    <p>初心者向けチュートリアル（全3話）。会話を読みながら、ルールと操作を覚えられます。</p>
+                    <p>初心者向けチュートリアル（全3話）。会話を読みながら、ルールと操作を覚えられます。第1話をクリアすると、縛りつきの「ミッション」にも挑戦できます。</p>
                 </article>
                 <article class="course-card">
                     <p class="course-number">03</p>
