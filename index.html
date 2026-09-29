@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Battle à la carte 公式サイト</title>
     <meta name="description" content="Battle à la carte（バトルア・ラ・カルト）の公式ホームページ。お知らせ、遊び方、ルール、カード紹介、Web版・モバイル版・Unity版への案内を掲載。">
-    <link rel="stylesheet" href="home.css?v=20260929a">
-    <script src="home.js?v=20260929a" defer></script>
+    <link rel="stylesheet" href="home.css?v=20260929b">
+    <script src="home.js?v=20260929b" defer></script>
 </head>
 <body>
     <header class="site-header">
@@ -66,57 +66,91 @@
             <div class="section-heading">
                 <p class="section-label">CHEF'S NEWS</p>
                 <h2>シェフ通信（お知らせ）</h2>
+                <p class="section-lead">気になるお知らせは「詳しく見る」から内容を確認できます。</p>
             </div>
 
-            <div class="news-board">
-                <article class="news-item">
+            <ul class="news-list">
+                <li class="news-row">
                     <p class="news-date"><time datetime="2026-09-29">2026.09.29</time><span class="news-tag">Web版</span></p>
-                    <h3>モバイル版の画面を見やすく再配置</h3>
-                    <ul>
-                        <li>中央に「相手の料理履歴・山札・捨て札・自分の料理履歴」、右下に大きな「料理作成・スキル発動・ターン終了」ボタン（スキルは使えるときに光ります）</li>
-                        <li>まな板に新しい効果：負けているとき、対戦中に1回だけ手札のイベント1枚を捨てて1枚引けます</li>
-                        <li>捨て札一覧やゴミ収集車などの選択画面で、全部のカードをスクロールして選べるように</li>
-                        <li>カード選択は、確定前なら別のカードを押すだけで選び直せます</li>
-                        <li>確認画面を開いている間は、画面の外を押しても反応しません（誤操作防止）</li>
-                        <li>対戦終了後に「対戦を終わらせる」でメニューへ戻れます</li>
-                    </ul>
-                </article>
-
-                <article class="news-item">
+                    <h3 class="news-title">モバイル版の画面を見やすく再配置</h3>
+                    <button class="news-open" type="button" data-open-dialog="news-20260929">詳しく見る</button>
+                </li>
+                <li class="news-row">
                     <p class="news-date"><time datetime="2026-09-28">2026.09.28</time><span class="news-tag">Web版</span></p>
-                    <h3>v0.5.0 ルールでバランス調整</h3>
-                    <ul>
-                        <li>先攻は1ターン目にイベントカードを使えません</li>
-                        <li>スキル「まかない補給」は「ロマン仕込み」に変わり、10点料理を狙いやすくなりました</li>
-                        <li>「厨房潜入」はイベントカードを捨てずに使えます</li>
-                        <li>加工アイテムの交換点数：エコバッグ・冷蔵庫 2点、まな板 3点</li>
-                        <li>食材トラップは、食材が相手のセットを離れると解除されます</li>
-                        <li>「やり直し」は使ったカード以外の手札をすべて引き直します</li>
-                        <li>スキル選択におすすめ度（★1〜3）と短い説明タグを表示</li>
-                        <li>設定で操作確認を「確認あり（標準）」と「クイック（確認なし）」から選べます</li>
-                        <li>画面比率を固定（PC 16:9、モバイル 縦9:16）。どの端末でも同じ配置で表示します</li>
-                    </ul>
-                </article>
-
-                <article class="news-item">
+                    <h3 class="news-title">v0.5.0 ルールでバランス調整</h3>
+                    <button class="news-open" type="button" data-open-dialog="news-20260928">詳しく見る</button>
+                </li>
+                <li class="news-row">
                     <p class="news-date"><time datetime="2026-09-27">2026.09.27</time><span class="news-tag">Web版・Unity版</span></p>
-                    <h3>降参機能を追加／Unity版 v0.4.0 を公開</h3>
-                    <ul>
-                        <li>CPU戦・ストーリー・通信対戦で、対戦中にメニューから降参できるようになりました</li>
-                        <li>Unity版（3D版）v0.4.0 を Windows / Android（試験版）で公開しました</li>
-                    </ul>
-                </article>
-
-                <article class="news-item news-upcoming">
+                    <h3 class="news-title">降参機能を追加／Unity版 v0.4.0 を公開</h3>
+                    <button class="news-open" type="button" data-open-dialog="news-20260927">詳しく見る</button>
+                </li>
+                <li class="news-row news-upcoming">
                     <p class="news-date"><span class="news-tag news-tag-plan">今後の予定</span></p>
-                    <h3>準備中・追加予定のメニュー</h3>
-                    <ul>
-                        <li>Unity版（3D版）v0.5.0 を準備中です。公開日は決まりしだいお知らせします</li>
-                        <li>ミッション（クリア後に楽しめる縛りプレイ）と、報酬のカードスリーブを追加予定です</li>
-                    </ul>
-                    <p class="news-note">※ 予定の内容は変更になる場合があります。</p>
-                </article>
-            </div>
+                    <h3 class="news-title">準備中・追加予定のメニュー</h3>
+                    <button class="news-open" type="button" data-open-dialog="news-plan">詳しく見る</button>
+                </li>
+            </ul>
+
+            <dialog class="home-dialog news-dialog" id="news-20260929" aria-labelledby="news-20260929-title">
+                <div class="dialog-head">
+                    <p class="news-date"><time datetime="2026-09-29">2026.09.29</time><span class="news-tag">Web版</span></p>
+                    <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+                </div>
+                <h3 id="news-20260929-title">モバイル版の画面を見やすく再配置</h3>
+                <ul>
+                    <li>中央に「相手の料理履歴・山札・捨て札・自分の料理履歴」、右下に大きな「料理作成・スキル発動・ターン終了」ボタン（スキルは使えるときに光ります）</li>
+                    <li>まな板に新しい効果：負けているとき、対戦中に1回だけ手札のイベント1枚を捨てて1枚引けます</li>
+                    <li>捨て札一覧やゴミ収集車などの選択画面で、全部のカードをスクロールして選べるように</li>
+                    <li>カード選択は、確定前なら別のカードを押すだけで選び直せます</li>
+                    <li>確認画面を開いている間は、画面の外を押しても反応しません（誤操作防止）</li>
+                    <li>対戦終了後に「対戦を終わらせる」でメニューへ戻れます</li>
+                </ul>
+            </dialog>
+
+            <dialog class="home-dialog news-dialog" id="news-20260928" aria-labelledby="news-20260928-title">
+                <div class="dialog-head">
+                    <p class="news-date"><time datetime="2026-09-28">2026.09.28</time><span class="news-tag">Web版</span></p>
+                    <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+                </div>
+                <h3 id="news-20260928-title">v0.5.0 ルールでバランス調整</h3>
+                <ul>
+                    <li>先攻は1ターン目にイベントカードを使えません</li>
+                    <li>スキル「まかない補給」は「ロマン仕込み」に変わり、10点料理を狙いやすくなりました</li>
+                    <li>「厨房潜入」はイベントカードを捨てずに使えます</li>
+                    <li>加工アイテムの交換点数：エコバッグ・冷蔵庫 2点、まな板 3点</li>
+                    <li>食材トラップは、食材が相手のセットを離れると解除されます</li>
+                    <li>「やり直し」は使ったカード以外の手札をすべて引き直します</li>
+                    <li>スキル選択におすすめ度（★1〜3）と短い説明タグを表示</li>
+                    <li>設定で操作確認を「確認あり（標準）」と「クイック（確認なし）」から選べます</li>
+                    <li>画面比率を固定（PC 16:9、モバイル 縦9:16）。どの端末でも同じ配置で表示します</li>
+                </ul>
+            </dialog>
+
+            <dialog class="home-dialog news-dialog" id="news-20260927" aria-labelledby="news-20260927-title">
+                <div class="dialog-head">
+                    <p class="news-date"><time datetime="2026-09-27">2026.09.27</time><span class="news-tag">Web版・Unity版</span></p>
+                    <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+                </div>
+                <h3 id="news-20260927-title">降参機能を追加／Unity版 v0.4.0 を公開</h3>
+                <ul>
+                    <li>CPU戦・ストーリー・通信対戦で、対戦中にメニューから降参できるようになりました</li>
+                    <li>Unity版（3D版）v0.4.0 を Windows / Android（試験版）で公開しました</li>
+                </ul>
+            </dialog>
+
+            <dialog class="home-dialog news-dialog" id="news-plan" aria-labelledby="news-plan-title">
+                <div class="dialog-head">
+                    <p class="news-date"><span class="news-tag news-tag-plan">今後の予定</span></p>
+                    <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+                </div>
+                <h3 id="news-plan-title">準備中・追加予定のメニュー</h3>
+                <ul>
+                    <li>Unity版（3D版）v0.5.0 を準備中です。公開日は決まりしだいお知らせします</li>
+                    <li>ミッション（クリア後に楽しめる縛りプレイ）と、報酬のカードスリーブを追加予定です</li>
+                </ul>
+                <p class="news-note">※ 予定の内容は変更になる場合があります。</p>
+            </dialog>
         </section>
 
         <section id="demo" class="content-section alt-section">
@@ -125,10 +159,12 @@
                 <h2>遊び方デモ</h2>
             </div>
 
-            <div class="demo-layout">
-                <div class="demo-stage" data-demo-stage role="img" aria-label="手札のごはんと、セットしたのりでおにぎりを作り、1点を獲得する流れのアニメーション">
+            <h3 class="demo-title">① 基本の流れ：材料をそろえて料理する</h3>
+            <div class="demo-layout demo-inline">
+                <div class="demo-stage" data-demo-stage role="img" aria-label="材料をセットし、次のターンに手札のごはんとセットしたのりでおにぎりを作り、1点を獲得する流れのアニメーション">
                     <span class="demo-zone demo-zone-set">セット</span>
                     <span class="demo-zone demo-zone-hand">手札</span>
+                    <span class="demo-banner demo-next-turn">次のターン</span>
                     <img class="demo-card demo-deck" src="assets/battle-images/card-back.webp" alt="" width="256" height="384">
                     <img class="demo-card demo-rice" src="assets/battle-images/cards/rice.webp" alt="" width="256" height="384">
                     <img class="demo-card demo-nori" src="assets/battle-images/cards/nori.webp" alt="" width="256" height="384">
@@ -143,13 +179,134 @@
                 <div class="demo-side">
                     <ol class="demo-steps">
                         <li class="demo-step demo-step-1"><strong>ドロー</strong>山札から手札を補充</li>
-                        <li class="demo-step demo-step-2"><strong>セット</strong>材料をセット枠へ置いておく</li>
-                        <li class="demo-step demo-step-3"><strong>料理</strong>手札とセットの材料で料理を完成（おにぎり＝ごはん＋のり）</li>
+                        <li class="demo-step demo-step-2"><strong>セット</strong>材料をセット枠へ置く（次のターン以降の料理に使える）</li>
+                        <li class="demo-step demo-step-3"><strong>料理</strong>次のターン、手札とセットの材料で料理を完成（おにぎり＝ごはん＋のり）</li>
                         <li class="demo-step demo-step-4"><strong>得点</strong>料理の点数を獲得。先に10点以上で勝利</li>
                     </ol>
                     <button class="demo-toggle" type="button" data-demo-toggle aria-pressed="false">アニメを一時停止</button>
                 </div>
             </div>
+
+            <div class="demo-more">
+                <h3 class="demo-more-title">ほかの遊び方デモ</h3>
+                <p class="demo-more-lead">気になるものだけ、押すとデモが開きます。</p>
+                <div class="demo-more-list">
+                    <button class="demo-more-button" type="button" data-open-dialog="demo-dialog" data-demo-tab="2"><span class="demo-more-num">②</span>イベントカードを使う<small>爆買い：山札から3枚引く</small></button>
+                    <button class="demo-more-button" type="button" data-open-dialog="demo-dialog" data-demo-tab="3"><span class="demo-more-num">③</span>スキルを発動する<small>切り札調達：材料を1枚選んで手札へ</small></button>
+                    <button class="demo-more-button" type="button" data-open-dialog="demo-dialog" data-demo-tab="4"><span class="demo-more-num">④</span>加工アイテムと交換する<small>まな板：得点を支払って強化</small></button>
+                </div>
+            </div>
+
+            <dialog class="home-dialog demo-dialog" id="demo-dialog" aria-labelledby="demo-dialog-title">
+                <div class="dialog-head">
+                    <h3 id="demo-dialog-title">遊び方デモ</h3>
+                    <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+                </div>
+                <div class="demo-tabs" role="tablist" aria-label="遊び方デモの切り替え">
+                    <button type="button" role="tab" id="demo-tab-1" aria-controls="demo-panel-1" aria-selected="false" tabindex="-1" data-demo-tab-button="1">① 基本の流れ</button>
+                    <button type="button" role="tab" id="demo-tab-2" aria-controls="demo-panel-2" aria-selected="true" data-demo-tab-button="2">② イベント</button>
+                    <button type="button" role="tab" id="demo-tab-3" aria-controls="demo-panel-3" aria-selected="false" tabindex="-1" data-demo-tab-button="3">③ スキル</button>
+                    <button type="button" role="tab" id="demo-tab-4" aria-controls="demo-panel-4" aria-selected="false" tabindex="-1" data-demo-tab-button="4">④ 加工アイテム</button>
+                </div>
+
+                <div class="demo-panel" role="tabpanel" id="demo-panel-1" aria-labelledby="demo-tab-1" hidden>
+                    <div class="demo-layout">
+                        <div class="demo-stage" role="img" aria-label="材料をセットし、次のターンにおにぎりを作って1点を獲得する流れのアニメーション">
+                            <span class="demo-zone demo-zone-set">セット</span>
+                            <span class="demo-zone demo-zone-hand">手札</span>
+                            <span class="demo-banner demo-next-turn">次のターン</span>
+                            <img class="demo-card demo-deck" src="assets/battle-images/card-back.webp" alt="" width="256" height="384" loading="lazy">
+                            <img class="demo-card demo-rice" src="assets/battle-images/cards/rice.webp" alt="" width="256" height="384" loading="lazy">
+                            <img class="demo-card demo-nori" src="assets/battle-images/cards/nori.webp" alt="" width="256" height="384" loading="lazy">
+                            <img class="demo-card demo-dish" src="assets/battle-images/recipes/onigiri.webp" alt="" width="256" height="384" loading="lazy">
+                            <div class="demo-score" aria-hidden="true">
+                                <span class="demo-score-label">得点</span>
+                                <span class="demo-score-before">0点</span>
+                                <span class="demo-score-after">1点</span>
+                            </div>
+                        </div>
+                        <ol class="demo-steps">
+                            <li class="demo-step demo-step-1"><strong>ドロー</strong>山札から手札を補充</li>
+                            <li class="demo-step demo-step-2"><strong>セット</strong>材料をセット枠へ置く（次のターン以降の料理に使える）</li>
+                            <li class="demo-step demo-step-3"><strong>料理</strong>次のターン、手札とセットの材料で料理を完成</li>
+                            <li class="demo-step demo-step-4"><strong>得点</strong>料理の点数を獲得。先に10点以上で勝利</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="demo-panel" role="tabpanel" id="demo-panel-2" aria-labelledby="demo-tab-2">
+                    <div class="demo-layout">
+                        <div class="demo-stage" role="img" aria-label="手札のイベントカード爆買いを中央の発動ゾーンへドラッグし、山札から3枚引いて、使ったイベントが捨て札へ移るアニメーション">
+                            <span class="demo-zone demo-zone-hand">手札</span>
+                            <span class="demo-zone demo-zone-fire">発動ゾーン</span>
+                            <span class="demo-zone demo-zone-discard">捨て札</span>
+                            <span class="demo-banner d2-effect">山札から3枚引く！</span>
+                            <img class="demo-card demo-deck" src="assets/battle-images/card-back.webp" alt="" width="256" height="384" loading="lazy">
+                            <img class="demo-card d2-event" src="assets/battle-images/events/bakugai.webp" alt="" width="256" height="384" loading="lazy">
+                            <img class="demo-card d2-draw d2-draw-1" src="assets/battle-images/cards/rice.webp" alt="" width="256" height="384" loading="lazy">
+                            <img class="demo-card d2-draw d2-draw-2" src="assets/battle-images/cards/beef.webp" alt="" width="256" height="384" loading="lazy">
+                            <img class="demo-card d2-draw d2-draw-3" src="assets/battle-images/cards/curry.webp" alt="" width="256" height="384" loading="lazy">
+                        </div>
+                        <ol class="demo-steps">
+                            <li class="demo-step demo-step-1"><strong>選ぶ</strong>手札のイベントカード（爆買い）を選ぶ</li>
+                            <li class="demo-step demo-step-2"><strong>発動</strong>中央の発動ゾーンへドラッグ（押して選ぶ操作でもOK）</li>
+                            <li class="demo-step demo-step-3"><strong>効果</strong>書かれた効果が起きる。爆買いは山札から3枚引く</li>
+                            <li class="demo-step demo-step-4"><strong>捨て札</strong>使ったイベントは捨て札へ。1ターンに1枚まで、先攻の1ターン目は使えない</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="demo-panel" role="tabpanel" id="demo-panel-3" aria-labelledby="demo-tab-3" hidden>
+                    <div class="demo-layout">
+                        <div class="demo-stage" role="img" aria-label="相手が8点になりスキル切り札調達の条件を満たし、光ったスキル発動ボタンを押して、山札の材料から1枚選んで手札に加えるアニメーション">
+                            <span class="demo-zone demo-zone-hand">手札</span>
+                            <div class="d3-scores" aria-hidden="true">
+                                <span class="d3-score">相手 <b class="d3-enemy-before">6点</b><b class="d3-enemy-after">8点</b></span>
+                                <span class="d3-score">自分 <b>3点</b></span>
+                            </div>
+                            <span class="d3-skill" aria-hidden="true"><span class="d3-skill-name">切り札調達</span><span class="d3-skill-state">スキル発動</span><span class="d3-skill-used">使用済み</span></span>
+                            <span class="demo-banner d3-choose">山札の材料から1枚選ぶ</span>
+                            <img class="demo-card d3-pick d3-pick-1" src="assets/battle-images/cards/carrot.webp" alt="" width="256" height="384" loading="lazy">
+                            <img class="demo-card d3-pick d3-pick-2" src="assets/battle-images/cards/curry.webp" alt="" width="256" height="384" loading="lazy">
+                            <img class="demo-card d3-pick d3-pick-3" src="assets/battle-images/cards/potato.webp" alt="" width="256" height="384" loading="lazy">
+                        </div>
+                        <ol class="demo-steps">
+                            <li class="demo-step demo-step-1"><strong>条件</strong>相手が8点以上になると、切り札調達の条件がそろう</li>
+                            <li class="demo-step demo-step-2"><strong>発動</strong>光った「スキル発動」ボタンを押す</li>
+                            <li class="demo-step demo-step-3"><strong>選ぶ</strong>山札の材料カードから、欲しい1枚を選ぶ</li>
+                            <li class="demo-step demo-step-4"><strong>手札へ</strong>選んだ材料が手札に。切り札調達は1試合1回</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="demo-panel" role="tabpanel" id="demo-panel-4" aria-labelledby="demo-tab-4" hidden>
+                    <div class="demo-layout">
+                        <div class="demo-stage" role="img" aria-label="得点5点でまな板を3点で交換して得点が2点になり、まな板を獲得して、次のターンから引く枚数が1枚増えるアニメーション">
+                            <span class="demo-zone demo-zone-items">自分の加工アイテム</span>
+                            <span class="demo-zone demo-zone-shop">交換</span>
+                            <div class="demo-score" aria-hidden="true">
+                                <span class="demo-score-label">得点</span>
+                                <span class="d4-score-before">5点</span>
+                                <span class="d4-score-after">2点</span>
+                            </div>
+                            <span class="d4-price" aria-hidden="true">3点</span>
+                            <img class="demo-card demo-deck" src="assets/battle-images/card-back.webp" alt="" width="256" height="384" loading="lazy">
+                            <img class="demo-card d4-board" src="assets/battle-images/packs/board-girl.webp" alt="" width="256" height="384" loading="lazy">
+                            <span class="demo-banner d4-bonus">毎ターン引く枚数 +1</span>
+                        </div>
+                        <ol class="demo-steps">
+                            <li class="demo-step demo-step-1"><strong>確認</strong>得点が必要点数以上なら交換できる（まな板は3点）</li>
+                            <li class="demo-step demo-step-2"><strong>交換</strong>まな板を選ぶと得点を支払う（5点→2点）</li>
+                            <li class="demo-step demo-step-3"><strong>獲得</strong>まな板が自分の加工アイテムに。各アイテムは1回だけ交換できる</li>
+                            <li class="demo-step demo-step-4"><strong>効果</strong>毎ターン、山札から引く枚数が1枚増える</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="dialog-foot">
+                    <button class="demo-toggle" type="button" data-demo-toggle aria-pressed="false">アニメを一時停止</button>
+                </div>
+            </dialog>
         </section>
 
         <section id="about" class="content-section">

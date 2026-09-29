@@ -48,6 +48,21 @@ test('official homepage texts match the game data', () => {
     }
 });
 
+test('news details and extra demos open in dialogs', () => {
+    const html = fs.readFileSync('index.html', 'utf8');
+    for (const match of html.matchAll(/data-open-dialog="([^"]+)"/g)) {
+        assert.match(html, new RegExp(`<dialog [^>]*id="${match[1]}"`), `dialog ${match[1]}`);
+    }
+    assert.equal((html.match(/class="news-row/g) || []).length, 4);
+    assert.equal((html.match(/role="tab"/g) || []).length, 4);
+    for (const n of [1, 2, 3, 4]) {
+        assert.match(html, new RegExp(`aria-controls="demo-panel-${n}"`));
+        assert.match(html, new RegExp(`id="demo-panel-${n}"`));
+    }
+    // Set cards can only be cooked from the next turn onward.
+    assert.match(html, /次のターン以降の料理に使える/);
+});
+
 test('homepage assets referenced by index.html exist', () => {
     const html = fs.readFileSync('index.html', 'utf8') + fs.readFileSync('home.js', 'utf8');
     for (const match of html.matchAll(/assets\/[\w./-]+\.(?:png|webp)/g)) {

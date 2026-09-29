@@ -41,24 +41,32 @@
         });
     }
 
-    function setupDemo() {
-        const layout = document.querySelector('.demo-layout');
-        const stage = document.querySelector('[data-demo-stage]');
-        const toggle = document.querySelector('[data-demo-toggle]');
-        if (!layout || !stage || !toggle) return;
-
+    function setupPauseToggle(container, toggle, isOffscreen) {
         let pausedByUser = false;
-        let offscreen = false;
         const apply = () => {
-            layout.classList.toggle('demo-paused', pausedByUser || offscreen);
+            container.classList.toggle('demo-paused', pausedByUser || isOffscreen());
             toggle.textContent = pausedByUser ? 'アニメを再生' : 'アニメを一時停止';
             toggle.setAttribute('aria-pressed', String(pausedByUser));
         };
-
         toggle.addEventListener('click', () => {
             pausedByUser = !pausedByUser;
             apply();
         });
+        return apply;
+    }
+
+    function setupDemo() {
+        const dialog = document.getElementById('demo-dialog');
+        const dialogToggle = dialog && dialog.querySelector('[data-demo-toggle]');
+        if (dialogToggle) setupPauseToggle(dialog, dialogToggle, () => false)();
+
+        const layout = document.querySelector('.demo-inline');
+        const stage = layout && layout.querySelector('[data-demo-stage]');
+        const toggle = layout && layout.querySelector('[data-demo-toggle]');
+        if (!layout || !stage || !toggle) return;
+
+        let offscreen = false;
+        const apply = setupPauseToggle(layout, toggle, () => offscreen);
 
         if ('IntersectionObserver' in window) {
             new IntersectionObserver(entries => {
@@ -69,7 +77,48 @@
         apply();
     }
 
+    function selectDemoTab(dialog, number) {
+        dialog.querySelectorAll('[data-demo-tab-button]').forEach(tab => {
+            const active = tab.dataset.demoTabButton === String(number);
+            tab.setAttribute('aria-selected', String(active));
+            tab.tabIndex = active ? 0 : -1;
+            document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
+        });
+    }
+
+    function setupDialogs() {
+        document.querySelectorAll('[data-open-dialog]').forEach(button => {
+            button.addEventListener('click', () => {
+                const dialog = document.getElementById(button.dataset.openDialog);
+                if (!dialog || typeof dialog.showModal !== 'function') return;
+                if (button.dataset.demoTab) selectDemoTab(dialog, button.dataset.demoTab);
+                dialog.showModal();
+            });
+        });
+        document.querySelectorAll('dialog.home-dialog').forEach(dialog => {
+            dialog.addEventListener('click', event => {
+                // Close on the close button or a click on the backdrop (outside the dialog box).
+                const rect = dialog.getBoundingClientRect();
+                const outside = event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right
+                    || event.clientY < rect.top || event.clientY > rect.bottom);
+                if (outside || event.target.closest('[data-close-dialog]')) dialog.close();
+            });
+            const tabs = [...dialog.querySelectorAll('[data-demo-tab-button]')];
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('click', () => selectDemoTab(dialog, tab.dataset.demoTabButton));
+                tab.addEventListener('keydown', event => {
+                    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+                    if (!step) return;
+                    const next = tabs[(index + step + tabs.length) % tabs.length];
+                    selectDemoTab(dialog, next.dataset.demoTabButton);
+                    next.focus();
+                });
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+        setupDialogs();
         showDailySpecial();
         setupFlipCards();
         setupDemo();
