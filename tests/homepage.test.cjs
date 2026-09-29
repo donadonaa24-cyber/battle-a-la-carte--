@@ -70,7 +70,7 @@ test('play modes and rules use the in-game style illustrations', () => {
     const html = fs.readFileSync('index.html', 'utf8');
     assert.equal((html.match(/class="course-card"/g) || []).length, 3);
     assert.match(html, /course-rivals[\s\S]*?chizuru-icons[\s\S]*?mai-icons[\s\S]*?takumi-icons[\s\S]*?akatsuki-icons/);
-    assert.match(html, /mode-story-v2\.jpg/);
+    assert.match(html, /mode-story-study\.jpg/);
     assert.match(html, /mode-online-vs\.jpg/);
     // The owner removed the turn-flow illustration from the rules section.
     assert.doesNotMatch(html, /flow-figure|system-flow/);

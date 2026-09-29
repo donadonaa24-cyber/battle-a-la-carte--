@@ -1469,6 +1469,10 @@ body:has(dialog[open]) {
     object-position: 50% 42%;
 }
 
+.course-visual-story {
+    object-position: 50% 25%;
+}
+
 .course-card {
     background: rgba(255, 255, 255, 0.9);
     border: 2px solid #efc27d;
