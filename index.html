@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Battle à la carte 公式サイト</title>
     <meta name="description" content="Battle à la carte（バトルア・ラ・カルト）の公式ホームページ。お知らせ、遊び方、ルール、カード紹介、Web版・モバイル版・Unity版への案内を掲載。">
-    <link rel="stylesheet" href="home.css?v=20260930b">
+    <link rel="stylesheet" href="home.css?v=20260930c">
     <script src="home.js?v=20260929b" defer></script>
 </head>
 <body>
@@ -386,26 +386,30 @@
 
             <div class="course-grid">
                 <article class="course-card">
+                    <div class="course-visual course-rivals" role="img" aria-label="選べるキャラクター、千鶴・舞依・拓海・暁の4人">
+                        <span style="background-image: url(assets/battle-images/character-icons/chizuru-icons.webp)"></span>
+                        <span style="background-image: url(assets/battle-images/character-icons/mai-icons.webp)"></span>
+                        <span style="background-image: url(assets/battle-images/character-icons/takumi-icons.webp)"></span>
+                        <span style="background-image: url(assets/battle-images/character-icons/akatsuki-icons.webp)"></span>
+                    </div>
                     <p class="course-number">01</p>
                     <h3>CPU対戦</h3>
-                    <p>CPUを相手に、すぐに1戦。CPUの性格や速度を設定して遊べます。</p>
+                    <p>千鶴・舞依・拓海・暁の4人から自分のキャラを選んで、CPUとすぐに1戦。CPUの性格や速度も設定できます。</p>
                 </article>
                 <article class="course-card">
+                    <img class="course-visual" src="assets/images/home/mode-story-v2.jpg" alt="" width="1200" height="800" loading="lazy">
                     <p class="course-number">02</p>
-                    <h3>ストーリー</h3>
+                    <h3>ストーリー・ミッション</h3>
                     <p>初心者向けチュートリアル（全3話）。会話を読みながら、ルールと操作を覚えられます。第1話をクリアすると、縛りつきの「ミッション」にも挑戦できます。</p>
                 </article>
                 <article class="course-card">
+                    <img class="course-visual" src="assets/images/home/mode-online-v2.jpg" alt="" width="1200" height="800" loading="lazy">
                     <p class="course-number">03</p>
                     <h3>通信対戦</h3>
                     <p>6桁の合言葉で友だちと対戦、または公開部屋で誰かと対戦。Unity版（3D版）からも、Web版で作った部屋に参加できます。</p>
                 </article>
-                <article class="course-card">
-                    <p class="course-number">04</p>
-                    <h3>降参・操作設定</h3>
-                    <p>対戦中はメニューから降参できます。設定で操作確認を「確認あり（標準）」と「クイック」から選べます。</p>
-                </article>
             </div>
+            <p class="course-note">どのモードでも、対戦中はメニューから降参できます。設定で操作確認を「確認あり（標準）」と「クイック」から選べます。</p>
         </section>
 
         <section id="rules" class="content-section">
@@ -413,6 +417,16 @@
                 <p class="section-label">RULES</p>
                 <h2>かんたんルール</h2>
             </div>
+
+            <figure class="flow-figure">
+                <img src="assets/images/home/system-flow-v2.jpg" alt="山札から引き、材料をセット枠に置き、料理を完成させて、得点を伸ばす流れのイラスト" width="1600" height="500" loading="lazy">
+                <figcaption class="flow-captions">
+                    <span><b>①</b>ドロー</span>
+                    <span><b>②</b>セット</span>
+                    <span><b>③</b>料理</span>
+                    <span><b>④</b>得点</span>
+                </figcaption>
+            </figure>
 
             <div class="rules-layout">
                 <div class="rule-box">

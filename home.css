@@ -1421,8 +1421,80 @@ body:has(dialog[open]) {
 /* Course (play modes) */
 .course-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 18px;
+}
+
+.course-visual {
+    display: block;
+    width: calc(100% + 44px);
+    max-width: none;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    margin: -20px -22px 14px;
+    border-radius: 20px 20px 0 0;
+    object-fit: cover;
+}
+
+/* Four character faces cut from the 3-expression icon sheets (768x512, first face). */
+.course-rivals {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    align-content: center;
+    gap: 4px;
+    padding: 0 10px;
+    background: radial-gradient(ellipse at 50% 60%, #ffe3b5 0%, #f5b35e 70%, #e28600 100%);
+}
+
+.course-rivals span {
+    aspect-ratio: 1;
+    border: 3px solid #fffaf0;
+    border-radius: 50%;
+    background-color: #fffaf0;
+    background-position: 0% 47%;
+    background-repeat: no-repeat;
+    background-size: 300% auto;
+    box-shadow: 0 6px 14px rgba(122, 73, 14, 0.25);
+}
+
+.course-note {
+    margin: 16px 0 0;
+    color: #6b5442;
+    font-size: 13px;
+    text-align: center;
+}
+
+.flow-figure {
+    margin: 0 0 22px;
+    overflow: hidden;
+    border: 2px solid #efc27d;
+    border-radius: 20px;
+    background: #fffaf0;
+    box-shadow: 0 10px 24px rgba(126, 84, 30, 0.08);
+}
+
+.flow-figure img {
+    width: 100%;
+    height: auto;
+}
+
+.flow-captions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 2px dotted #efc27d;
+}
+
+.flow-captions span {
+    padding: 8px 4px;
+    color: #7b3400;
+    font-size: 15px;
+    font-weight: 900;
+    text-align: center;
+}
+
+.flow-captions b {
+    margin-right: 4px;
+    color: #d06b00;
 }
 
 .course-card {
@@ -1708,9 +1780,6 @@ body:has(dialog[open]) {
         scroll-margin-top: 84px;
     }
 
-    .course-grid {
-        grid-template-columns: 1fr 1fr;
-    }
 }
 
 @media (max-width: 768px) {
@@ -1724,6 +1793,14 @@ body:has(dialog[open]) {
 
     .home-dialog {
         padding: 14px;
+    }
+
+    .flow-captions span {
+        font-size: 12px;
+    }
+
+    .course-visual {
+        aspect-ratio: 16 / 9;
     }
 
     .home-dialog .demo-step {
