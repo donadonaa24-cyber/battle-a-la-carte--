@@ -12,6 +12,10 @@
         extraEventUsesRemainingThisTurn: 0,
         lockedCookingThisTurn: false,
         cookedRecipes: [],
+        packsExchangedCount: 0,
+        skillsUsedCount: 0,
+        eventsUsedCount: 0,
+        maxDeficit: 0,
         cookedMeatTypes: [],
         recipesCookedThisTurn: 0,
         battleALaCarteModeActive: false,
@@ -214,6 +218,9 @@ const GameState = {
     pendingKnifeOptions: [],
     openDishHistoryFor: null,
     specialWinReason: null,
+    activeMissionId: null,
+    missionFailedLogged: false,
+    missionResultText: '',
     characterSides: {
         player: 'player',
         cpu: 'cpu'
@@ -255,6 +262,10 @@ function resetPlayerState(player) {
     player.extraEventUsesRemainingThisTurn = 0;
     player.lockedCookingThisTurn = false;
     player.cookedRecipes = [];
+    player.packsExchangedCount = 0;
+    player.skillsUsedCount = 0;
+    player.eventsUsedCount = 0;
+    player.maxDeficit = 0;
     player.cookedMeatTypes = [];
     player.recipesCookedThisTurn = 0;
     player.battleALaCarteModeActive = false;
@@ -289,6 +300,9 @@ function resetUiState() {
     GameState.pendingKnifeOptions = [];
     GameState.openDishHistoryFor = null;
     GameState.specialWinReason = null;
+    GameState.activeMissionId = null;
+    GameState.missionFailedLogged = false;
+    GameState.missionResultText = '';
     GameState.ui = {
         pileViewType: null,
         infoOverlayType: null
@@ -401,6 +415,7 @@ function buyPack(player, packKey) {
     if (!canBuyPack(player, packKey)) return false;
 
     player.score -= def.cost;
+    player.packsExchangedCount = (Number(player.packsExchangedCount) || 0) + 1;
     player.packs.push({
         key: def.key,
         name: def.name,
@@ -429,6 +444,7 @@ function getSpecialWinReason(player) {
 }
 
 function checkWinner() {
+    if (typeof window.Missions?.observeScores === 'function') window.Missions.observeScores(GameState);
     const playerSpecial = getSpecialWinReason(GameState.players.player);
     if (playerSpecial) {
         GameState.specialWinReason = playerSpecial;

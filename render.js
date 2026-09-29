@@ -931,8 +931,10 @@ function renderInfoOverlay() {
                     </div>
                     <div class="settings-note">0%で無音、100%で最大です。</div>
                 </div>
+                <div class="reference-item"><div class="reference-title">カードスリーブ</div><div id="settings-sleeve-picker" class="sleeve-picker"></div></div>
             </div>
         `;
+        window.Missions?.renderSleevePicker();
         bindSettingsOverlayControls();
         return;
     }

@@ -185,6 +185,7 @@
                 if (room && next?.id !== user?.id) { stopped = true; connected = false; detach(); }
                 user = next;
                 controls();
+                if (source === accountClient && next && !next.is_anonymous) void window.Missions?.syncAccount(accountClient);
                 if (stopped) message('ログイン状態が変わりました。再読み込みしてログインし直してください。');
             });
             const { data, error } = await client.auth.getSession();
@@ -294,7 +295,7 @@
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20260929-reselect1', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20260929-mission1', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;
@@ -839,6 +840,7 @@
                 $('online-password').value = '';
                 if (error) throw error;
                 client = accountClient; user = data.user; message('ログインしました。部屋を作成または参加してください。');
+                void window.Missions?.syncAccount(accountClient);
             } catch (error) { fail(error); } finally { busy = false; controls(); }
         });
         $('online-resume').onclick = resume;
@@ -876,6 +878,13 @@
     }
     window.FriendBattle = {
         isActive: active, isAvailable: () => !!window.SUPABASE_CONFIG,
+        getMissionAccountClient: async () => {
+            try {
+                await getClient();
+                const result = await accountClient.auth.getSession();
+                return result.data?.session?.user && !result.data.session.user.is_anonymous ? accountClient : null;
+            } catch (_) { return null; }
+        },
         refreshLogin,
         createRoom: options => enter('host', { ...options, isPublic: options?.isPublic ?? $('friend-private-toggle')?.checked === false }),
         joinRoom: options => enter('guest', options), searchPublicRooms,

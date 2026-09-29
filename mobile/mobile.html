@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style-sp.css?v=20260929-board2">
+<link rel="stylesheet" href="style-sp.css?v=20260929-mission2">
     <link rel="stylesheet" href="../online.css?v=20260929-ui1">
 </head>
 <body>
@@ -38,6 +38,7 @@
                     </div>
                 </div>
             </div>
+            <div id="mission-banner" class="mission-banner hidden" role="status"></div>
         </header>
 
         <div id="discard-banner" class="discard-banner hidden"></div>
@@ -353,8 +354,12 @@
     <div id="result-overlay" class="result-overlay hidden">
         <div class="result-panel">
             <div id="result-text" class="result-text">勝利</div>
+            <div id="result-mission" class="result-mission hidden" role="status">
+                <img id="result-mission-image" class="result-mission-image" alt="">
+                <div class="result-mission-copy"><strong id="result-mission-label"></strong><span id="result-mission-detail"></span></div>
+            </div>
             <div id="result-summary" class="result-summary"></div>
-            <div class="result-actions"><button id="result-field-button" class="result-field-button">フィールドを確認</button><button id="result-exit-button" class="result-exit-button">対戦を終わらせる</button></div>
+            <div class="result-actions"><button id="result-field-button" class="result-field-button">フィールドを確認</button><button id="result-retry-button" class="result-field-button hidden">もう一度</button><button id="result-exit-button" class="result-exit-button">対戦を終わらせる</button></div>
         </div>
     </div>
     <div id="final-field-actions" class="final-field-actions hidden"><button id="show-match-result-button" class="show-match-result-button">試合結果を見る</button><button id="final-field-exit-button" class="result-exit-button">対戦を終わらせる</button></div>
@@ -387,7 +392,7 @@
                     <div class="start-menu-buttons">
                         <button id="menu-cpu-button" class="start-main-button">料理開始！CPU戦</button>
                         <button id="menu-resume-button" class="start-main-button hidden">続きから対戦</button>
-                        <button id="menu-story-button" class="start-main-button">ストーリーモード（チュートリアル）</button>
+<button id="menu-story-button" class="start-main-button">ストーリー・ミッション</button>
                         <button id="menu-friend-button" class="start-menu-button">オンライン対戦</button>
                         <button id="menu-coin-button" class="start-menu-button">コイン交換所</button>
                         <button id="menu-rules-button" class="start-menu-button">ルールページ</button>
@@ -423,6 +428,7 @@
                             <span class="start-char-name">暁</span>
                         </button>
                     </div>
+                    <div id="start-mission-opponent-wrap" class="start-user-form hidden"><label class="start-field-label" for="start-mission-opponent">対戦相手を選択</label><select id="start-mission-opponent" class="start-select-input"><option value="chizuru">千鶴</option><option value="mai">舞依</option><option value="takumi">拓海</option><option value="akatsuki">暁</option></select></div>
                 </div>
 
                 <div id="start-skill-step" class="start-setup-step hidden">
@@ -453,12 +459,14 @@
             </div>
 
             <div id="start-story-stage" class="start-stage hidden">
-                <h2 class="start-section-title">ストーリーモード</h2>
-                <p id="story-stage-subtitle" class="start-subtitle">初心者向けチュートリアル（全3話）</p>
+                <h2 class="start-section-title">ストーリー・ミッション</h2>
+                <div class="story-mission-tabs"><button type="button" class="active" data-story-tab="story">ストーリー</button><button type="button" data-story-tab="missions">ミッション</button></div>
+                <p id="story-stage-subtitle" class="start-subtitle story-only">初心者向けチュートリアル（全3話）</p>
 
-                <div id="story-episode-list" class="story-episode-list"></div>
+                <div id="story-episode-list" class="story-episode-list story-only"></div>
+                <section id="mission-section" class="mission-section hidden"><div id="mission-list" class="mission-list"></div><p id="mission-account-note" class="mission-account-note"></p></section>
 
-                <div id="story-dialogue-panel" class="story-dialogue-panel hidden">
+                <div id="story-dialogue-panel" class="story-dialogue-panel story-only hidden">
                     <div class="story-dialogue-header">
                         <span id="story-speaker-icon" class="story-speaker-icon start-char-portrait char-mai"></span>
                         <div class="story-speaker-meta">
@@ -469,18 +477,18 @@
                     <div id="story-dialogue-text" class="story-dialogue-text"></div>
                 </div>
 
-                <div id="story-battle-guide" class="story-battle-guide hidden">
+                <div id="story-battle-guide" class="story-battle-guide story-only hidden">
                     <div class="story-battle-guide-title">チュートリアル目標</div>
                     <div id="story-objective-note" class="story-objective-note"></div>
                     <div id="story-objective-list" class="story-objective-list"></div>
                 </div>
 
-                <p id="story-stage-message" class="start-menu-message"></p>
+                <p id="story-stage-message" class="start-menu-message story-only"></p>
 
                 <div class="start-stage-footer">
                     <div class="start-setup-actions">
-                        <button id="story-primary-button" class="start-main-button hidden">次へ</button>
-                        <button id="story-secondary-button" class="start-sub-button hidden">もう一度</button>
+                        <button id="story-primary-button" class="start-main-button story-only hidden">次へ</button>
+                        <button id="story-secondary-button" class="start-sub-button story-only hidden">もう一度</button>
                     </div>
                     <button id="start-story-back-button" class="start-sub-button wide">メニューへ戻る</button>
                 </div>
@@ -605,6 +613,7 @@
                         <label class="start-field-label">よく作る料理</label>
                         <div id="user-recent-dishes" class="start-user-recent-list"></div>
                     </div>
+                    <div class="start-user-recent-wrap"><label class="start-field-label">カードスリーブ</label><div id="sleeve-picker" class="sleeve-picker"></div></div>
                 </div>
 
                 <div class="start-stage-footer">
@@ -622,22 +631,23 @@
 
 <script src="../stage-layout.js?v=20260929-ui1"></script>
 <script src="cards-sp.js?v=20260929-board1"></script>
-<script src="state-sp.js?v=20260929-board1"></script>
+<script src="state-sp.js?v=20260929-mission1"></script>
+<script src="../missions.js?v=20260929-mission1"></script>
 <script src="../profile.js?v=20260927-surrender1"></script>
 <script src="../quick-confirm.js?v=20260928-quick1"></script>
 <script src="rules-sp.js?v=20260927-balance1"></script>
-<script src="player-sp.js?v=20260929-reselect1"></script>
+<script src="player-sp.js?v=20260929-mission1"></script>
 <script src="cpu-sp.js?v=20260929-board1"></script>
     <script src="../battle-view-model.js?v=20260916"></script>
     <script src="../battle-images.js?v=20260916"></script>
-<script src="render-sp.js?v=20260929-pack1"></script>
+<script src="render-sp.js?v=20260929-mission1"></script>
     <script src="audio-sp.js?v=20260918-match1"></script>
     <script src="../supabase-config.js?v=20260912"></script>
 <script src="../battle-protocol.js?v=20260929-board1"></script>
     <script src="../battle-chat.js?v=20260916"></script>
     <script src="../battle-metrics.js?v=20260916"></script>
-<script src="../network.js?v=20260929-reselect1"></script>
-<script src="main-sp.js?v=20260929-pack1"></script>
+<script src="../network.js?v=20260929-mission1"></script>
+    <script src="main-sp.js?v=20260929-mission2"></script>
 <script src="../card-drag.js?v=20260928-stage1"></script>
 <script src="../story-mode.js?v=20260929-ui1"></script>
 </body>

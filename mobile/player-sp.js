@@ -330,6 +330,7 @@ function markSkillUsed(player, skillKey) {
     }
     const current = getSkillUseCount(player, skillKey);
     player.skillUseCounts[skillKey] = current + 1;
+    player.skillsUsedCount = (Number(player.skillsUsedCount) || 0) + 1;
 }
 
 function getRemainingEventUseCount(player) {
@@ -351,6 +352,7 @@ function consumeEventUse(player) {
         player.extraEventUsesRemainingThisTurn = Math.max(0, player.extraEventUsesRemainingThisTurn - 1);
     }
     player.usedEventThisTurn = true;
+    player.eventsUsedCount = (Number(player.eventsUsedCount) || 0) + 1;
 }
 
 function getOwnIngredientCandidatesForSkill(player) {

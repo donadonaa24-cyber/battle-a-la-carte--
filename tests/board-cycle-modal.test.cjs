@@ -30,7 +30,7 @@ test('PC and mobile board details have their own visible modal path outside the 
         assert.ok(ancestors.includes('app-stage'), file);
         assert.ok(!ancestors.includes('pack-shop-overlay'), file);
         assert.match(html, /id="board-cycle-close-button"[^>]*>閉じる<\/button>/);
-        assert.match(html, /render(?:-sp)?\.js\?v=20260929-pack1/);
+        assert.match(html, /render(?:-sp)?\.js\?v=20260929-mission1/);
     }
 });
 

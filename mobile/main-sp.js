@@ -1,4 +1,4 @@
-﻿let bgmStarted = false;
+let bgmStarted = false;
 let resultOverlayTimer = null;
 let matchFinaleTimer = null;
 let spotlightTimer = null;
@@ -14,6 +14,7 @@ let startTitleTimer = null;
 let startMenuFloatTimer = null;
 let selectedGalleryType = 'characters';
 let startCpuSetupStep = 1;
+let pendingMissionId = null;
 let startOverlayAudioUnlockBound = false;
 const START_MENU_CARD_VISIBLE_MS = 5000;
 const START_MENU_CARD_FADE_MS = 600;
@@ -162,6 +163,9 @@ function normalizeSavedPlayerState(input, fallback) {
     }
     merged.boardCycleUsed = Number.isSafeInteger(source.boardCycleUsed)
         ? Math.max(0, source.boardCycleUsed) : 0;
+    for (const key of ['packsExchangedCount', 'skillsUsedCount', 'eventsUsedCount', 'maxDeficit']) {
+        merged[key] = Number.isSafeInteger(source[key]) ? Math.max(0, source[key]) : 0;
+    }
     return merged;
 }
 
@@ -200,6 +204,9 @@ function applySavedMatchSnapshot(snapshot) {
     GameState.pendingKnifeOptions = Array.isArray(source.pendingKnifeOptions) ? source.pendingKnifeOptions : [];
     GameState.openDishHistoryFor = source.openDishHistoryFor || null;
     GameState.specialWinReason = source.specialWinReason || null;
+    GameState.activeMissionId = window.Missions?.getDefinition(source.activeMissionId) ? source.activeMissionId : null;
+    GameState.missionFailedLogged = source.missionFailedLogged === true;
+    GameState.missionResultText = '';
     GameState.characterSides = source.characterSides || { player: 'player', cpu: 'cpu' };
     GameState.characterIds = source.characterIds || { player: 'chizuru', cpu: 'mai' };
     GameState.characterNames = source.characterNames || { player: '千鶴', cpu: '舞依' };
@@ -272,6 +279,7 @@ function setupMatchAutosaveOnce() {
     const previousUpdateHook = window.__onGameStateUpdated || null;
     window.__onGameStateUpdated = function matchAutosaveUpdateHook() {
         if (typeof previousUpdateHook === 'function') previousUpdateHook();
+        window.Missions?.refreshBanner(GameState);
         saveMatchSnapshot('state-update');
     };
 
@@ -923,6 +931,7 @@ function bindMainEvents() {
 
     bindIfExists('result-field-button', returnToFinalField);
     bindIfExists('result-exit-button', finishCompletedMatch);
+    bindIfExists('result-retry-button', retryMissionMatch);
     bindIfExists('final-field-exit-button', finishCompletedMatch);
 
     bindIfExists('spotlight-close-button', hideSpotlightCard);
@@ -1159,7 +1168,9 @@ function applyCharacterChoice() {
 
     const playerOption = getStartCharacterOptionById(selectedStartCharacter) || START_CHARACTER_OPTIONS[0];
     const cpuCandidates = START_CHARACTER_OPTIONS.filter(option => option.id !== playerOption.id);
-    const cpuOption = cpuCandidates[Math.floor(Math.random() * cpuCandidates.length)] || START_CHARACTER_OPTIONS[1];
+    const missionOpponentId = GameState.activeMissionId ? document.getElementById('start-mission-opponent')?.value : null;
+    const cpuOption = getStartCharacterOptionById(missionOpponentId)
+        || cpuCandidates[Math.floor(Math.random() * cpuCandidates.length)] || START_CHARACTER_OPTIONS[1];
 
     GameState.characterIds.player = playerOption.id;
     GameState.characterIds.cpu = cpuOption.id;
@@ -1182,6 +1193,9 @@ function revealTurnCards(chosenSide) {
 
 function beginMatchByRole(role) {
     safeStartGame();
+    GameState.activeMissionId = window.Missions?.getDefinition(pendingMissionId) ? pendingMissionId : null;
+    GameState.missionFailedLogged = false;
+    pendingMissionId = null;
     if (typeof unlockAudio === 'function') unlockAudio();
     startBgmOnce();
     applyCharacterChoice();
@@ -1307,6 +1321,8 @@ function setupStartOverlay() {
     const startSkillMessage = document.getElementById('start-skill-message');
     const startSkillRulesList = document.getElementById('start-skill-rules-list');
     const startCharacterStep = document.getElementById('start-character-step');
+    const missionOpponentWrap = document.getElementById('start-mission-opponent-wrap');
+    const missionOpponentSelect = document.getElementById('start-mission-opponent');
     const startSkillStep = document.getElementById('start-skill-step');
     const startCpuSetupSubtitle = document.getElementById('start-cpu-setup-subtitle');
     const galleryFilterButtons = document.querySelectorAll('.start-gallery-filter[data-gallery-type]');
@@ -1328,6 +1344,7 @@ function setupStartOverlay() {
 
     const renderCpuSetupStep = () => {
         if (startCharacterStep) startCharacterStep.classList.toggle('hidden', startCpuSetupStep !== 1);
+        if (missionOpponentWrap) missionOpponentWrap.classList.toggle('hidden', !pendingMissionId);
         if (startSkillStep) startSkillStep.classList.toggle('hidden', startCpuSetupStep !== 2);
         if (turnStage) turnStage.classList.toggle('hidden', startCpuSetupStep !== 3);
 
@@ -1381,6 +1398,7 @@ function setupStartOverlay() {
     };
 
     const openMenuStage = () => {
+        pendingMissionId = null;
         resetTurnStage();
         setCpuSetupStep(1);
         setStartMenuMessage(STARTUP_IMAGE_CACHE_NOTICE);
@@ -1548,20 +1566,26 @@ function setupStartOverlay() {
         });
     }
 
-    if (menuCpuButton) {
-        menuCpuButton.addEventListener('click', () => {
+    const openCpuSetup = (missionId = null) => {
+            pendingMissionId = window.Missions?.getDefinition(missionId) ? missionId : null;
             if (typeof unlockAudio === 'function') unlockAudio();
             setStartMenuMessage('');
             resetTurnStage();
             setCharacterChoice(getPreferredStartCharacterId());
+            if (missionOpponentSelect && pendingMissionId) {
+                missionOpponentSelect.value = START_CHARACTER_OPTIONS.find(item => item.id !== selectedStartCharacter)?.id || 'mai';
+            }
             selectedStartSkillKey = getPreferredStartSkillKey();
             selectedCpuPersonality = normalizeStartCpuPersonality(GameState?.settings?.cpuPersonality || selectedCpuPersonality);
             syncStartCpuPersonalitySelect();
             renderStartSkillSelection();
             setCpuSetupStep(1);
             showStartStage('start-cpu-setup-stage');
-        });
-    }
+    };
+    window.startMissionCpuSetup = missionId => {
+        if (window.Missions?.isUnlocked() && window.Missions.getDefinition(missionId)) openCpuSetup(missionId);
+    };
+    if (menuCpuButton) menuCpuButton.addEventListener('click', () => openCpuSetup());
 
     if (menuResumeButton) {
         menuResumeButton.addEventListener('click', () => {
@@ -1835,7 +1859,28 @@ function showResultOverlay(text, type) {
 
     overlay.classList.remove('hidden', 'win', 'lose');
     overlay.classList.add(type);
-    resultText.textContent = text;
+    const missionText = GameState.missionResultText || '';
+    const missionBlock = document.getElementById('result-mission');
+    const missionImage = document.getElementById('result-mission-image');
+    const missionLabel = document.getElementById('result-mission-label');
+    const missionDetail = document.getElementById('result-mission-detail');
+    const cleared = missionText.startsWith('ミッションクリア');
+    const mission = window.Missions?.getDefinition(GameState.activeMissionId);
+    resultText.textContent = missionText ? (type === 'win' ? '勝利！' : '敗北…') : text;
+    missionBlock?.classList.toggle('hidden', !missionText);
+    missionBlock?.classList.toggle('is-clear', cleared);
+    if (missionLabel) missionLabel.textContent = cleared ? 'ミッションクリア！' : missionText;
+    if (missionDetail) missionDetail.textContent = cleared
+        ? (missionText.includes('獲得済み') ? '（獲得済み）' : `『${mission?.sleeveName || ''}』を獲得しました`) : '';
+    if (missionImage) {
+        missionImage.hidden = !cleared || !mission;
+        if (cleared && mission) {
+            missionImage.src = window.Missions.sleevePath(mission.id);
+            missionImage.alt = mission.sleeveName;
+        }
+    }
+    document.getElementById('result-retry-button')?.classList.toggle('hidden', !GameState.activeMissionId);
+    document.querySelector('.result-actions')?.classList.toggle('mission-result', !!GameState.activeMissionId);
     renderMatchResultSummary();
     document.getElementById('final-field-actions')?.classList.add('hidden');
     if (typeof playResultBGM === 'function') playResultBGM();
@@ -1931,6 +1976,13 @@ async function finishCompletedMatch() {
     } else {
         showStartStage('start-menu-stage');
     }
+}
+
+async function retryMissionMatch() {
+    const id = GameState.activeMissionId;
+    if (!id) return;
+    await finishCompletedMatch();
+    window.startMissionCpuSetup?.(id);
 }
 
 function showPlayerSkillDetails() {
@@ -2273,6 +2325,7 @@ function endGame(winner) {
     GameState.gameEnded = true;
     GameState.winner = winner || null;
     GameState.matchEndedAt = Date.now();
+    GameState.missionResultText = window.Missions?.complete(GameState, winner) || '';
     clearSavedMatch();
     GameState.currentTurn = null;
     GameState.currentPhase = 'ゲーム終了';
