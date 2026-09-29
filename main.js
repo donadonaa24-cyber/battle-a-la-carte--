@@ -1950,13 +1950,13 @@ function showPlayerSkillDetails() {
     });
 }
 
-function showFieldPackDetails(packDef) {
+function showFieldPackDetails(packDef, owned) {
     if (!packDef) return;
     const imagePath = window.getPackImagePath ? window.getPackImagePath(packDef.key) : null;
     showSpotlightCard({
         badge: '加工アイテム効果',
         name: packDef.name,
-        sub: typeof getDetailedPackEffectText === 'function' ? getDetailedPackEffectText(packDef.key) : (packDef.description || '加工アイテム'),
+        sub: `所持状況: ${owned ? '所持' : '未所持'}\n効果: ${typeof getDetailedPackEffectText === 'function' ? getDetailedPackEffectText(packDef.key) : (packDef.description || '加工アイテム')}`,
         imagePath,
         kind: 'pack',
         durationMs: 6000

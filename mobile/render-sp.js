@@ -1380,15 +1380,13 @@ function renderPacks(player, container) {
     if (!container) return;
     const ownPacks = container.id === 'player-packs';
     const sectionKey = `packs:${container.id || 'unknown'}`;
-    const signature = player.packs.map(pack => `${pack.key}:${pack.name}`).join('|') + (ownPacks ? ':all' : '');
+    const signature = player.packs.map(pack => `${pack.key}:${pack.name}`).join('|');
     if (shouldSkipSectionRender(sectionKey, signature)) return;
 
     container.innerHTML = '';
-    if (!ownPacks && player.packs.length === 0) { container.textContent = 'なし'; return; }
-
-    (ownPacks ? packDefinitions : player.packs).forEach(def => {
-        const pack = ownPacks ? (player.packs.find(item => item.key === def.key) || def) : def;
-        const owned = !ownPacks || hasPack(player, def.key);
+    packDefinitions.forEach(def => {
+        const pack = player.packs.find(item => item.key === def.key) || def;
+        const owned = hasPack(player, def.key);
         const card = {
             name: pack.name,
             description: getPackDefinition(pack.key)?.description || '加工アイテム'
@@ -1404,16 +1402,19 @@ function renderPacks(player, container) {
         el.classList.add('inspectable-card');
         el.setAttribute('role', 'button');
         el.setAttribute('tabindex', '0');
-        el.setAttribute('aria-label', owned ? `${pack.name}の効果を確認` : `${pack.name}を交換する（${def.cost}点）`);
+        el.setAttribute('aria-label', !ownPacks ? `${pack.name}の効果を確認（${owned ? '所持' : '未所持'}）` :
+            owned ? `${pack.name}の効果を確認` : `${pack.name}を交換する（${def.cost}点）`);
         const inspect = () => {
-            if (owned) {
+            const current = getBattleViewModel();
+            const currentPlayer = ownPacks ? current.me : current.opponent;
+            if (!ownPacks || hasPack(currentPlayer, def.key)) {
                 if (ownPacks && def.key === 'board') window.openBoardCycleDetails?.();
-                else window.showFieldPackDetails?.(pack);
+                else window.showFieldPackDetails?.(def, hasPack(currentPlayer, def.key));
                 return;
             }
             if (GameState.selectionMode || packShopOpen) return;
             openPackShop();
-            if (getBattleViewModel().turn === 'me' && !GameState.gameEnded && canBuyPack(player, def.key)) {
+            if (current.turn === 'me' && !GameState.gameEnded && canBuyPack(currentPlayer, def.key)) {
                 window.playerBuyPack?.(def.key);
             } else {
                 packPreviewKey = def.key;
