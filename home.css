@@ -1464,37 +1464,9 @@ body:has(dialog[open]) {
     text-align: center;
 }
 
-.flow-figure {
-    margin: 0 0 22px;
-    overflow: hidden;
-    border: 2px solid #efc27d;
-    border-radius: 20px;
-    background: #fffaf0;
-    box-shadow: 0 10px 24px rgba(126, 84, 30, 0.08);
-}
-
-.flow-figure img {
-    width: 100%;
-    height: auto;
-}
-
-.flow-captions {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    border-top: 2px dotted #efc27d;
-}
-
-.flow-captions span {
-    padding: 8px 4px;
-    color: #7b3400;
-    font-size: 15px;
-    font-weight: 900;
-    text-align: center;
-}
-
-.flow-captions b {
-    margin-right: 4px;
-    color: #d06b00;
+/* Portrait artwork in a 3:2 card slot: keep both faces and the VS mark in view. */
+.course-visual-vs {
+    object-position: 50% 42%;
 }
 
 .course-card {
@@ -1793,10 +1765,6 @@ body:has(dialog[open]) {
 
     .home-dialog {
         padding: 14px;
-    }
-
-    .flow-captions span {
-        font-size: 12px;
     }
 
     .course-visual {
