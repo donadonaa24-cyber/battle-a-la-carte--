@@ -1436,27 +1436,6 @@ body:has(dialog[open]) {
     object-fit: cover;
 }
 
-/* Four character faces cut from the 3-expression icon sheets (768x512, first face). */
-.course-rivals {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    align-content: center;
-    gap: 4px;
-    padding: 0 10px;
-    background: radial-gradient(ellipse at 50% 60%, #ffe3b5 0%, #f5b35e 70%, #e28600 100%);
-}
-
-.course-rivals span {
-    aspect-ratio: 1;
-    border: 3px solid #fffaf0;
-    border-radius: 50%;
-    background-color: #fffaf0;
-    background-position: 0% 47%;
-    background-repeat: no-repeat;
-    background-size: 300% auto;
-    box-shadow: 0 6px 14px rgba(122, 73, 14, 0.25);
-}
-
 .course-note {
     margin: 16px 0 0;
     color: #6b5442;
@@ -1471,6 +1450,10 @@ body:has(dialog[open]) {
 
 .course-visual-story {
     object-position: 50% 25%;
+}
+
+.course-visual-cpu {
+    object-position: 50% 15%;
 }
 
 .course-card {

@@ -69,7 +69,8 @@ test('news details and extra demos open in dialogs', () => {
 test('play modes and rules use the in-game style illustrations', () => {
     const html = fs.readFileSync('index.html', 'utf8');
     assert.equal((html.match(/class="course-card"/g) || []).length, 3);
-    assert.match(html, /course-rivals[\s\S]*?chizuru-icons[\s\S]*?mai-icons[\s\S]*?takumi-icons[\s\S]*?akatsuki-icons/);
+    assert.match(html, /mode-cpu-full\.jpg/);
+    assert.match(html, /相手をおなかいっぱいにして勝利しよう/);
     assert.match(html, /mode-story-study\.jpg/);
     assert.match(html, /mode-online-vs\.jpg/);
     // The owner removed the turn-flow illustration from the rules section.
