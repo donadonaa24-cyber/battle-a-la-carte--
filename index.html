@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Battle à la carte 公式サイト</title>
     <meta name="description" content="Battle à la carte（バトルア・ラ・カルト）の公式ホームページ。お知らせ、遊び方、ルール、カード紹介、Web版・モバイル版・Unity版への案内を掲載。">
-    <link rel="stylesheet" href="home.css?v=20260930f">
+    <link rel="stylesheet" href="home.css?v=20260930g">
     <script src="home.js?v=20260929b" defer></script>
 </head>
 <body>
@@ -189,10 +189,10 @@
 
             <h3 class="demo-title">① 基本の流れ：材料をそろえて料理する</h3>
             <div class="demo-layout demo-inline">
-                <div class="demo-stage" data-demo-stage role="img" aria-label="材料をセットし、次のターンに手札のごはんとセットしたのりでおにぎりを作り、1点を獲得する流れのアニメーション">
+                <div class="demo-stage" data-demo-stage role="img" aria-label="のりをセット枠に置き、同じターンのうちに手札のごはんとセットしたのりでおにぎりを作り、1点を獲得する流れのアニメーション">
                     <span class="demo-zone demo-zone-set">セット</span>
                     <span class="demo-zone demo-zone-hand">手札</span>
-                    <span class="demo-banner demo-next-turn">次のターン</span>
+                    <span class="demo-banner demo-keep">ターン終了でも捨てずに残る</span>
                     <img class="demo-card demo-deck" src="assets/battle-images/card-back.webp" alt="" width="256" height="384">
                     <img class="demo-card demo-rice" src="assets/battle-images/cards/rice.webp" alt="" width="256" height="384">
                     <img class="demo-card demo-nori" src="assets/battle-images/cards/nori.webp" alt="" width="256" height="384">
@@ -207,8 +207,8 @@
                 <div class="demo-side">
                     <ol class="demo-steps">
                         <li class="demo-step demo-step-1"><strong>ドロー</strong>山札から手札を補充</li>
-                        <li class="demo-step demo-step-2"><strong>セット</strong>材料をセット枠へ置く（次のターン以降の料理に使える）</li>
-                        <li class="demo-step demo-step-3"><strong>料理</strong>次のターン、手札とセットの材料で料理を完成（おにぎり＝ごはん＋のり）</li>
+                        <li class="demo-step demo-step-2"><strong>セット</strong>材料をセット枠へ置く（すぐ料理に使え、ターン終了で捨てずに持ち越せる）</li>
+                        <li class="demo-step demo-step-3"><strong>料理</strong>手札とセットの材料で料理を完成（おにぎり＝ごはん＋のり）</li>
                         <li class="demo-step demo-step-4"><strong>得点</strong>料理の点数を獲得。先に10点以上で勝利</li>
                     </ol>
                     <button class="demo-toggle" type="button" data-demo-toggle aria-pressed="false">アニメを一時停止</button>
@@ -239,10 +239,10 @@
 
                 <div class="demo-panel" role="tabpanel" id="demo-panel-1" aria-labelledby="demo-tab-1" hidden>
                     <div class="demo-layout">
-                        <div class="demo-stage" role="img" aria-label="材料をセットし、次のターンにおにぎりを作って1点を獲得する流れのアニメーション">
+                        <div class="demo-stage" role="img" aria-label="のりをセット枠に置き、同じターンのうちにおにぎりを作って1点を獲得する流れのアニメーション">
                             <span class="demo-zone demo-zone-set">セット</span>
                             <span class="demo-zone demo-zone-hand">手札</span>
-                            <span class="demo-banner demo-next-turn">次のターン</span>
+                            <span class="demo-banner demo-keep">ターン終了でも捨てずに残る</span>
                             <img class="demo-card demo-deck" src="assets/battle-images/card-back.webp" alt="" width="256" height="384" loading="lazy">
                             <img class="demo-card demo-rice" src="assets/battle-images/cards/rice.webp" alt="" width="256" height="384" loading="lazy">
                             <img class="demo-card demo-nori" src="assets/battle-images/cards/nori.webp" alt="" width="256" height="384" loading="lazy">
@@ -255,8 +255,8 @@
                         </div>
                         <ol class="demo-steps">
                             <li class="demo-step demo-step-1"><strong>ドロー</strong>山札から手札を補充</li>
-                            <li class="demo-step demo-step-2"><strong>セット</strong>材料をセット枠へ置く（次のターン以降の料理に使える）</li>
-                            <li class="demo-step demo-step-3"><strong>料理</strong>次のターン、手札とセットの材料で料理を完成</li>
+                            <li class="demo-step demo-step-2"><strong>セット</strong>材料をセット枠へ置く（すぐ料理に使え、ターン終了で捨てずに持ち越せる）</li>
+                            <li class="demo-step demo-step-3"><strong>料理</strong>手札とセットの材料で料理を完成（おにぎり＝ごはん＋のり）</li>
                             <li class="demo-step demo-step-4"><strong>得点</strong>料理の点数を獲得。先に10点以上で勝利</li>
                         </ol>
                     </div>

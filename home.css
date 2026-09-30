@@ -1111,15 +1111,16 @@ body:has(dialog[open]) {
     box-shadow: 0 4px 12px rgba(40, 20, 0, 0.35);
 }
 
-/* ① "next turn" marker between setting and cooking */
-.demo-next-turn {
-    animation: demo-next-turn var(--demo-cycle) ease-out infinite;
+/* ① While the set step plays: set cards are usable right away and survive the end-of-turn discard. */
+.demo-keep {
+    font-size: 12px;
+    animation: demo-keep var(--demo-cycle) ease-out infinite;
 }
 
-@keyframes demo-next-turn {
-    0%, 43% { opacity: 0; }
-    46%, 55% { opacity: 1; }
-    59%, 100% { opacity: 0; }
+@keyframes demo-keep {
+    0%, 36% { opacity: 0; }
+    40%, 50% { opacity: 1; }
+    54%, 100% { opacity: 0; }
 }
 
 /* ② event card: select -> drag to the fire zone -> draw 3 -> discard */
@@ -1383,7 +1384,7 @@ body:has(dialog[open]) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .demo-next-turn,
+    .demo-keep,
     .d2-event,
     .d2-draw,
     .d2-effect,
@@ -1756,6 +1757,12 @@ body:has(dialog[open]) {
 
     .course-visual {
         aspect-ratio: 16 / 9;
+    }
+
+    .demo-keep {
+        top: 44%;
+        padding: 2px 10px;
+        font-size: 11px;
     }
 
     .home-dialog .demo-step {

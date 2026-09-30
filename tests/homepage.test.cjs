@@ -62,8 +62,9 @@ test('news details and extra demos open in dialogs', () => {
         assert.match(html, new RegExp(`aria-controls="demo-panel-${n}"`));
         assert.match(html, new RegExp(`id="demo-panel-${n}"`));
     }
-    // Set cards can only be cooked from the next turn onward.
-    assert.match(html, /次のターン以降の料理に使える/);
+    // Set cards can be cooked the same turn and survive the end-of-turn discard (owner-confirmed rule).
+    assert.match(html, /すぐ料理に使え、ターン終了で捨てずに持ち越せる/);
+    assert.doesNotMatch(html, /次のターン以降の料理|demo-next-turn|>次のターン</);
 });
 
 test('play modes and rules use the in-game style illustrations', () => {
