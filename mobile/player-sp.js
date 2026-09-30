@@ -179,6 +179,7 @@ function playerShowRecipeCandidates() {
     GameState.candidateRecipes = findPossibleRecipesForPlayer(player);
 
     if (GameState.candidateRecipes.length === 0) {
+        window.RecipeHints?.show();
         addLog(getUsableIngredientCards(player).some(card => card.romanReserved === true)
             ? '作れる料理がありません。ロマン仕込みの食材は10点料理にしか使えません。'
             : '作れる料理がありません。');

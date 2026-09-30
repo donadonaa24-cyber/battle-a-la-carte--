@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style-sp.css?v=20260929-mission2">
+<link rel="stylesheet" href="style-sp.css?v=20260930-hint1">
     <link rel="stylesheet" href="../online.css?v=20260929-ui1">
 </head>
 <body>
@@ -317,6 +317,14 @@
 
         <div id="log-area" class="log-area hidden"></div>
     </div>
+
+    <section id="recipe-hints-overlay" class="recipe-hints-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="recipe-hints-title">
+        <div class="recipe-hints-modal">
+            <header><span>料理のヒント</span><h2 id="recipe-hints-title">今は作れる料理がありません</h2><p>あと少しで作れる料理</p></header>
+            <div id="recipe-hints-list" class="recipe-hints-list"></div>
+            <footer><p>山札から引くか、食材探索・爆買いなどのイベントで集めよう</p><button id="recipe-hints-close-button" type="button">閉じる</button></footer>
+        </div>
+    </section>
 
     <section id="pack-shop-overlay" class="pack-shop-overlay hidden" aria-label="加工アイテム交換">
         <div class="pack-shop-modal" role="dialog" aria-modal="true" aria-labelledby="pack-shop-title">
@@ -636,17 +644,18 @@
 <script src="../profile.js?v=20260927-surrender1"></script>
 <script src="../quick-confirm.js?v=20260928-quick1"></script>
 <script src="rules-sp.js?v=20260927-balance1"></script>
-<script src="player-sp.js?v=20260929-mission1"></script>
+<script src="../recipe-hints.js?v=20260930-hint1"></script>
+<script src="player-sp.js?v=20260930-hint1"></script>
 <script src="cpu-sp.js?v=20260929-board1"></script>
     <script src="../battle-view-model.js?v=20260916"></script>
     <script src="../battle-images.js?v=20260916"></script>
-<script src="render-sp.js?v=20260929-mission1"></script>
+<script src="render-sp.js?v=20260930-hint1"></script>
     <script src="audio-sp.js?v=20260918-match1"></script>
     <script src="../supabase-config.js?v=20260912"></script>
 <script src="../battle-protocol.js?v=20260929-board1"></script>
     <script src="../battle-chat.js?v=20260916"></script>
     <script src="../battle-metrics.js?v=20260916"></script>
-<script src="../network.js?v=20260929-mission1"></script>
+<script src="../network.js?v=20260930-hint1"></script>
     <script src="main-sp.js?v=20260929-mission2"></script>
 <script src="../card-drag.js?v=20260928-stage1"></script>
 <script src="../story-mode.js?v=20260929-ui1"></script>

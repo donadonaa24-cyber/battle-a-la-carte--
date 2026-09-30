@@ -764,7 +764,12 @@ function renderInfoOverlay() {
 
     if (type === 'recipes') {
         title.textContent = '料理一覧';
-        content.innerHTML = recipes.map(r => `<div class="reference-item"><div class="reference-title">${escapeHtml(r.name)} (${r.points}点)</div><div>必要: ${escapeHtml(r.required.join(' + '))}</div></div>`).join('');
+        const player = getBattleViewModel().me;
+        content.innerHTML = recipes.map(r => {
+            const hint = window.RecipeHints?.detailsFor(player, r);
+            const status = hint ? (hint.missing.length ? `あと：${window.RecipeHints.formatNames(hint.missing)}` : '作成可能') : '';
+            return `<div class="reference-item"><div class="reference-title">${escapeHtml(r.name)} (${r.points}点)</div><div>必要: ${escapeHtml(r.required.join(' + '))}</div><div>${escapeHtml(status)}</div></div>`;
+        }).join('');
         return;
     }
 
@@ -2112,6 +2117,8 @@ function renderCandidateRecipes() {
         container.appendChild(row);
     });
 
+    window.RecipeHints?.renderNear(container, getBattleViewModel().me);
+
     const cancelRow = document.createElement('div');
     cancelRow.className = 'recipe-cancel-row';
 
@@ -2259,7 +2266,8 @@ function renderShopButtons() {
         shopButton.classList.toggle('all-exchanged', ownedCount === packDefinitions.length);
     }
     if (cookBtn) {
-        cookBtn.disabled = disabled;
+        cookBtn.disabled = disabled || GameState.currentPhase !== 'メインフェイズ' || !!player.lockedCookingThisTurn;
+        cookBtn.title = player.lockedCookingThisTurn ? 'このターンはイベント効果で通常料理できません。' : '';
         const canCookNow = !disabled && !player.lockedCookingThisTurn && findPossibleRecipesForPlayer(player).length > 0;
         cookBtn.classList.toggle('has-recipe-alert', canCookNow);
     }
@@ -2479,6 +2487,7 @@ function performUIRender() {
         renderCandidateRecipes();
         renderSkillHud();
         renderShopButtons();
+        window.RecipeHints?.render();
         renderPackShopModal();
         renderDiscardButton();
         renderDishSummaries();

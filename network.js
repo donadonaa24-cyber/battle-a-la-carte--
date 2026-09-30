@@ -858,7 +858,9 @@
         for (const name of protocol.actions) {
             const original = window[name];
             originals.set(name, original);
-            window[name] = (...args) => active() ? dispatch(name, args) : original(...args);
+            window[name] = (...args) => active() && name === 'playerShowRecipeCandidates' &&
+                findPossibleRecipesForPlayer(getBattleViewModel().me).length === 0
+                ? original(...args) : active() ? dispatch(name, args) : original(...args);
         }
         const requestPile = window.requestPileView;
         window.requestPileView = type => {
