@@ -1,6 +1,6 @@
 // HOST-only worker. Reuses the actual game rules without rendering or local coin rewards.
 self.window = self;
-importScripts('battle-protocol.js?v=20260929-board1', 'cards.js?v=20260929-board1', 'state.js?v=20260929-mission1', 'rules.js?v=20260927-balance1', 'player.js?v=20260929-mission1');
+importScripts('battle-protocol.js?v=20260929-board1', 'cards.js?v=20260929-board1', 'state.js?v=20260929-mission1', 'rules.js?v=20260927-balance1', 'player.js?v=20261001-cooksfx1');
 // Rule timers only schedule presentation; deliver those cues with the committed action.
 self.setTimeout = callback => { callback(); return 0; };
 let effects = [], logs = [];
@@ -8,7 +8,7 @@ for (const name of ['updateUI', 'hideDiscardBanner', 'showDiscardBanner', 'disab
     self[name] = () => {};
 }
 for (const name of ['playSfx', 'playCookBgm', 'showSpotlightRecipeCard', 'showSpotlightEventCard',
-    'showSpotlightSkillCutin', 'showSpotlightPackCardAsync', 'setBattleModeBgmLocked', 'playBattleModeBGM', 'showBattleALaCarteModeCutin']) {
+    'showSpotlightSkillCutin', 'showSpotlightPackCardAsync', 'setBattleModeBgmLocked', 'playBattleModeBGM', 'showBattleALaCarteModeCutin', 'showFieldNotice']) {
     self[name] = (...args) => { effects.push({ name, args }); };
 }
 self.addLog = text => logs.push(String(text));
@@ -62,7 +62,7 @@ async function execute(request) {
     const snapshot = BattleProtocol.clone(GameState);
     const views = {};
     for (const role of ['host', 'guest']) {
-        const adapted = BattleProtocol.clone(effects);
+        const adapted = BattleProtocol.clone(effects).filter(effect => effect.name !== 'showFieldNotice' || role === actor);
         if (role !== actor) {
             for (const e of adapted) if (['showSpotlightSkillCutin', 'showBattleALaCarteModeCutin'].includes(e.name))
                 e.args[0] = e.args[0] === 'player' ? 'cpu' : 'player';

@@ -91,6 +91,34 @@ const EVENT_IMAGE_MAP = {
 function byId(id) { return document.getElementById(id); }
 function safeSetText(id, text) { const el = byId(id); if (el) el.textContent = text; }
 
+let fieldNoticeTimer = null;
+let fieldNoticeFlashTimer = null;
+function showFieldNotice(message) {
+    const notice = byId('field-notice');
+    if (!notice) return;
+    const firstTurn = message === '最初のターンはイベントを使用できません。';
+    safeSetText('field-notice-message', firstTurn ? '先攻は最初のターンにイベントカードを使えません' : message);
+    const detail = byId('field-notice-detail');
+    if (detail) {
+        detail.textContent = firstTurn ? '次のターンから使えます' : '';
+        detail.classList.toggle('hidden', !firstTurn);
+    }
+    notice.classList.remove('hidden');
+    clearTimeout(fieldNoticeTimer);
+    fieldNoticeTimer = setTimeout(() => {
+        notice.classList.add('hidden');
+        safeSetText('field-notice-message', '');
+        if (detail) detail.textContent = '';
+    }, 2500);
+
+    const zone = document.querySelector('.center-field, .center-panel');
+    if (zone) {
+        clearTimeout(fieldNoticeFlashTimer);
+        zone.classList.add('event-refusal-flash');
+        fieldNoticeFlashTimer = setTimeout(() => zone.classList.remove('event-refusal-flash'), 400);
+    }
+}
+
 function shouldSkipSectionRender(sectionKey, signature) {
     const key = String(sectionKey || '');
     const normalized = String(signature || '');
@@ -1267,6 +1295,8 @@ function renderPlayerMixedHand() {
     if (!container) return;
 
     const player = getBattleViewModel().me;
+    const firstTurnLocked = GameState.turnNumber === 1 && getBattleViewModel().turn === 'me' && !GameState.gameEnded;
+    byId('event-first-turn-hint')?.classList.toggle('hidden', !firstTurnLocked || player.events.length === 0);
     const cards = [
         ...player.hand.map(card => ({ ...card, zoneType: 'ingredient' })),
         ...player.events.map(card => ({ ...card, zoneType: 'event' }))
@@ -1276,6 +1306,7 @@ function renderPlayerMixedHand() {
         GameState.selectionMode || '',
         (GameState.selectedCardIds || []).join(','),
         getBattleViewModel().turn || '',
+        firstTurnLocked ? 'first-turn-locked' : '',
         GameState.gameEnded ? '1' : '0'
     ].join('::');
     if (shouldSkipSectionRender('player-hand-mixed', signature)) return;
@@ -1288,8 +1319,14 @@ function renderPlayerMixedHand() {
     cards.forEach(card => {
         const className = card.type === 'event' ? 'event-card' : 'ingredient-card';
         const el = createFaceCard(card, className);
+        if (card.type === 'event' && firstTurnLocked) {
+            el.classList.add('event-first-turn-locked');
+            el.title = '1ターン目は使用不可：次のターンから使えます';
+        }
         if (activeCardMotionFrame?.newOwnIds.has(String(card.id))) markCardDrawArrival(el, drawOrder++, PLAYER_DRAW_REVEAL_INTERVAL_MS);
         window.CardDragActions?.mark(el, card);
+
+        if (card.type === 'event' && firstTurnLocked) el.setAttribute('aria-label', `${card.name}。1ターン目は使用不可。次のターンから使えます`);
 
         if (GameState.selectionMode === 'discard' && GameState.selectedCardIds.includes(card.id)) el.classList.add('selected-card');
 
@@ -1706,8 +1743,7 @@ function renderSelectionPanel() {
             options.appendChild(item);
         });
         options.scrollTop = scrollTop;
-        confirmButton.textContent = '捨てる';
-        confirmButton.disabled = GameState.selectedCardIds.length !== GameState.discardNeedCount;
+        renderDiscardButton();
         return;
     }
 
@@ -2189,6 +2225,8 @@ function renderSkillHud() {
 
     button.disabled = !canUseNow;
     button.classList.toggle('ready', canUseNow);
+    button.classList.toggle('has-recipe-alert', canUseNow && !GameState.selectionMode &&
+        !packShopOpen && !GameState.ui?.infoOverlayType);
     button.textContent = 'スキル発動';
 
     if (!playerSkill) {
@@ -2361,11 +2399,22 @@ function renderPackShopModal() {
 
 function renderDiscardButton() {
     const button = byId('confirm-discard-button');
-    if (!button) return;
     const discarding = GameState.selectionMode === 'discard';
-    button.disabled = !discarding || GameState.selectedCardIds.length !== GameState.discardNeedCount;
-    button.textContent = `捨てる（${GameState.discardNeedCount || 0}枚）`;
-    button.classList.toggle('hidden', !discarding);
+    const canDiscard = discarding && getBattleViewModel().turn === 'me' && !GameState.gameEnded;
+    const count = GameState.selectedCardIds.length;
+    const label = `選んだ${count}枚を捨てる`;
+    const disabled = !canDiscard || count !== GameState.discardNeedCount;
+    byId('game-container')?.classList.toggle('discard-selection-active', canDiscard);
+    if (button) {
+        button.disabled = disabled;
+        button.textContent = label;
+        button.classList.toggle('hidden', !discarding);
+    }
+    const modalButton = byId('selection-confirm-button');
+    if (discarding && modalButton) {
+        modalButton.textContent = label;
+        modalButton.disabled = disabled;
+    }
     byId('cook-button')?.classList.toggle('hidden', discarding);
     byId('player-skill-button')?.classList.toggle('hidden', discarding);
     byId('end-turn-button')?.classList.toggle('hidden', discarding);
@@ -2561,6 +2610,7 @@ function updateUI(forceImmediate = false) {
 }
 
 window.updateUI = updateUI;
+window.showFieldNotice = showFieldNotice;
 window.updateUIImmediate = () => updateUI(true);
 window.addLog = addLog;
 window.setCPUStatus = setCPUStatus;

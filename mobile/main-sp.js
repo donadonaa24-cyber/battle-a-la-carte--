@@ -1,4 +1,4 @@
-let bgmStarted = false;
+﻿let bgmStarted = false;
 let resultOverlayTimer = null;
 let matchFinaleTimer = null;
 let spotlightTimer = null;
@@ -15,6 +15,7 @@ let startMenuFloatTimer = null;
 let selectedGalleryType = 'characters';
 let startCpuSetupStep = 1;
 let pendingMissionId = null;
+let choosingMissionOpponent = false;
 let startOverlayAudioUnlockBound = false;
 const START_MENU_CARD_VISIBLE_MS = 5000;
 const START_MENU_CARD_FADE_MS = 600;
@@ -24,17 +25,17 @@ const BATTLE_MODE_TEXT_STEP1_MS = 1000;
 const BATTLE_MODE_TEXT_STEP2_MS = 2000;
 const BATTLE_MODE_CUTIN_IMAGE_MS = 3000;
 const SKILL_CUTIN_IMAGE_PATHS = {
-    chizuru: '../assets/images/skill-cutins/chizuru-skill-cutin.png',
-    mai: '../assets/images/skill-cutins/mai-skill-cutin.png',
-    takumi: '../assets/images/skill-cutins/takumi-skill-cutin.png',
-    akatsuki: '../assets/images/skill-cutins/akatsuki-skill-cutin.png'
+    chizuru: 'assets/images/skill-cutins/chizuru-skill-cutin.png',
+    mai: 'assets/images/skill-cutins/mai-skill-cutin.png',
+    takumi: 'assets/images/skill-cutins/takumi-skill-cutin.png',
+    akatsuki: 'assets/images/skill-cutins/akatsuki-skill-cutin.png'
 };
 
 const BATTLE_MODE_CUTIN_IMAGE_PATHS = {
-    chizuru: '../assets/images/battle-mode-cutins/chizuru-battle-mode-cutin.png',
-    mai: '../assets/images/battle-mode-cutins/mai-battle-mode-cutin.png',
-    takumi: '../assets/images/battle-mode-cutins/takumi-battle-mode-cutin.png',
-    akatsuki: '../assets/images/battle-mode-cutins/akatsuki-battle-mode-cutin.png'
+    chizuru: 'assets/images/battle-mode-cutins/chizuru-battle-mode-cutin.png',
+    mai: 'assets/images/battle-mode-cutins/mai-battle-mode-cutin.png',
+    takumi: 'assets/images/battle-mode-cutins/takumi-battle-mode-cutin.png',
+    akatsuki: 'assets/images/battle-mode-cutins/akatsuki-battle-mode-cutin.png'
 };
 const STARTUP_IMAGE_CACHE_NOTICE = '\u521d\u56de\u8d77\u52d5\u6642\u306f\u753b\u50cf\u306e\u8aad\u307f\u8fbc\u307f\u306b\u6642\u9593\u304c\u304b\u304b\u308a\u3001\u8868\u793a\u304c\u9045\u308c\u308b\u5834\u5408\u304c\u3042\u308a\u307e\u3059\u3002\u5c11\u3057\u5f85\u3064\u3068\u30ad\u30e3\u30c3\u30b7\u30e5\u304c\u52b9\u3044\u3066\u8868\u793a\u3055\u308c\u308b\u3088\u3046\u306b\u306a\u308a\u307e\u3059\u3002';
 
@@ -701,6 +702,7 @@ function findFriendRoom(passphrase) {
 }
 
 function showStartStage(activeId) {
+    window.cancelPendingCookSfx?.();
     START_STAGE_IDS.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -733,7 +735,7 @@ function escapeHtmlText(text) {
 }
 
 function getStartMenuFloatImagePool() {
-    const pool = ['../assets/battle-images/card-back.webp'];
+    const pool = ['assets/battle-images/card-back.webp'];
 
     if (Array.isArray(window.ingredientDefinitions) && typeof window.getIngredientImagePath === 'function') {
         window.ingredientDefinitions.forEach(def => {
@@ -878,7 +880,7 @@ function renderStartGallery(type) {
             : 'start-gallery-art start-gallery-card-art';
         const artHtml = item.characterClass
             ? `<div class="start-gallery-art character-art"><span class="start-char-portrait ${escapeHtmlText(item.characterClass)}"></span></div>`
-            : `<div class="${staticArtClass}" style="background-image:url('${escapeHtmlText(item.imagePath || '../assets/battle-images/card-back.webp')}')"></div>`;
+            : `<div class="${staticArtClass}" style="background-image:url('${escapeHtmlText(item.imagePath || 'assets/battle-images/card-back.webp')}')"></div>`;
 
         return `
             <article class="start-gallery-card">
@@ -1155,7 +1157,25 @@ function setCharacterChoice(choice) {
     buttons.forEach(button => {
         const charId = button.getAttribute('data-character-id');
         button.classList.toggle('active', charId === selectedStartCharacter);
+        button.setAttribute('aria-pressed', String(charId === selectedStartCharacter));
     });
+}
+
+function renderStartCharacterCards(containerId, selectedId, opponent = false) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const skill = getSkillDefinitionByKeySafe(selectedStartSkillKey);
+    const personality = getCpuPersonalityOptionsSafe().find(item => item.key === selectedCpuPersonality);
+    const strategy = opponent ? `CPU性格：${personality?.label || '標準'}` : `スキル：${skill?.name || '次へで選択'}`;
+    const prefix = window.location?.pathname?.includes('/mobile/') ? '../' : '';
+    container.innerHTML = START_CHARACTER_OPTIONS.map(option => {
+        const selected = option.id === selectedId;
+        const attribute = opponent ? 'data-opponent-id' : 'data-character-id';
+        return `<button type="button" class="start-char-button start-standing-card${selected ? ' active' : ''}" ${attribute}="${option.id}" aria-pressed="${selected}">
+            <img class="start-standing-art" src="${prefix}${BattleImages.standingPath(option.id)}" width="512" height="768" alt="" draggable="false">
+            <span class="start-standing-plate"><span class="start-char-name">${option.name}</span><span class="start-char-strategy">${escapeHtmlText(strategy)}</span></span>
+        </button>`;
+    }).join('');
 }
 
 function applyCharacterChoice() {
@@ -1265,7 +1285,39 @@ function onTurnCardSelected(side) {
     }, 900);
 }
 
+// The online menu mounts its controls first. Move the existing nodes so their
+// listeners and form submission stay intact, without changing network code.
+function setupOnlineStartLayout() {
+    const stage = document.getElementById('start-friend-stage');
+    if (!stage || stage.querySelector('.start-stage-body')) return;
+    const header = document.createElement('div');
+    header.className = 'start-stage-header';
+    const body = document.createElement('div');
+    body.className = 'start-stage-body';
+    const footer = document.createElement('div');
+    footer.className = 'start-stage-footer';
+    const roomActions = stage.querySelector('.start-setup-actions');
+    const search = document.getElementById('friend-search-public-button');
+    const back = document.getElementById('start-friend-back-button');
+    const resume = document.getElementById('online-resume');
+    const login = stage.querySelector('#online-login-form button[type="submit"]');
+    if (login) login.setAttribute('form', 'online-login-form');
+    for (const child of Array.from(stage.children)) {
+        if (child.matches('h2, .start-subtitle')) header.appendChild(child);
+        else if (child !== roomActions && child !== back) body.appendChild(child);
+    }
+    if (roomActions) footer.appendChild(roomActions);
+    for (const buttons of [[login, resume], [search, back]]) {
+        const row = document.createElement('div');
+        row.className = 'start-setup-actions';
+        buttons.filter(Boolean).forEach(button => row.appendChild(button));
+        if (row.children.length) footer.appendChild(row);
+    }
+    stage.append(header, body, footer);
+}
+
 function setupStartOverlay() {
+    setupOnlineStartLayout();
     setupMatchAutosaveOnce();
     setupMatchExitGuardOnce();
     const overlay = document.getElementById('start-overlay');
@@ -1282,7 +1334,8 @@ function setupStartOverlay() {
         }, { once: true, passive: true });
     }
 
-    const charButtons = document.querySelectorAll('.start-char-button[data-character-id]');
+    const characterCards = document.getElementById('start-character-cards');
+    const opponentCards = document.getElementById('start-opponent-cards');
     const startButton = document.getElementById('start-setup-button');
     const turnStage = document.getElementById('start-turn-stage');
     const left = document.getElementById('start-turn-card-left');
@@ -1319,6 +1372,8 @@ function setupStartOverlay() {
     const startSkillList = document.getElementById('start-skill-list');
     const startSkillDetail = document.getElementById('start-skill-detail');
     const startSkillMessage = document.getElementById('start-skill-message');
+    const startSkillFooter = document.getElementById('start-skill-footer');
+    const startSkillFavoriteButton = document.getElementById('start-skill-favorite-button');
     const startSkillRulesList = document.getElementById('start-skill-rules-list');
     const startCharacterStep = document.getElementById('start-character-step');
     const missionOpponentWrap = document.getElementById('start-mission-opponent-wrap');
@@ -1343,14 +1398,15 @@ function setupStartOverlay() {
     };
 
     const renderCpuSetupStep = () => {
-        if (startCharacterStep) startCharacterStep.classList.toggle('hidden', startCpuSetupStep !== 1);
-        if (missionOpponentWrap) missionOpponentWrap.classList.toggle('hidden', !pendingMissionId);
+        if (startCharacterStep) startCharacterStep.classList.toggle('hidden', startCpuSetupStep !== 1 || choosingMissionOpponent);
+        if (missionOpponentWrap) missionOpponentWrap.classList.toggle('hidden', startCpuSetupStep !== 1 || !pendingMissionId || !choosingMissionOpponent);
         if (startSkillStep) startSkillStep.classList.toggle('hidden', startCpuSetupStep !== 2);
+        if (startSkillFooter) startSkillFooter.classList.toggle('hidden', startCpuSetupStep !== 2);
         if (turnStage) turnStage.classList.toggle('hidden', startCpuSetupStep !== 3);
 
         if (startCpuSetupSubtitle) {
             if (startCpuSetupStep === 1) {
-                startCpuSetupSubtitle.textContent = '1/3 キャラを選択';
+                startCpuSetupSubtitle.textContent = choosingMissionOpponent ? '1/3 対戦相手を選択' : '1/3 キャラを選択';
             } else if (startCpuSetupStep === 2) {
                 startCpuSetupSubtitle.textContent = '2/3 スキルを選択';
             } else {
@@ -1361,7 +1417,7 @@ function setupStartOverlay() {
         if (startButton) {
             if (startCpuSetupStep === 1) {
                 startButton.classList.remove('hidden');
-                startButton.textContent = '次へ（スキル選択）';
+                startButton.textContent = pendingMissionId && !choosingMissionOpponent ? '次へ（対戦相手を選択）' : '次へ（スキル選択）';
             } else if (startCpuSetupStep === 2) {
                 startButton.classList.remove('hidden');
                 startButton.textContent = '次へ（先攻・後攻決め）';
@@ -1372,18 +1428,24 @@ function setupStartOverlay() {
 
         if (backMenuButton) {
             if (startCpuSetupStep === 1) {
-                backMenuButton.textContent = 'メニューへ戻る';
+                backMenuButton.textContent = choosingMissionOpponent ? 'キャラ選択へ戻る' : 'メニューへ戻る';
             } else if (startCpuSetupStep === 2) {
-                backMenuButton.textContent = 'キャラ選択へ戻る';
+                backMenuButton.textContent = pendingMissionId ? '対戦相手へ戻る' : 'キャラ選択へ戻る';
             } else {
                 backMenuButton.textContent = 'スキル選択へ戻る';
             }
+        }
+        if (startCpuSetupStep === 1) {
+            renderStartCharacterCards('start-character-cards', selectedStartCharacter);
+            if (pendingMissionId) renderStartCharacterCards('start-opponent-cards', missionOpponentSelect?.value, true);
         }
     };
 
     const setCpuSetupStep = (nextStep) => {
         startCpuSetupStep = Math.max(1, Math.min(3, Number(nextStep) || 1));
         renderCpuSetupStep();
+        const body = document.querySelector('#start-cpu-setup-stage > .start-stage-body');
+        if (body) body.scrollTop = 0;
     };
 
     const openTurnDecisionStep = () => {
@@ -1399,6 +1461,7 @@ function setupStartOverlay() {
 
     const openMenuStage = () => {
         pendingMissionId = null;
+        choosingMissionOpponent = false;
         resetTurnStage();
         setCpuSetupStep(1);
         setStartMenuMessage(STARTUP_IMAGE_CACHE_NOTICE);
@@ -1456,6 +1519,7 @@ function setupStartOverlay() {
                 <button type="button" class="start-skill-tile${selected ? ' active' : ''}" data-pick-skill-key="${escapeHtmlText(skill.key)}" aria-pressed="${selected ? 'true' : 'false'}">
                     <span class="start-skill-tile-name">${escapeHtmlText(skill.name)}</span>
                     <span class="skill-recommendation">${escapeHtmlText(skillRecommendationText(skill))}</span>
+                    <span class="start-skill-tile-summary">${escapeHtmlText(skill.effect || 'なし')}</span>
                     <span class="start-skill-tile-uses">${maxUses}回</span>
                 </button>
             `;
@@ -1468,15 +1532,19 @@ function setupStartOverlay() {
             } else {
                 const maxUses = Number.isFinite(Number(picked.maxUses)) ? Math.max(1, Math.floor(Number(picked.maxUses))) : 1;
                 startSkillDetail.innerHTML = `
-                    <div class="start-skill-detail-name">${escapeHtmlText(picked.name)}</div>
+                    <details>
+                    <summary class="start-skill-detail-name">${escapeHtmlText(picked.name)} · 詳しく</summary>
+                    <div class="start-skill-detail-body">
                     <div class="skill-recommendation">${escapeHtmlText(skillRecommendationText(picked))}</div>
                     <div class="start-skill-detail-row"><span>条件</span><strong>${escapeHtmlText(picked.condition || 'なし')}</strong></div>
                     <div class="start-skill-detail-row"><span>効果</span><strong>${escapeHtmlText(picked.effect || 'なし')}</strong></div>
                     <div class="start-skill-detail-row"><span>使用回数</span><strong>${maxUses}回</strong></div>
+                    </div>
+                    </details>
                 `;
             }
         }
-        setStartSkillMessage(picked ? `現在の選択: ${picked.name}` : 'スキルを1つ選択してください。');
+        setStartSkillMessage(picked ? '' : 'スキルを1つ選択してください。');
     };
 
     const renderStartSkillRules = () => {
@@ -1511,11 +1579,18 @@ function setupStartOverlay() {
         startCpuPersonalitySelect.value = current;
     };
 
-    charButtons.forEach(button => {
-        button.addEventListener('click', () => {
+    characterCards?.addEventListener('click', event => {
+            const button = event.target.closest('button[data-character-id]');
+            if (!button) return;
             const charId = button.getAttribute('data-character-id');
             setCharacterChoice(charId || 'chizuru');
-        });
+    });
+    opponentCards?.addEventListener('click', event => {
+        const button = event.target.closest('button[data-opponent-id]');
+        const id = button?.getAttribute('data-opponent-id');
+        if (!getStartCharacterOptionById(id) || !missionOpponentSelect) return;
+        missionOpponentSelect.value = id;
+        renderStartCharacterCards('start-opponent-cards', id, true);
     });
 
     if (startCpuPersonalitySelect) {
@@ -1539,12 +1614,26 @@ function setupStartOverlay() {
         });
     }
 
+    if (startSkillFavoriteButton) {
+        startSkillFavoriteButton.addEventListener('click', () => {
+            const skill = getSkillDefinitionByKeySafe(selectedStartSkillKey);
+            if (!skill || typeof updateUserBasicSettings !== 'function') return;
+            updateUserBasicSettings({ favoriteSkillKey: skill.key });
+            setStartSkillMessage(`「${skill.name}」をお気に入りに登録しました。`);
+        });
+    }
+
     if (left) left.addEventListener('click', () => onTurnCardSelected('left'));
     if (right) right.addEventListener('click', () => onTurnCardSelected('right'));
 
     if (startButton) {
         startButton.addEventListener('click', () => {
             if (startCpuSetupStep === 1) {
+                if (pendingMissionId && !choosingMissionOpponent) {
+                    choosingMissionOpponent = true;
+                    setCpuSetupStep(1);
+                    return;
+                }
                 setCpuSetupStep(2);
                 return;
             }
@@ -1568,6 +1657,7 @@ function setupStartOverlay() {
 
     const openCpuSetup = (missionId = null) => {
             pendingMissionId = window.Missions?.getDefinition(missionId) ? missionId : null;
+            choosingMissionOpponent = false;
             if (typeof unlockAudio === 'function') unlockAudio();
             setStartMenuMessage('');
             resetTurnStage();
@@ -1652,13 +1742,18 @@ function setupStartOverlay() {
     if (menuHomeButton) {
         menuHomeButton.addEventListener('click', () => {
             stopMenuFloatingBackground();
-            window.location.href = '../index.html';
+            window.location.href = 'index.html';
         });
     }
 
     if (backMenuButton) {
         backMenuButton.addEventListener('click', () => {
             if (startCpuSetupStep <= 1) {
+                if (choosingMissionOpponent) {
+                    choosingMissionOpponent = false;
+                    setCpuSetupStep(1);
+                    return;
+                }
                 openMenuStage();
                 return;
             }
@@ -2018,6 +2113,7 @@ function showFieldPackDetails(packDef, owned) {
 function prepareMatchFinale(winner) {
     updateBattleMenu();
     if (GameState.surrenderedBy) {
+        window.cancelPendingCookSfx?.();
         if (matchFinaleTimer) clearTimeout(matchFinaleTimer);
         hideSpotlightCard();
         showResultOverlay(buildWinnerText(winner), winner === 'player' ? 'win' : 'lose');

@@ -295,7 +295,7 @@
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20260929-mission1', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20261001-cooksfx1', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;
@@ -341,7 +341,7 @@
         for (const text of row.payload.logs || []) window.addLog(String(text).replace(/CPU/g, '相手'));
         for (const effect of row.payload.effects || []) {
             if (['playSfx', 'playCookBgm', 'showSpotlightRecipeCard', 'showSpotlightEventCard',
-                'showSpotlightSkillCutin', 'showSpotlightPackCardAsync', 'setBattleModeBgmLocked', 'playBattleModeBGM', 'showBattleALaCarteModeCutin'].includes(effect.name)) {
+                'showSpotlightSkillCutin', 'showSpotlightPackCardAsync', 'setBattleModeBgmLocked', 'playBattleModeBGM', 'showBattleALaCarteModeCutin', 'showFieldNotice'].includes(effect.name)) {
                 if (effect.name === 'showBattleALaCarteModeCutin') setTimeout(() => window[effect.name]?.(...effect.args), 2100);
                 else window[effect.name]?.(...effect.args);
             }

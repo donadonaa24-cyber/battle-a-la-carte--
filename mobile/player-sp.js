@@ -1048,9 +1048,15 @@ function getBoardCycleError(side, eventId) {
     return null;
 }
 
+// Keep the existing log text; renderers (or the online presentation bridge) add a field notice.
+function reportEventRefusal(message, side = 'player') {
+    addLog(message);
+    if (side === 'player') window.showFieldNotice?.(message);
+}
+
 function playerUseBoardCycle(eventId) {
     const error = getBoardCycleError('player', eventId);
-    if (error) { addLog(error); return false; }
+    if (error) { reportEventRefusal(error); return false; }
     const player = GameState.players.player;
     const index = player.events.findIndex(card => card.id === eventId);
     moveCardToDiscard(player.events.splice(index, 1)[0]);
@@ -1077,7 +1083,7 @@ function beginBoardCycleSelection() {
     if (GameState.selectionMode !== 'board-details') return;
     const firstEvent = GameState.players.player.events[0];
     const error = getBoardCycleError('player', firstEvent?.id);
-    if (error) { addLog(error); updateUI(); return; }
+    if (error) { reportEventRefusal(error); updateUI(); return; }
     GameState.selectionMode = 'board-cycle-select';
     GameState.selectedTargetIds = [];
     updateUI();
@@ -1094,7 +1100,7 @@ function confirmBoardCycleSelection() {
     if (GameState.selectionMode !== 'board-cycle-select') return;
     const eventId = GameState.selectedTargetIds[0];
     const error = getBoardCycleError('player', eventId);
-    if (error) { addLog(error); updateUI(); return; }
+    if (error) { reportEventRefusal(error); updateUI(); return; }
     GameState.selectionMode = null;
     GameState.selectedTargetIds = [];
     window.playerUseBoardCycle(eventId);
@@ -1116,12 +1122,12 @@ function playerUseEvent(eventId) {
     const player = GameState.players.player;
 
     if (GameState.turnNumber === 1) {
-        addLog('最初のターンはイベントを使用できません。');
+        reportEventRefusal('最初のターンはイベントを使用できません。');
         return;
     }
 
     if (!canUseEventThisTurn(player)) {
-        addLog('このターンはすでにイベントカードを使用しています。');
+        reportEventRefusal('このターンはすでにイベントカードを使用しています。');
         return;
     }
 
@@ -1129,13 +1135,13 @@ function playerUseEvent(eventId) {
     if (!eventCard) return;
 
     if (eventCard.name === 'やり直し' && getCurrentTotalHandCount(player) <= 1) {
-        addLog('引き直す手札がありません。');
+        reportEventRefusal('引き直す手札がありません。');
         return;
     }
 
     const specialCheck = canActivateSpecialCookingEvent(player, eventCard.name);
     if (!specialCheck.ok) {
-        addLog(specialCheck.message);
+        reportEventRefusal(specialCheck.message);
         return;
     }
 
@@ -1163,14 +1169,14 @@ function confirmEventCard() {
     if (!canUseEventThisTurn(player)) {
         GameState.selectionMode = null;
         GameState.pendingEventCardId = null;
-        addLog(GameState.turnNumber === 1 ? '最初のターンはイベントを使用できません。' : 'このターンはすでにイベントカードを使用しています。');
+        reportEventRefusal(GameState.turnNumber === 1 ? '最初のターンはイベントを使用できません。' : 'このターンはすでにイベントカードを使用しています。');
         updateUI();
         return;
     }
     if (eventCard.name === 'やり直し' && getCurrentTotalHandCount(player) <= 1) {
         GameState.selectionMode = null;
         GameState.pendingEventCardId = null;
-        addLog('引き直す手札がありません。');
+        reportEventRefusal('引き直す手札がありません。');
         updateUI();
         return;
     }
@@ -1226,7 +1232,7 @@ function needsEventSelection(selfPlayer, enemyPlayer, eventCard, side) {
 function startEventSelection(selfPlayer, enemyPlayer, eventCard, side) {
     const specialCheck = canActivateSpecialCookingEvent(selfPlayer, eventCard.name);
     if (!specialCheck.ok) {
-        addLog(specialCheck.message);
+        reportEventRefusal(specialCheck.message, side);
         return;
     }
 
@@ -1359,7 +1365,7 @@ function toggleEventTargetSelection(targetId) {
 function proceedTradeExchangeSecondStep(context, selfPlayer) {
     const receiveId = GameState.selectedTargetIds[0];
     if (!receiveId) {
-        addLog('相手から受け取るカードを1枚選んでください。');
+        reportEventRefusal('相手から受け取るカードを1枚選んでください。');
         return;
     }
 
@@ -1401,7 +1407,7 @@ function confirmEventSelection() {
 
     if (context.battleModeDiscardPickup === true) {
         if (GameState.selectedTargetIds.length < context.minSelect || GameState.selectedTargetIds.length > context.maxSelect) {
-            addLog(`選択枚数が不正です（${context.minSelect}〜${context.maxSelect}枚）。`);
+            reportEventRefusal(`選択枚数が不正です（${context.minSelect}〜${context.maxSelect}枚）。`);
             return;
         }
         if (typeof resolveBattleModeDiscardPickupSelection === 'function') {
@@ -1416,7 +1422,7 @@ function confirmEventSelection() {
 
     if (context.eventName === '物々交換' && context.step === 1) {
         if (GameState.selectedTargetIds.length !== 1) {
-            addLog('受け取るカードを1枚選択してください。');
+            reportEventRefusal('受け取るカードを1枚選択してください。');
             return;
         }
         proceedTradeExchangeSecondStep(context, selfPlayer);
@@ -1424,7 +1430,7 @@ function confirmEventSelection() {
     }
 
     if (GameState.selectedTargetIds.length < context.minSelect || GameState.selectedTargetIds.length > context.maxSelect) {
-        addLog(`選択枚数が不正です（${context.minSelect}〜${context.maxSelect}枚）。`);
+        reportEventRefusal(`選択枚数が不正です（${context.minSelect}〜${context.maxSelect}枚）。`);
         return;
     }
 
@@ -1567,6 +1573,7 @@ function pushSpecialEventDishHistory(player, dishName) {
         fromEvent: true
     });
     player.recipesCookedThisTurn = (player.recipesCookedThisTurn || 0) + 1;
+    if (window.playCookBgm) { playCookBgm(); } else if (typeof playSfx === 'function') { playSfx('cook'); }
     if (player === GameState.players.player && typeof recordDishCooked === 'function') {
         recordDishCooked(1, dishName);
     }
@@ -1599,14 +1606,14 @@ function executeEventEffect(selfPlayer, enemyPlayer, eventCard, side, extra) {
                 selfPlayer.hand.push(card);
                 addLog(`${actorName}は「ゴミ収集車」で「${card.name}」を回収しました。`);
             } else {
-                addLog(`${actorName}は「ゴミ収集車」を使いましたが回収対象がありませんでした。`);
+                reportEventRefusal(`${actorName}は「ゴミ収集車」を使いましたが回収対象がありませんでした。`, side);
             }
             break;
         }
 
         case '物々交換': {
             if (selfPlayer.hand.length === 0 || enemyPlayer.hand.length === 0) {
-                addLog(`${actorName}は「物々交換」を使いましたが交換できませんでした。`);
+                reportEventRefusal(`${actorName}は「物々交換」を使いましたが交換できませんでした。`, side);
                 break;
             }
 
@@ -1630,7 +1637,7 @@ function executeEventEffect(selfPlayer, enemyPlayer, eventCard, side, extra) {
 
         case 'やっぱやめた': {
             if (selfPlayer.set.length === 0) {
-                addLog(`${actorName}は「やっぱやめた」を使いましたが戻すセットがありませんでした。`);
+                reportEventRefusal(`${actorName}は「やっぱやめた」を使いましたが戻すセットがありませんでした。`, side);
                 break;
             }
             let movedCount = 0;
@@ -1655,7 +1662,7 @@ function executeEventEffect(selfPlayer, enemyPlayer, eventCard, side, extra) {
 
         case '創作料理': {
             if (selfPlayer.score > 6) {
-                addLog(`${actorName}は「創作料理」を使えませんでした（点数が7以上）。`);
+                reportEventRefusal(`${actorName}は「創作料理」を使えませんでした（点数が7以上）。`, side);
                 break;
             }
 
@@ -1663,7 +1670,7 @@ function executeEventEffect(selfPlayer, enemyPlayer, eventCard, side, extra) {
             const ids = selectedIds.length === 2 ? selectedIds : fallbackIds;
 
             if (ids.length < 2) {
-                addLog(`${actorName}は「創作料理」の材料選択に失敗しました。`);
+                reportEventRefusal(`${actorName}は「創作料理」の材料選択に失敗しました。`, side);
                 break;
             }
 
@@ -1731,14 +1738,14 @@ function executeEventEffect(selfPlayer, enemyPlayer, eventCard, side, extra) {
 
         case '緊急料理': {
             if (selfPlayer.score > 3) {
-                addLog(`${actorName}は「緊急料理」を使えませんでした（点数が4以上）。`);
+                reportEventRefusal(`${actorName}は「緊急料理」を使えませんでした（点数が4以上）。`, side);
                 break;
             }
 
             const fallbackId = getSelectableIngredientCards(selfPlayer)[0]?.id;
             const id = selectedIds[0] || fallbackId;
             if (!id) {
-                addLog(`${actorName}は「緊急料理」の材料を選べませんでした。`);
+                reportEventRefusal(`${actorName}は「緊急料理」の材料を選べませんでした。`, side);
                 break;
             }
 

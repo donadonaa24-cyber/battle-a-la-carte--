@@ -635,6 +635,11 @@ button { line-height: 1.35; }
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
+/* These overlays can open without changing the skill's activation status. */
+body:has(.recipe-hints-overlay:not(.hidden), .spotlight-overlay:not(.hidden), #surrender-dialog[open]) #player-skill-button.has-recipe-alert::after {
+    display: none;
+}
+
 .candidate-recipes-panel {
     position: absolute;
     left: 104px;
@@ -1951,7 +1956,7 @@ button { line-height: 1.35; }
     padding: 16px 16px 20px;
     box-sizing: border-box;
     text-align: center;
-    overflow-y: auto;
+    overflow: hidden;
     color: #eaf6ff;
 }
 
@@ -2196,8 +2201,8 @@ button { line-height: 1.35; }
 }
 
 .start-stage-footer {
-    position: sticky;
-    bottom: -6px;
+    position: static;
+    flex-shrink: 0;
     z-index: 2;
     display: flex;
     flex-direction: column;
@@ -3454,3 +3459,238 @@ button { line-height: 1.35; }
 .stage-prompt-panel p { margin: 0 0 12px; }
 .stage-prompt-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .stage-prompt-actions button { min-height: 44px; }
+
+/* ===== Start setup: header, scrolling content, persistent actions ===== */
+#start-panel {
+    display: flex;
+    flex-direction: column;
+    width: min(92cqw, 620px);
+    height: min(86cqh, 760px);
+    max-height: min(86cqh, 760px);
+    padding: 12px;
+    overflow: hidden;
+}
+#app-stage[data-stage-width="432"] #start-panel { width: min(96cqw, 420px); }
+#start-panel .start-stage, #start-panel .start-menu-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    gap: 10px;
+}
+#start-panel .start-stage-header { flex: 0 0 auto; }
+#start-panel .start-subtitle { margin: 4px 0 0; line-height: 1.45; }
+#start-panel .start-stage-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2px;
+    overscroll-behavior: contain;
+}
+#start-panel .start-stage-body > * { flex-shrink: 0; }
+#start-panel .start-stage-footer {
+    position: static;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(168, 214, 255, 0.22);
+    background: #0b1e4e;
+}
+#start-panel .start-stage-footer button { min-height: 44px; margin: 0; line-height: 1.35; }
+#start-panel .start-setup-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#start-panel .start-stage-footer .start-setup-actions:has(> :only-child) { grid-template-columns: 1fr; }
+#start-panel .start-menu-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#start-panel .start-menu-buttons .home-link { grid-column: 1 / -1; }
+#start-title-stage { justify-content: center; }
+#start-title-stage .start-stage-body { flex: 0 0 auto; }
+#start-panel .start-rules-scroll, #start-panel .start-gallery-list,
+#start-panel .story-episode-list, #start-panel .mission-list { max-height: none; overflow: visible; }
+#start-panel .start-menu-message:empty { display: none; }
+#start-panel #start-cpu-setup-stage > .start-stage-body { overflow: hidden; }
+#start-panel #start-skill-step { flex: 1 1 auto; min-height: 0; }
+#start-panel #start-skill-step > .start-user-form {
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 6px;
+    padding: 8px;
+    overflow: hidden;
+}
+.start-cpu-personality-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; flex: 0 0 auto; }
+.start-cpu-personality-row .start-select-input { min-height: 40px; padding: 6px 8px; }
+.start-skill-heading { flex: 0 0 auto; }
+.start-skill-heading .skill-recommendation { margin: 2px 0 0; font-size: 11px; }
+#start-panel #start-skill-list {
+    flex: 0 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 84px;
+    gap: 6px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2px;
+    overscroll-behavior: contain;
+}
+#start-panel .start-skill-tile { min-width: 0; min-height: 0; padding: 6px 8px; gap: 2px; }
+#start-panel .start-skill-tile .skill-recommendation { margin: 0; font-size: 11px; }
+.start-skill-tile-summary { display: block; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; line-height: 1.4; }
+#start-panel .start-skill-tile:focus-visible { outline: 2px solid #ffe490; outline-offset: -3px; }
+#start-panel #start-skill-detail { flex: 0 0 auto; padding: 0 8px; }
+#start-skill-detail summary { cursor: pointer; min-height: 40px; display: list-item; align-content: center; line-height: 40px; }
+.start-skill-detail-body { display: flex; flex-direction: column; gap: 6px; max-height: 126px; overflow-y: auto; padding: 4px 2px 8px; }
+#start-skill-message { margin-top: 4px; line-height: 1.4; }
+#app-stage[data-stage-width="1440"] #start-panel .start-char-select { grid-template-columns: repeat(4, minmax(112px, 132px)); }
+
+/* Standing art is confined to CPU and mission setup. */
+#start-panel #start-character-step,
+#start-panel #start-mission-opponent-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 6px;
+    overflow: hidden;
+}
+#start-panel .start-standing-grid {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+}
+#start-panel .start-standing-card {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
+    border: 2px solid #7da9cb;
+    border-radius: 12px;
+    background: #08143a;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+#start-panel .start-standing-art {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+}
+#start-panel .start-standing-plate {
+    position: absolute;
+    inset: auto 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 4px;
+    color: #fff;
+    background: linear-gradient(180deg, #07142bbd, #07142bf5);
+    line-height: 1.35;
+}
+#start-panel .start-standing-plate .start-char-name { font-size: 18px; }
+#start-panel .start-char-strategy { font-size: 11px; font-weight: 500; }
+#start-panel .start-standing-card.active { border: 3px solid #ffe490; box-shadow: inset 0 0 0 2px #073658; }
+#start-panel .start-standing-card.active .start-standing-plate { background: #155398ed; }
+#start-panel .start-standing-card:focus-visible { outline: 3px solid #fff; outline-offset: -6px; }
+#app-stage[data-stage-width="1440"] #start-panel:has(#start-cpu-setup-stage:not(.hidden) #start-character-step:not(.hidden), #start-cpu-setup-stage:not(.hidden) #start-mission-opponent-wrap:not(.hidden)) { width: min(92cqw, 900px); }
+#app-stage[data-stage-width="1440"] #start-panel .start-standing-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+    align-items: center;
+}
+#app-stage[data-stage-width="1440"] #start-panel .start-standing-card { height: auto; aspect-ratio: 2 / 3; max-height: 100%; }
+
+/* During discard only the visible hand and the existing outside confirm are above the shield. */
+#game-container.discard-selection-active { --discard-input-layer: 4000; }
+#game-container.discard-selection-active .player-hand-zone {
+    position: relative;
+    z-index: var(--discard-input-layer);
+    pointer-events: none;
+}
+#game-container.discard-selection-active #player-hand-mixed { pointer-events: auto; }
+#game-container.discard-selection-active #confirm-discard-button {
+    position: relative;
+    z-index: var(--discard-input-layer);
+    pointer-events: auto;
+}
+#selection-panel[data-selection-key="discard"] {
+    top: 18px;
+    transform: translateX(-50%);
+    max-height: calc(100cqh - 286px);
+    outline: none;
+}
+#selection-panel[data-selection-key="discard"] #selection-confirm-button {
+    flex: 1 0 100%;
+    width: 100%;
+    min-height: 56px;
+    padding: 12px 18px;
+    box-sizing: border-box;
+    font-size: 20px;
+    font-weight: 900;
+    border: 2px solid #ae6414;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffe592, #f6b33e);
+    color: #4c2c08;
+}
+#selection-panel[data-selection-key="discard"] #selection-confirm-button:disabled { opacity: .5; cursor: default; }
+#game-container.mobile-field-ui.discard-selection-active { --discard-input-layer: 60; }
+/* These flex ancestors otherwise trap the mobile exceptions below the backdrop. */
+#game-container.mobile-field-ui.discard-selection-active .duel-field,
+#game-container.mobile-field-ui.discard-selection-active .player-side { z-index: auto; }
+#app-stage[data-stage-width="432"] #selection-panel[data-selection-key="discard"] { top: 12px; max-height: 54cqh; }
+#app-stage[data-stage-width="432"] #selection-panel[data-selection-key="discard"] #selection-confirm-button { min-height: 48px; font-size: 17px; padding: 10px 12px; }
+
+/* Event refusals and first-turn hints shared by PC/mobile. */
+.field-notice {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 210000;
+    width: max-content;
+    max-width: min(86%, 650px);
+    box-sizing: border-box;
+    padding: 16px 20px;
+    border: 2px solid #ffd47f;
+    border-radius: 16px;
+    background: rgba(35, 24, 46, .96);
+    color: #fff5df;
+    box-shadow: 0 6px 24px #0009;
+    text-align: center;
+    font-size: clamp(16px, 2.3cqw, 28px);
+    line-height: 1.5;
+    pointer-events: none;
+}
+.field-notice strong { display: block; }
+.field-notice small { display: block; margin-top: 6px; font-size: .78em; color: #ffda8e; }
+.event-first-turn-hint {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #43384c;
+    color: #ffe5ad;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 1.3;
+}
+#player-hand-mixed .event-first-turn-locked { opacity: .65; filter: saturate(.65); }
+.mobile-field-ui .event-first-turn-hint { padding: 0 4px; font-size: 9px; line-height: 1.2; letter-spacing: 0; }
+.event-refusal-flash { animation: event-refusal-flash 400ms ease-out; }
+@keyframes event-refusal-flash {
+    0%, 50% { box-shadow: inset 0 0 0 3px #ffbe69, 0 0 18px #ffbe6980; }
+    100% { box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .event-refusal-flash { animation: none; }
+}

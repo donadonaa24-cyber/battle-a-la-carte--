@@ -28,7 +28,6 @@ let packShopOpen = false;
 let packPreviewKey = null;
 const HORIZONTAL_SCROLL_ROW_IDS = [
     'player-hand-mixed',
-    'cpu-hand-mixed',
     'player-set',
     'cpu-set',
     'player-packs',
@@ -90,6 +89,34 @@ const EVENT_IMAGE_MAP = {
 
 function byId(id) { return document.getElementById(id); }
 function safeSetText(id, text) { const el = byId(id); if (el) el.textContent = text; }
+
+let fieldNoticeTimer = null;
+let fieldNoticeFlashTimer = null;
+function showFieldNotice(message) {
+    const notice = byId('field-notice');
+    if (!notice) return;
+    const firstTurn = message === '最初のターンはイベントを使用できません。';
+    safeSetText('field-notice-message', firstTurn ? '先攻は最初のターンにイベントカードを使えません' : message);
+    const detail = byId('field-notice-detail');
+    if (detail) {
+        detail.textContent = firstTurn ? '次のターンから使えます' : '';
+        detail.classList.toggle('hidden', !firstTurn);
+    }
+    notice.classList.remove('hidden');
+    clearTimeout(fieldNoticeTimer);
+    fieldNoticeTimer = setTimeout(() => {
+        notice.classList.add('hidden');
+        safeSetText('field-notice-message', '');
+        if (detail) detail.textContent = '';
+    }, 2500);
+
+    const zone = document.querySelector('.center-field, .center-panel');
+    if (zone) {
+        clearTimeout(fieldNoticeFlashTimer);
+        zone.classList.add('event-refusal-flash');
+        fieldNoticeFlashTimer = setTimeout(() => zone.classList.remove('event-refusal-flash'), 400);
+    }
+}
 
 function shouldSkipSectionRender(sectionKey, signature) {
     const key = String(sectionKey || '');
@@ -623,6 +650,24 @@ function bindRenderEventsOnce() {
     if (discardButton) discardButton.addEventListener('click', () => requestPileView('discard'));
     if (pileViewClose) pileViewClose.addEventListener('click', closePileView);
     if (dishHistoryClose) dishHistoryClose.addEventListener('click', closeDishHistory);
+    for (const ownerKey of ['player', 'cpu']) {
+        const strip = byId(`${ownerKey}-latest-dish`);
+        if (!strip) continue;
+        strip.addEventListener('click', () => openDishHistory(ownerKey));
+        strip.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            openDishHistory(ownerKey);
+        });
+        enableHorizontalDragScroll(strip);
+    }
+    for (const [button, type] of [[deckButton, 'deck'], [discardButton, 'discard']]) {
+        button?.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            requestPileView(type);
+        });
+    }
     if (packShopButton) packShopButton.addEventListener('click', openPackShop);
     if (packShopClose) packShopClose.addEventListener('click', closePackShop);
     if (packShopOverlay) packShopOverlay.addEventListener('click', e => { if (e.target === packShopOverlay) e.stopPropagation(); });
@@ -1267,6 +1312,8 @@ function renderPlayerMixedHand() {
     if (!container) return;
 
     const player = getBattleViewModel().me;
+    const firstTurnLocked = GameState.turnNumber === 1 && getBattleViewModel().turn === 'me' && !GameState.gameEnded;
+    byId('event-first-turn-hint')?.classList.toggle('hidden', !firstTurnLocked || player.events.length === 0);
     const cards = [
         ...player.hand.map(card => ({ ...card, zoneType: 'ingredient' })),
         ...player.events.map(card => ({ ...card, zoneType: 'event' }))
@@ -1276,6 +1323,7 @@ function renderPlayerMixedHand() {
         GameState.selectionMode || '',
         (GameState.selectedCardIds || []).join(','),
         getBattleViewModel().turn || '',
+        firstTurnLocked ? 'first-turn-locked' : '',
         GameState.gameEnded ? '1' : '0'
     ].join('::');
     if (shouldSkipSectionRender('player-hand-mixed', signature)) return;
@@ -1288,8 +1336,14 @@ function renderPlayerMixedHand() {
     cards.forEach(card => {
         const className = card.type === 'event' ? 'event-card' : 'ingredient-card';
         const el = createFaceCard(card, className);
+        if (card.type === 'event' && firstTurnLocked) {
+            el.classList.add('event-first-turn-locked');
+            el.title = '1ターン目は使用不可：次のターンから使えます';
+        }
         if (activeCardMotionFrame?.newOwnIds.has(String(card.id))) markCardDrawArrival(el, drawOrder++, PLAYER_DRAW_REVEAL_INTERVAL_MS);
         window.CardDragActions?.mark(el, card);
+
+        if (card.type === 'event' && firstTurnLocked) el.setAttribute('aria-label', `${card.name}。1ターン目は使用不可。次のターンから使えます`);
 
         if (GameState.selectionMode === 'discard' && GameState.selectedCardIds.includes(card.id)) el.classList.add('selected-card');
 
@@ -1310,8 +1364,10 @@ function renderPlayerSet() {
     if (!container) return;
 
     const player = getBattleViewModel().me;
+    const limit = getSetLimit(player);
     const signature = [
         player.set.map(card => `${card.id}:${card.name}:${card.trapLocked === true ? 1 : 0}:${card.blockedByTrap === true ? 1 : 0}:${card.romanReserved === true ? 1 : 0}`).join('|'),
+        limit,
         GameState.selectionMode || '',
         GameState.gameEnded ? '1' : '0'
     ].join('::');
@@ -1319,7 +1375,7 @@ function renderPlayerSet() {
 
     container.innerHTML = '';
 
-    if (player.set.length === 0) { container.textContent = 'セットなし'; return; }
+    if (player.set.length === 0 && container.dataset?.setSlots !== '3') { container.textContent = 'セットなし'; return; }
 
     player.set.forEach(card => {
         const isTrap = card.trapLocked === true || card.blockedByTrap === true;
@@ -1333,24 +1389,50 @@ function renderPlayerSet() {
         }
         container.appendChild(el);
     });
+    appendSetSlotPlaceholders(container, player.set.length, limit);
 }
 
 function renderOpponentMixedHand() {
     const container = byId('cpu-hand-mixed');
     if (!container) return;
 
-    const cpu = getBattleViewModel().opponent;
+    const model = getBattleViewModel();
+    const cpu = model.opponent;
     const total = cpu.hand.length + cpu.events.length;
-    const signature = `${cpu.hand.length}:${cpu.events.length}`;
+    const label = `${model.opponentLabel}の手札 ${total}枚`;
+    const fan = container.dataset?.handFan === 'true';
+    safeSetText('cpu-hand-heading', label);
+    container.setAttribute('aria-label', `${label}（非公開）`);
+    const signature = `${model.opponentLabel}:${cpu.hand.length}:${cpu.events.length}`;
     if (shouldSkipSectionRender('cpu-hand-mixed', signature)) return;
 
     container.innerHTML = '';
+    if (fan) {
+        // CSS caps the spread at 24px, then compresses it to the available width.
+        // Percentages keep the stack fitted when the fixed stage or its columns resize.
+        container.style.setProperty('--hand-intervals', String(Math.max(1, total - 1)));
+        const badge = document.createElement('span');
+        badge.className = 'opponent-hand-count';
+        badge.textContent = `${total}枚`;
+        badge.setAttribute('aria-hidden', 'true');
+        container.appendChild(badge);
+    }
 
-    if (total === 0) { container.textContent = 'なし'; return; }
+    if (total === 0) {
+        const empty = document.createElement('span');
+        empty.className = 'opponent-hand-empty';
+        empty.textContent = 'なし';
+        container.appendChild(empty);
+        return;
+    }
     let drawOrder = 0;
     const cards = [...cpu.hand, ...cpu.events];
-    cards.forEach(card => {
-        const el = createBackCard(getBattleViewModel().opponentLabel, '手札', card.id);
+    cards.forEach((card, index) => {
+        const el = createBackCard(model.opponentLabel, '手札', card.id);
+        if (fan) {
+            el.style.setProperty('--hand-index', String(index));
+            el.setAttribute('aria-hidden', 'true');
+        }
         if (activeCardMotionFrame?.newOpponentIds.has(String(card.id))) markCardDrawArrival(el, drawOrder++, OPPONENT_DRAW_REVEAL_INTERVAL_MS);
         container.appendChild(el);
     });
@@ -1361,14 +1443,15 @@ function renderOpponentSet() {
     if (!container) return;
 
     const cpu = getBattleViewModel().opponent;
-    const signature = cpu.set
+    const limit = getSetLimit(cpu);
+    const signature = `${limit}:` + cpu.set
         .map(card => `${card.id}:${card.name}:${card.trapLocked === true ? 1 : 0}:${card.blockedByTrap === true ? 1 : 0}`)
         .join('|');
     if (shouldSkipSectionRender('cpu-set', signature)) return;
 
     container.innerHTML = '';
 
-    if (cpu.set.length === 0) { container.textContent = 'セットなし'; return; }
+    if (cpu.set.length === 0 && container.dataset?.setSlots !== '3') { container.textContent = 'セットなし'; return; }
     cpu.set.forEach(card => {
         const isTrap = card.trapLocked === true || card.blockedByTrap === true;
         if (isTrap) {
@@ -1381,6 +1464,20 @@ function renderOpponentSet() {
         }
         container.appendChild(createBackCard(getBattleViewModel().opponentLabel, 'セット'));
     });
+    appendSetSlotPlaceholders(container, cpu.set.length, limit);
+}
+
+function appendSetSlotPlaceholders(container, count, limit) {
+    if (container.dataset?.setSlots !== '3') return;
+    container.setAttribute('aria-label', `セット枠：${count}枚／上限${limit}枚（冷蔵庫で3枚）`);
+    for (let index = count; index < 3; index++) {
+        const locked = index >= limit;
+        const slot = document.createElement('div');
+        slot.className = `set-slot-placeholder${locked ? ' is-locked' : ''}`;
+        slot.textContent = locked ? '冷蔵庫で解放' : `セット ${index + 1}`;
+        slot.setAttribute('data-set-slot', String(index + 1));
+        container.appendChild(slot);
+    }
 }
 
 function renderPacks(player, container) {
@@ -1477,7 +1574,6 @@ function createDishCardElement(dish, ownerKey, compact = false) {
         el.appendChild(title); el.appendChild(points); el.appendChild(req);
     }
 
-    if (compact) el.addEventListener('click', () => openDishHistory(ownerKey));
     return el;
 }
 
@@ -1488,10 +1584,8 @@ function renderLatestDishFor(ownerKey) {
     if (!container) return;
 
     const p = getBattleViewModel().forSide(ownerKey);
-    const latest = Array.isArray(p.cookedRecipes) && p.cookedRecipes.length > 0 ? p.cookedRecipes[0] : null;
-    const signature = latest
-        ? `${latest.name}:${latest.points}:${latest.id || ''}`
-        : 'empty';
+    const dishes = Array.isArray(p.cookedRecipes) ? p.cookedRecipes : [];
+    const signature = dishes.map(dish => `${dish.name}:${dish.points}:${dish.id || ''}`).join('|') || 'empty';
     if (shouldSkipSectionRender(`latest-dish:${ownerKey}`, signature)) return;
 
     container.innerHTML = '';
@@ -1504,7 +1598,7 @@ function renderLatestDishFor(ownerKey) {
         return;
     }
 
-    container.appendChild(createDishCardElement(p.cookedRecipes[0], ownerKey, true));
+    dishes.forEach(dish => container.appendChild(createDishCardElement(dish, ownerKey, true)));
 }
 
 function openDishHistory(ownerKey) { GameState.openDishHistoryFor = ownerKey; updateUI(); }
@@ -1706,8 +1800,7 @@ function renderSelectionPanel() {
             options.appendChild(item);
         });
         options.scrollTop = scrollTop;
-        confirmButton.textContent = '捨てる';
-        confirmButton.disabled = GameState.selectedCardIds.length !== GameState.discardNeedCount;
+        renderDiscardButton();
         return;
     }
 
@@ -2089,38 +2182,54 @@ function renderCandidateRecipes() {
     const container = byId('candidate-recipes');
     if (!container) return;
     const panel = container.closest('.candidate-recipes-panel');
-    const candidateCount = Array.isArray(GameState.candidateRecipes) ? GameState.candidateRecipes.length : 0;
-    if (panel) panel.classList.toggle('expanded', candidateCount >= 4);
+    const actions = byId('candidate-recipes-actions');
+    const scrollTop = container.scrollTop;
     container.innerHTML = '';
+    if (actions) actions.innerHTML = '';
     if (GameState.candidateRecipes.length === 0) {
-        if (panel) panel.classList.remove('hidden');
-        container.textContent = '料理を作るボタンを押すと候補が出ます。';
+        if (panel) panel.classList.add('hidden');
+        if (panel) panel.classList.remove('expanded');
         return;
     }
-    if (panel) panel.classList.remove('hidden');
+    const wasOpen = panel && !panel.classList.contains('hidden');
+    if (panel) {
+        panel.classList.add('expanded');
+        panel.classList.remove('hidden');
+    }
 
     GameState.candidateRecipes.forEach(plan => {
         const row = document.createElement('div');
         row.className = 'recipe-option';
 
+        const art = document.createElement('div');
+        art.className = 'recipe-option-art';
+        art.setAttribute('aria-hidden', 'true');
+        const imagePath = getRecipeImagePath(plan.recipe.name);
+        if (imagePath) art.style.backgroundImage = `url("${imagePath}")`;
+
         const meta = document.createElement('div');
         meta.className = 'recipe-meta';
-        meta.innerHTML = `<strong>${escapeHtml(plan.recipe.name)}</strong> (${plan.recipe.points}点)<br>必要: ${escapeHtml(plan.recipe.required.join(' + '))}`;
+        const name = document.createElement('strong');
+        name.className = 'recipe-option-name';
+        name.textContent = plan.recipe.name;
+        const points = document.createElement('span');
+        points.className = 'recipe-option-points';
+        points.textContent = `${plan.recipe.points}点`;
+        const required = document.createElement('span');
+        required.className = 'recipe-option-required';
+        required.textContent = `必要: ${plan.recipe.required.join(' + ')}`;
+        meta.append(name, points, required);
 
         const button = document.createElement('button');
         button.textContent = '作る';
         button.disabled = getBattleViewModel().turn !== 'me' || !!GameState.selectionMode || GameState.gameEnded;
         button.addEventListener('click', () => playerCookSelectedRecipe(plan.recipe.name));
 
-        row.appendChild(meta);
-        row.appendChild(button);
+        row.append(art, meta, button);
         container.appendChild(row);
     });
 
     window.RecipeHints?.renderNear(container, getBattleViewModel().me);
-
-    const cancelRow = document.createElement('div');
-    cancelRow.className = 'recipe-cancel-row';
 
     const cancelButton = document.createElement('button');
     cancelButton.className = 'recipe-cancel-button';
@@ -2132,8 +2241,8 @@ function renderCandidateRecipes() {
         }
     });
 
-    cancelRow.appendChild(cancelButton);
-    container.appendChild(cancelRow);
+    if (actions) actions.appendChild(cancelButton);
+    container.scrollTop = wasOpen ? scrollTop : 0;
 }
 
 function formatSkillUsageText(player, skill) {
@@ -2167,16 +2276,17 @@ function renderSkillHud() {
         : { ok: false, reason: 'スキル未対応' };
     const isSkillConfirmMode = GameState.selectionMode === 'skill-confirm';
     const blockedBySelection = !!GameState.selectionMode && !isSkillConfirmMode;
-    const canOpenDetail = !!playerSkill && !blockedBySelection;
     const canUseNow = !!playerSkill &&
         !GameState.gameEnded &&
         getBattleViewModel().turn === 'me' &&
         !blockedBySelection &&
         status.ok;
 
-    button.disabled = !canOpenDetail;
+    button.disabled = !canUseNow;
     button.classList.toggle('ready', canUseNow);
-    button.textContent = playerSkill ? (canUseNow ? 'スキル発動' : 'スキル詳細') : 'スキル未選択';
+    button.classList.toggle('has-recipe-alert', canUseNow && !GameState.selectionMode &&
+        !packShopOpen && !GameState.ui?.infoOverlayType);
+    button.textContent = 'スキル発動';
 
     if (!playerSkill) {
         button.title = 'スキルが未設定です。';
@@ -2348,17 +2458,32 @@ function renderPackShopModal() {
 
 function renderDiscardButton() {
     const button = byId('confirm-discard-button');
-    if (!button) return;
     const discarding = GameState.selectionMode === 'discard';
-    button.disabled = !discarding || GameState.selectedCardIds.length !== GameState.discardNeedCount;
-    button.textContent = `捨てる（${GameState.discardNeedCount || 0}枚）`;
+    const canDiscard = discarding && getBattleViewModel().turn === 'me' && !GameState.gameEnded;
+    const count = GameState.selectedCardIds.length;
+    const label = `選んだ${count}枚を捨てる`;
+    const disabled = !canDiscard || count !== GameState.discardNeedCount;
+    byId('game-container')?.classList.toggle('discard-selection-active', canDiscard);
+    if (button) {
+        button.disabled = disabled;
+        button.textContent = label;
+        button.classList.toggle('hidden', !discarding);
+    }
+    const modalButton = byId('selection-confirm-button');
+    if (discarding && modalButton) {
+        modalButton.textContent = label;
+        modalButton.disabled = disabled;
+    }
+    byId('cook-button')?.classList.toggle('hidden', discarding);
+    byId('player-skill-button')?.classList.toggle('hidden', discarding);
+    byId('end-turn-button')?.classList.toggle('hidden', discarding);
 }
 
 function renderRealtimeLog() {
     const container = byId('realtime-log-list');
     if (!container) return;
 
-    const lines = realtimeLogHistory.slice(0, 5);
+    const lines = realtimeLogHistory.slice(0, 1);
     const signature = lines.join('\n');
     if (shouldSkipSectionRender('realtime-log-list', signature)) return;
 
@@ -2544,6 +2669,7 @@ function updateUI(forceImmediate = false) {
 }
 
 window.updateUI = updateUI;
+window.showFieldNotice = showFieldNotice;
 window.updateUIImmediate = () => updateUI(true);
 window.addLog = addLog;
 window.setCPUStatus = setCPUStatus;

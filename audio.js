@@ -25,6 +25,8 @@ const BASE_BGM_VOLUME = {
 };
 
 const DEFAULT_BGM_VOLUME = 0.8;
+const COOK_SFX_DELAY_MS = 500;
+const pendingCookSfxTimers = new Set();
 
 const AudioManager = {
     isUnlocked: false,
@@ -151,6 +153,7 @@ function playBgmByKey(key) {
 }
 
 function setupAudio() {
+    cancelPendingCookSfx();
     AudioManager.sounds = {
         gameStart: new Audio('assets/audio/turn-start.mp3'),
         turnStart: new Audio('assets/audio/turn-start.mp3'),
@@ -277,6 +280,42 @@ function getBgmTrackOptions() {
 }
 
 function playSfx(name) {
+    if (name === 'cook') {
+        scheduleCookSfx();
+        return;
+    }
+    playSfxNow(name);
+}
+
+function cancelPendingCookSfx() {
+    pendingCookSfxTimers.forEach(timer => clearTimeout(timer));
+    pendingCookSfxTimers.clear();
+}
+
+function canPlayCookSfx(matchStartedAt) {
+    // Cooking may end the match before this cue plays, including an already-ended guest view.
+    if (typeof GameState !== 'undefined' &&
+        (GameState.surrenderedBy || GameState.matchStartedAt !== matchStartedAt)) return false;
+    return typeof window.isMatchInBattleScreen !== 'function' || window.isMatchInBattleScreen();
+}
+
+function scheduleCookSfx() {
+    const matchStartedAt = typeof GameState !== 'undefined' ? GameState.matchStartedAt : null;
+    if (!canPlayCookSfx(matchStartedAt)) return;
+    const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 0 : COOK_SFX_DELAY_MS;
+    if (delay === 0) {
+        playSfxNow('cook');
+        return;
+    }
+    // Keep one timer per completion so a second dish does not replace the first sound.
+    const timer = setTimeout(() => {
+        pendingCookSfxTimers.delete(timer);
+        if (canPlayCookSfx(matchStartedAt)) playSfxNow('cook');
+    }, delay);
+    pendingCookSfxTimers.add(timer);
+}
+
+function playSfxNow(name) {
     const base = AudioManager.sounds[name];
     if (!base) return;
 
@@ -304,6 +343,8 @@ window.playResultBGM = playResultBGM;
 window.stopBGM = stopBGM;
 window.playSfx = playSfx;
 window.playCookBgm = playCookBgm;
+window.cancelPendingCookSfx = cancelPendingCookSfx;
+window.addEventListener?.('pagehide', cancelPendingCookSfx);
 window.setBgmEnabled = setBgmEnabled;
 window.getBgmEnabled = getBgmEnabled;
 window.setBgmTrack = setBgmTrack;
