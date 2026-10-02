@@ -77,8 +77,8 @@ test('PC field has three rows, piles beside player set and a separate bounded st
     assert.match(ids.get('candidate-recipes-panel').attrs, /\bhidden\b/);
     assert.ok(!ids.get('candidate-recipes-actions').ancestors.includes('candidate-recipes'));
     assert.doesNotMatch(html, /class="side-panel|class="bottom-info-grid/);
-    assert.match(html, /style\.css\?v=20261002-menucard1/);
-    assert.match(html, /render\.js\?v=20261002-ach1/);
+    assert.match(html, /style\.css\?v=20261002-ui5/);
+    assert.match(html, /render\.js\?v=20261002-fx1/);
     assert.match(ids.get('cpu-hand-mixed').attrs, /data-hand-fan="true"/);
     assert.ok(ids.get('cpu-hand-heading').ancestors.includes('pc-opponent-field'));
     assert.ok(html.indexOf('class="panel-box cpu-set-zone"') < html.indexOf('class="panel-box cpu-hand-zone"'),

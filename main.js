@@ -1,6 +1,7 @@
 ﻿let bgmStarted = false;
 let resultOverlayTimer = null;
 let matchFinaleTimer = null;
+let matchFinaleSequence = 0;
 let spotlightTimer = null;
 let spotlightHideAt = 0;
 let gameStartedOnce = false;
@@ -56,6 +57,7 @@ const START_GALLERY_CHARACTER_OPTIONS = [
 const START_STAGE_IDS = [
     'start-title-stage',
     'start-menu-stage',
+    'start-settings-stage',
     'start-cpu-setup-stage',
     'start-story-stage',
     'start-rules-stage',
@@ -739,6 +741,7 @@ function findFriendRoom(passphrase) {
 function showStartStage(activeId) {
     window.Achievements?.clearToasts();
     window.cancelPendingCookSfx?.();
+    window.DishEffects?.cancel();
     START_STAGE_IDS.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -1774,6 +1777,16 @@ function setupStartOverlay() {
         button?.addEventListener('click', openUserStage);
     }
 
+    document.getElementById('menu-settings-button')?.addEventListener('click', () => {
+        showStartStage('start-settings-stage');
+        const content = document.getElementById('start-settings-content');
+        if (content && window.DishEffects) {
+            content.innerHTML = window.DishEffects.settingsHtml('start-settings');
+            window.DishEffects.bindSettings('start-settings');
+        }
+    });
+    document.getElementById('start-settings-back-button')?.addEventListener('click', openMenuStage);
+
     if (menuHomeButton) {
         menuHomeButton.addEventListener('click', () => {
             stopMenuFloatingBackground();
@@ -2157,6 +2170,7 @@ function showFieldPackDetails(packDef, owned) {
 }
 
 function prepareMatchFinale(winner) {
+    const sequence = ++matchFinaleSequence;
     updateBattleMenu();
     if (GameState.surrenderedBy) {
         window.cancelPendingCookSfx?.();
@@ -2170,27 +2184,30 @@ function prepareMatchFinale(winner) {
     const button = document.getElementById('final-field-actions');
     overlay?.classList.add('hidden');
     button?.classList.add('hidden');
-    const finalDish = !GameState.surrenderedBy && GameState.lastCookedRecipe?.side === winner ? GameState.lastCookedRecipe : null;
-    const waitMs = finalDish ? 3000 : 1200;
-    if (finalDish) {
-        const legendary = Number(finalDish.points) >= 10;
-        showSpotlightCard({
-            badge: legendary ? '伝説の一皿で決着！' : '決着の一皿！',
-            name: finalDish.name,
-            sub: `${finalDish.points}点　この料理が勝負を決めた！`,
-            imagePath: window.getRecipeImagePath?.(finalDish.name),
-            kind: legendary ? 'final-recipe legendary' : 'final-recipe',
-            durationMs: waitMs
-        });
-    }
-    matchFinaleTimer = setTimeout(() => {
-        hideSpotlightCard();
+    const latest = GameState.players?.[winner]?.cookedRecipes?.[0];
+    const finalDish = latest?.fromEvent && Number(latest.cookedAt) >= Number(GameState.lastCookedRecipe?.cookedAt || 0)
+        ? latest
+        : (GameState.lastCookedRecipe?.side === winner ? GameState.lastCookedRecipe : null);
+    const match = GameState.matchStartedAt;
+    const complete = status => {
+        if (status?.cancelled || sequence !== matchFinaleSequence || GameState.matchStartedAt !== match || !GameState.gameEnded || !isMatchInBattleScreen()) return;
         button?.classList.remove('hidden');
         if (typeof playSfx === 'function') playSfx('gameEnd');
-    }, waitMs);
+    };
+    if (finalDish && window.DishEffects) {
+        hideSpotlightCard();
+        window.DishEffects.show(finalDish, { side: winner, winning: true }).then(complete);
+        return;
+    }
+    const waitMs = finalDish ? 3000 : 1200;
+    if (finalDish) showSpotlightCard({ badge: '決着の一皿！', name: finalDish.name,
+        sub: `${finalDish.points}点　この料理が勝負を決めた！`,
+        imagePath: window.getRecipeImagePath?.(finalDish.name), kind: 'final-recipe', durationMs: waitMs });
+    matchFinaleTimer = setTimeout(() => { hideSpotlightCard(); complete(); }, waitMs);
 }
 
 function hideResultOverlay() {
+    matchFinaleSequence++;
     const overlay = document.getElementById('result-overlay');
     if (!overlay) return;
 
@@ -2390,8 +2407,9 @@ function showBattleALaCarteModeCutinAsync(side) {
 }
 
 function showSpotlightRecipeCard(recipe) {
+    if (window.DishEffects) return window.DishEffects.show(recipe);
     const imagePath = window.getRecipeImagePath ? window.getRecipeImagePath(recipe.name) : null;
-    const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 900;
+    const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 1200;
     setTimeout(() => {
         if (GameState.gameEnded) return;
         showSpotlightCard({
@@ -2405,8 +2423,9 @@ function showSpotlightRecipeCard(recipe) {
 }
 
 function showSpotlightRecipeCardAsync(recipe) {
+    if (window.DishEffects) return window.DishEffects.show(recipe);
     const imagePath = window.getRecipeImagePath ? window.getRecipeImagePath(recipe.name) : null;
-    const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 900;
+    const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 1200;
     return new Promise(resolve => {
         setTimeout(() => {
             if (GameState.gameEnded) { resolve(); return; }

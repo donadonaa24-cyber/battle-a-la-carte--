@@ -7,7 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style-sp.css?v=20261002-menucard1">
+<link rel="stylesheet" href="style-sp.css?v=20261002-ui5">
+<link rel="stylesheet" href="../dish-effects.css?v=20261002-fx1">
     <link rel="stylesheet" href="../online.css?v=20260929-ui1">
     <link rel="stylesheet" href="../achievements.css?v=20261002-ach1">
 </head>
@@ -81,7 +82,7 @@
                 <div class="cpu-middle-row">
                     <div class="zone-block cpu-set-zone">
                         <div class="zone-label" data-online-label="相手セット">CPUセット</div>
-                        <div id="cpu-set" class="card-row compact-row"></div>
+                        <div id="cpu-set" class="card-row compact-row" data-set-slots="3"></div>
                     </div>
 
                     <div class="zone-block cpu-pack-zone">
@@ -129,7 +130,7 @@
 
                     <div class="zone-block player-set-zone">
                         <div class="zone-label">セットカード</div>
-                        <div id="player-set" class="card-row compact-row"></div>
+                        <div id="player-set" class="card-row compact-row" data-set-slots="3"></div>
                     </div>
                 </div>
 
@@ -177,6 +178,7 @@
         </section>
 
         <div id="modal-input-backdrop" class="modal-input-backdrop" aria-hidden="true"></div>
+        <button id="selection-return-button" class="selection-return-button hidden" type="button" aria-controls="selection-panel">カード選択へ戻る</button>
         <div id="dish-history-panel" class="panel-box selection-panel hidden">
             <h3 id="dish-history-title">料理履歴</h3>
             <div id="dish-history-description" class="selection-description"></div>
@@ -193,6 +195,7 @@
             <div class="selection-actions">
                 <button id="selection-confirm-button" disabled>確定</button>
                 <button id="selection-cancel-button">キャンセル</button>
+                <button id="selection-field-view-button" type="button">盤面と手札を見る</button>
             </div>
         </div>
 
@@ -421,6 +424,7 @@
                             <div class="menu-player-links">
                                 <button id="menu-player-profile-button" type="button">ユーザー情報</button>
                                 <button id="menu-player-achievements-button" type="button">アチーブメント</button>
+                                <button id="menu-settings-button" type="button">設定</button>
                             </div>
                         </section>
                     </div>
@@ -437,6 +441,11 @@
                         <button id="menu-home-button" class="start-menu-button home-link">公式ホームページへ戻る</button>
                     </div>
                 </div>
+            </div>
+            <div id="start-settings-stage" class="start-stage hidden">
+                <div class="start-stage-header"><h2 class="start-section-title">設定</h2></div>
+                <div id="start-settings-content" class="start-stage-body settings-group"></div>
+                <div class="start-stage-footer"><button id="start-settings-back-button" class="start-sub-button wide">メニューへ戻る</button></div>
             </div>
             <div id="start-cpu-setup-stage" class="start-stage hidden">
                 <div class="start-stage-header">
@@ -717,27 +726,26 @@
 <script src="../missions.js?v=20261002-ach1"></script>
 <script src="../profile.js?v=20261002-menucard1"></script>
 <script src="../achievements.js?v=20261002-menucard1"></script>
+<script src="../dish-effects.js?v=20261002-fx1"></script>
 <script src="../quick-confirm.js?v=20260928-quick1"></script>
 <script src="rules-sp.js?v=20261002-ach1"></script>
 <script src="../recipe-hints.js?v=20260930-hint1"></script>
 <script src="player-sp.js?v=20261002-ach1"></script>
-<script src="cpu-sp.js?v=20260929-board1"></script>
+<script src="cpu-sp.js?v=20261002-fx1"></script>
     <script src="../battle-view-model.js?v=20260916"></script>
     <script src="../battle-images.js?v=20261001-discard1"></script>
-<script src="render-sp.js?v=20261002-ach1"></script>
-    <script src="audio-sp.js?v=20261001-cooksfx2"></script>
+<script src="render-sp.js?v=20261002-fx1"></script>
+    <script src="audio-sp.js?v=20261002-fx1"></script>
     <script src="../supabase-config.js?v=20260912"></script>
 <script src="../battle-protocol.js?v=20261002-ach1"></script>
     <script src="../battle-chat.js?v=20260916"></script>
     <script src="../battle-metrics.js?v=20260916"></script>
 <script src="../network.js?v=20261002-menucard1"></script>
-    <script src="main-sp.js?v=20261002-menucard1"></script>
+    <script src="main-sp.js?v=20261002-fx1"></script>
 <script src="../card-drag.js?v=20260928-stage1"></script>
 <script src="../story-mode.js?v=20261002-ach1"></script>
 </body>
 </html>
-
-
 
 
 

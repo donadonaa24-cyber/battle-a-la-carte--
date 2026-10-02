@@ -26,6 +26,7 @@ let cardMotionState = {
 let activeCardMotionFrame = null;
 let packShopOpen = false;
 let packPreviewKey = null;
+let selectionFieldViewKey = null;
 const HORIZONTAL_SCROLL_ROW_IDS = [
     'player-hand-mixed',
     'player-set',
@@ -344,6 +345,7 @@ function ensureUiState() {
 function ensureGameSettings() {
     if (!GameState.settings) GameState.settings = {};
     if (typeof GameState.settings.cpuSpeed === 'undefined') GameState.settings.cpuSpeed = 'default';
+    if (window.DishEffects) GameState.settings.cpuSpeed = window.DishEffects.cpuSpeed();
     if (typeof GameState.settings.cpuPersonality === 'undefined') GameState.settings.cpuPersonality = 'default';
     if (typeof GameState.settings.backgroundTheme === 'undefined') GameState.settings.backgroundTheme = 'default';
     if (typeof GameState.settings.backgroundDesign === 'undefined') GameState.settings.backgroundDesign = 'default';
@@ -426,6 +428,7 @@ function buildPackReferenceHtml(pack) {
 
 function bindSettingsOverlayControls() {
     const settings = ensureGameSettings();
+    window.DishEffects?.bindSettings('settings');
 
     const resetButton = byId('settings-reset-button');
     const personalitySelect = byId('settings-cpu-personality');
@@ -480,8 +483,9 @@ function bindSettingsOverlayControls() {
     if (speedSelect) {
         speedSelect.value = settings.cpuSpeed;
         speedSelect.addEventListener('change', () => {
-            settings.cpuSpeed = speedSelect.value === 'fast' ? 'fast' : 'default';
-            addLog(`設定: CPU処理速度を「${settings.cpuSpeed === 'fast' ? '処理最速' : 'デフォルト'}」に変更しました。`);
+            settings.cpuSpeed = ['fast', 'relaxed'].includes(speedSelect.value) ? speedSelect.value : 'default';
+            window.DishEffects?.save({ cpuSpeed: settings.cpuSpeed });
+            addLog(`設定: CPU処理速度を「${settings.cpuSpeed === 'fast' ? '処理最速' : settings.cpuSpeed === 'relaxed' ? 'まったり' : 'デフォルト'}」に変更しました。`);
             updateUI();
         });
     }
@@ -673,6 +677,8 @@ function bindRenderEventsOnce() {
     if (packShopOverlay) packShopOverlay.addEventListener('click', e => { if (e.target === packShopOverlay) e.stopPropagation(); });
     byId('modal-input-backdrop')?.addEventListener('pointerdown', e => e.stopPropagation());
     byId('modal-input-backdrop')?.addEventListener('click', e => e.stopPropagation());
+    byId('selection-field-view-button')?.addEventListener('click', hideSelectionForFieldView);
+    byId('selection-return-button')?.addEventListener('click', restoreSelectionFromFieldView);
     byId('pack-confirm-no-button')?.addEventListener('click', () => { if (packPreviewKey) { packPreviewKey = null; closePackShop(); } });
     const skillName = byId('player-skill-name');
     if (skillName) {
@@ -914,6 +920,7 @@ function renderInfoOverlay() {
         title.textContent = '設定';
         content.innerHTML = `
             <div class="settings-group">
+                ${window.DishEffects?.settingsHtml('settings', false) || ''}
                 <div class="reference-item">
                     <div class="reference-title">操作確認</div>
                     <label class="settings-label" for="settings-operation-confirm">操作確認</label>
@@ -939,8 +946,9 @@ function renderInfoOverlay() {
                     <select id="settings-cpu-speed" class="settings-select">
                         <option value="default"${settings.cpuSpeed === 'default' ? ' selected' : ''}>デフォルト</option>
                         <option value="fast"${settings.cpuSpeed === 'fast' ? ' selected' : ''}>処理最速</option>
+                        <option value="relaxed"${settings.cpuSpeed === 'relaxed' ? ' selected' : ''}>まったり</option>
                     </select>
-                    <div class="settings-note">「処理最速」はCPUの待機時間を0にして即時進行します。</div>
+                    <div class="settings-note">「処理最速」はCPUの待機時間を0にして即時進行します。「まったり」は考え中…の間を取り、一つずつゆっくり行動します。</div>
                 </div>
 
                 <div class="reference-item">
@@ -1075,7 +1083,7 @@ function createImageCard(card, cardEl, imagePath, fallbackClassName = '') {
         cardEl.dataset.imageFallbackApplied = '1';
         cardEl.innerHTML = '';
         cardEl.classList.remove('has-image');
-        if (fallbackClassName) cardEl.className = `card ${fallbackClassName}${cardEl.classList.contains('unowned-pack') ? ' unowned-pack' : ''}`;
+        if (fallbackClassName) cardEl.className = `card ${fallbackClassName}${cardEl.classList.contains('unowned-pack') ? ' unowned-pack' : ''}${cardEl.classList.contains('exchangeable-pack') ? ' exchangeable-pack' : ''}`;
         if (card.romanReserved === true) cardEl.classList.add('roman-reserved-card');
         createCardTextBlock(card, cardEl);
     };
@@ -1208,7 +1216,7 @@ function beginCardMotionFrame() {
             ownDishCount: ownDish.count,
             opponentDishCount: opponentDish.count
         },
-        cookingFusion: cookedDish && fusionTransfers.length > 0
+        cookingFusion: cookedDish
             ? { ...cookedDish, transfers: fusionTransfers }
             : null,
         discardTransfers: [
@@ -1231,49 +1239,8 @@ function markCardDrawArrival(element, order, intervalMs) {
 }
 
 function animateCookingFusion(fusion) {
-    if (!fusion?.dish || !Array.isArray(fusion.transfers) || fusion.transfers.length === 0) return;
-    const discardTarget = StageLayout.toStageRect(byId('discard-pile-button')?.getBoundingClientRect());
-    if (!discardTarget || discardTarget.width <= 0 || discardTarget.height <= 0) return;
-    const fallbackElement = byId(fusion.side === 'opponent' ? 'cpu-hand-mixed' : 'player-hand-mixed');
-    const fallbackRect = StageLayout.toStageRect(fallbackElement?.getBoundingClientRect() || byId('deck-pile-button')?.getBoundingClientRect() || byId('discard-pile-button').getBoundingClientRect());
-    const center = { x: StageLayout.logical.width / 2, y: StageLayout.logical.height / 2 };
-
-    fusion.transfers.forEach((transfer, index) => {
-        const sourceRect = transfer.source?.rect || fallbackRect;
-        const material = transfer.source?.clone || createFaceCard(transfer.card, 'ingredient-card');
-        material.classList.remove('selected-card', 'card-draw-enter');
-        material.classList.add('cooking-fusion-material');
-        material.removeAttribute('id');
-        material.style.left = `${sourceRect.left}px`;
-        material.style.top = `${sourceRect.top}px`;
-        material.style.width = `${sourceRect.width}px`;
-        material.style.height = `${sourceRect.height}px`;
-        material.style.setProperty('--fusion-x', `${center.x - (sourceRect.left + sourceRect.width / 2)}px`);
-        material.style.setProperty('--fusion-y', `${center.y - (sourceRect.top + sourceRect.height / 2)}px`);
-        material.style.setProperty('--fusion-delay', `${index * 70}ms`);
-        StageLayout.stage.appendChild(material);
-        setTimeout(() => material.remove(), 720 + index * 70);
-    });
-
-    setTimeout(() => {
-        const width = Math.max(70, Math.min(118, fallbackRect.width || 92));
-        const height = width * 1.42;
-        const result = document.createElement('div');
-        result.className = 'card recipe-card cooking-fusion-result';
-        const imagePath = getRecipeImagePath(fusion.dish.name);
-        if (imagePath) createImageCard({ name: fusion.dish.name }, result, imagePath, 'recipe-card');
-        else createCardTextBlock({ name: fusion.dish.name, description: `${fusion.dish.points || 0}点` }, result);
-        const left = center.x - width / 2;
-        const top = center.y - height / 2;
-        result.style.left = `${left}px`;
-        result.style.top = `${top}px`;
-        result.style.width = `${width}px`;
-        result.style.height = `${height}px`;
-        result.style.setProperty('--fusion-discard-x', `${discardTarget.left + discardTarget.width / 2 - center.x}px`);
-        result.style.setProperty('--fusion-discard-y', `${discardTarget.top + discardTarget.height / 2 - center.y}px`);
-        StageLayout.stage.appendChild(result);
-        setTimeout(() => result.remove(), 1050);
-    }, 520 + Math.max(0, fusion.transfers.length - 1) * 70);
+    if (!fusion?.dish) return;
+    window.DishEffects?.show(fusion.dish, { side: fusion.side, transfers: fusion.transfers });
 }
 
 function animateDiscardTransfers(transfers) {
@@ -1487,7 +1454,10 @@ function renderPacks(player, container) {
     const ownPacks = container.id === 'player-packs';
     const sectionKey = `packs:${container.id || 'unknown'}`;
     const signature = player.packs.map(pack => `${pack.key}:${pack.name}`).join('|');
-    if (shouldSkipSectionRender(sectionKey, signature)) return;
+    if (shouldSkipSectionRender(sectionKey, signature)) {
+        renderPackExchangeHints(player, container, ownPacks);
+        return;
+    }
 
     container.innerHTML = '';
     packDefinitions.forEach(def => {
@@ -1534,6 +1504,21 @@ function renderPacks(player, container) {
             inspect();
         });
         container.appendChild(el);
+    });
+    renderPackExchangeHints(player, container, ownPacks);
+}
+
+function renderPackExchangeHints(player, container, ownPacks) {
+    const canOperate = ownPacks && getBattleViewModel().turn === 'me' &&
+        GameState.currentPhase === 'メインフェイズ' && !GameState.gameEnded && !GameState.selectionMode;
+    packDefinitions.forEach((def, index) => {
+        const card = container.children[index];
+        if (!card) return;
+        const available = canOperate && canBuyPack(player, def.key);
+        card.classList.toggle('exchangeable-pack', available);
+        if (ownPacks) card.setAttribute('aria-label', hasPack(player, def.key)
+            ? `${def.name}の効果を確認`
+            : `${def.name}を交換する（${def.cost}点）${available ? '、交換可能' : ''}`);
     });
 }
 
@@ -1724,6 +1709,37 @@ function renderDiscardPileTop() {
     pile.setAttribute('aria-label', latest ? `捨て札${GameState.discard.length}枚。最後は${latest.name}` : '捨て札0枚');
 }
 
+function getSelectionFieldViewKey() {
+    if (GameState.gameEnded) return null;
+    const mode = GameState.selectionMode;
+    let detail;
+    if (mode === 'discard') detail = `discard:${GameState.discardNeedCount}`;
+    else if (mode === 'board-cycle-select') detail = 'board-cycle-select';
+    else {
+        const ctx = mode === 'event-target' ? GameState.pendingEventContext
+            : mode === 'skill-target' ? GameState.pendingSkillContext : null;
+        if (!ctx) return null;
+        detail = JSON.stringify([ctx.source, ctx.eventCardId, ctx.skillName || ctx.eventName,
+            ctx.step, ctx.options.map(option => option.id)]);
+    }
+    return `${GameState.matchStartedAt}:${GameState.currentTurn}:${mode}:${detail}`;
+}
+
+function hideSelectionForFieldView() {
+    const key = getSelectionFieldViewKey();
+    const panel = byId('selection-panel');
+    if (!key || !panel || panel.classList.contains('hidden')) return;
+    selectionFieldViewKey = key;
+    renderSelectionPanel();
+    byId('selection-return-button')?.focus?.();
+}
+
+function restoreSelectionFromFieldView() {
+    selectionFieldViewKey = null;
+    renderSelectionPanel();
+    byId('selection-field-view-button')?.focus?.();
+}
+
 function renderSelectionPanel() {
     const panel = byId('selection-panel');
     const title = byId('selection-title');
@@ -1737,6 +1753,17 @@ function renderSelectionPanel() {
             panel?.classList.add('hidden');
             GameState.selectionMode = 'board-details';
         }
+        return;
+    }
+
+    const fieldViewKey = getSelectionFieldViewKey();
+    if (selectionFieldViewKey !== fieldViewKey) selectionFieldViewKey = null;
+    const viewingField = !!fieldViewKey && selectionFieldViewKey === fieldViewKey;
+    byId('game-container')?.classList.toggle('selection-field-view', viewingField);
+    byId('selection-field-view-button')?.classList.toggle('hidden', !fieldViewKey);
+    byId('selection-return-button')?.classList.toggle('hidden', !viewingField);
+    if (viewingField) {
+        panel.classList.add('hidden');
         return;
     }
 
@@ -2413,7 +2440,7 @@ function renderPackShopModal() {
     if (!showShop) return;
 
     const player = getBattleViewModel().me;
-    const canOperate = getBattleViewModel().turn === 'me' && !GameState.gameEnded &&
+    const canOperate = getBattleViewModel().turn === 'me' && GameState.currentPhase === 'メインフェイズ' && !GameState.gameEnded &&
         (!GameState.selectionMode || GameState.selectionMode === 'pack-confirm');
     score.textContent = `現在の点数: ${player.score}点 / 交換に必要な点数: エコバッグ・冷蔵庫2点、まな板3点`;
     if (closeButton) closeButton.disabled = GameState.selectionMode === 'pack-resolving';
@@ -2444,7 +2471,8 @@ function renderPackShopModal() {
         status.textContent = owned
             ? '交換済み'
             : (player.score < def.cost ? `未交換・あと${def.cost - player.score}点必要` :
-                (getBattleViewModel().turn !== 'me' ? '未交換・相手のターン' : '未交換・交換できます'));
+                (getBattleViewModel().turn !== 'me' ? '未交換・相手のターン' :
+                    (GameState.currentPhase !== 'メインフェイズ' ? '未交換・メインフェイズで交換' : '未交換・交換できます')));
         body.append(title, effect, cost, status);
 
         const button = document.createElement('button');

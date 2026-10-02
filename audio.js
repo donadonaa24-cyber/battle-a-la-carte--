@@ -25,7 +25,7 @@ const BASE_BGM_VOLUME = {
 };
 
 const DEFAULT_BGM_VOLUME = 0.8;
-const COOK_SFX_DELAY_MS = 500;
+const COOK_SFX_DELAY_MS = 1200;
 const pendingCookSfxTimers = new Set();
 
 const AudioManager = {
@@ -288,6 +288,7 @@ function playSfx(name) {
 }
 
 function cancelPendingCookSfx() {
+    window.DishEffects?.cancel();
     pendingCookSfxTimers.forEach(timer => clearTimeout(timer));
     pendingCookSfxTimers.clear();
 }
@@ -302,6 +303,9 @@ function canPlayCookSfx(matchStartedAt) {
 function scheduleCookSfx() {
     const matchStartedAt = typeof GameState !== 'undefined' ? GameState.matchStartedAt : null;
     if (!canPlayCookSfx(matchStartedAt)) return;
+    if (window.DishEffects?.queueCookSound(() => {
+        if (canPlayCookSfx(matchStartedAt)) playSfxNow('cook');
+    }, COOK_SFX_DELAY_MS)) return;
     const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 0 : COOK_SFX_DELAY_MS;
     if (delay === 0) {
         playSfxNow('cook');

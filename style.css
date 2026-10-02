@@ -3704,3 +3704,14 @@ body:has(.pc-field-ui) #online-bar { z-index: 300; }
 @media (prefers-reduced-motion: reduce) {
     .event-refusal-flash { animation: none; }
 }
+
+/* Card selection can be paused to inspect the field without changing its state. */
+.selection-return-button { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 4100; width: 220px; max-width: calc(100% - 16px); min-height: 40px; box-sizing: border-box; padding: 8px 12px; border: 2px solid #ffc95d; border-radius: 12px; background: #153b83; color: #fff4c9; font-size: 14px; font-weight: 700; line-height: 1.35; box-shadow: 0 3px 12px #0008; cursor: pointer; }
+.selection-return-button.hidden { display: none; }
+#selection-field-view-button { flex: 1 1 100%; }
+#selection-panel .selection-actions { flex-wrap: wrap; }
+#game-container.selection-field-view .modal-input-backdrop { display: none; }
+.pack-card.exchangeable-pack { position: relative; box-shadow: 0 0 0 2px #ffc95d, 0 0 10px #ffc95d99; }
+.unowned-pack.exchangeable-pack { filter: none; opacity: 1; }
+.unowned-pack.exchangeable-pack .card-art { filter: grayscale(1) brightness(.68); opacity: .72; }
+.pack-card.exchangeable-pack::after { content: '交換可能'; position: absolute; left: 0; right: 0; top: 2px; z-index: 2; padding: 2px 0; border-radius: 4px; background: #ffda76; color: #553000; font-size: 9px; font-weight: 900; line-height: 1.25; text-align: center; pointer-events: none; }

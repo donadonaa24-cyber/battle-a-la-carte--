@@ -3460,6 +3460,13 @@ body:has(.recipe-hints-overlay:not(.hidden), .spotlight-overlay:not(.hidden), #s
 .stage-prompt-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .stage-prompt-actions button { min-height: 44px; }
 
+/* Fit the same three set slots within the existing mobile rows. */
+.mobile-field-ui :is(#player-set, #cpu-set) { gap: 4px; padding: 0; box-sizing: border-box; }
+.mobile-field-ui .set-slot-placeholder { flex: 0 0 auto; box-sizing: border-box; border: 1px dashed #9fd5ff; border-radius: 6px; background: #102b6840; color: #c8e7ff; display: flex; align-items: center; justify-content: center; padding: 2px; text-align: center; font-size: 9px; line-height: 1.35; overflow-wrap: anywhere; }
+.mobile-field-ui .cpu-set-zone .set-slot-placeholder { width: 38px; height: 47px; }
+.mobile-field-ui .player-set-zone .set-slot-placeholder { width: 53px; height: 76px; }
+.mobile-field-ui .set-slot-placeholder.is-locked { border-style: dotted; border-color: #888f9f; background: #747d8c40; color: #b7bfce; }
+
 /* ===== Start setup: header, scrolling content, persistent actions ===== */
 #start-panel {
     display: flex;
@@ -3722,3 +3729,14 @@ body:has(.recipe-hints-overlay:not(.hidden), .spotlight-overlay:not(.hidden), #s
 @media (prefers-reduced-motion: reduce) {
     .event-refusal-flash { animation: none; }
 }
+
+/* Card selection can be paused to inspect the field without changing its state. */
+.selection-return-button { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 4100; width: 220px; max-width: calc(100% - 16px); min-height: 40px; box-sizing: border-box; padding: 8px 12px; border: 2px solid #ffc95d; border-radius: 12px; background: #153b83; color: #fff4c9; font-size: 14px; font-weight: 700; line-height: 1.35; box-shadow: 0 3px 12px #0008; cursor: pointer; }
+.selection-return-button.hidden { display: none; }
+#selection-field-view-button { flex: 1 1 100%; }
+#selection-panel .selection-actions { flex-wrap: wrap; }
+#game-container.selection-field-view .modal-input-backdrop { display: none; }
+.pack-card.exchangeable-pack { position: relative; box-shadow: 0 0 0 2px #ffc95d, 0 0 10px #ffc95d99; }
+.unowned-pack.exchangeable-pack { filter: none; opacity: 1; }
+.unowned-pack.exchangeable-pack .card-art { filter: grayscale(1) brightness(.68); opacity: .72; }
+.pack-card.exchangeable-pack::after { content: '交換可能'; position: absolute; left: 0; right: 0; top: 2px; z-index: 2; padding: 2px 0; border-radius: 4px; background: #ffda76; color: #553000; font-size: 9px; font-weight: 900; line-height: 1.25; text-align: center; pointer-events: none; }

@@ -231,14 +231,17 @@ for (const [file, cssFile, stageHeight] of [['web.html', 'style.css', 810], ['mo
 }
 
 test('PC/mobile share menu card logic, markup, styles and cache versions', () => {
-    assert.equal(read('main.js'), read('mobile/main-sp.js'));
+    assert.equal(read('main.js'), read('mobile/main-sp.js').replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
     const menu = html => html.slice(html.indexOf('<div id="start-menu-stage"'), html.indexOf('<div id="start-cpu-setup-stage"'));
     assert.equal(menu(read('web.html')), menu(read('mobile/mobile.html')));
     const marker = '/* Menu player card stays';
     const cardCss = css => css.slice(css.indexOf(marker), css.indexOf('#start-panel #start-cpu-setup-stage > .start-stage-body'));
     assert.equal(cardCss(read('style.css')), cardCss(read('mobile/style-sp.css')));
     for (const [file, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
-        for (const asset of [`style${suffix}.css`, `main${suffix}.js`, 'profile.js', 'achievements.js', 'network.js']) assert.ok(read(file).includes(`${asset}?v=20261002-menucard1`), `${file}: ${asset}`);
+        for (const asset of [`style${suffix}.css`, `main${suffix}.js`, 'profile.js', 'achievements.js', 'network.js']) {
+            const version = asset.startsWith('style') ? '20261002-ui5' : asset.startsWith('main') ? '20261002-fx1' : '20261002-menucard1';
+            assert.ok(read(file).includes(`${asset}?v=${version}`), `${file}: ${asset}`);
+        }
     }
     assert.match(read('battle-engine-worker.js'), /achievements\.js\?v=20261002-menucard1/);
     assert.match(read('network.js'), /battle-engine-worker\.js\?v=20261002-menucard1/);

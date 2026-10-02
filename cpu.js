@@ -1,23 +1,46 @@
 ﻿const CPU_THINK_DELAY = 3000;
 const CPU_ACTION_DELAY = 900;
 const CPU_BIG_ACTION_DELAY = 1200;
+let cpuTurnInFlight = null;
+
+function isCpuTurnCurrent(matchStartedAt = GameState.matchStartedAt) {
+    return !GameState.gameEnded && GameState.currentTurn === 'cpu' &&
+        GameState.matchStartedAt === matchStartedAt && !window.FriendBattle?.isActive?.();
+}
+
+function getCpuSpeedMode() {
+    return window.DishEffects?.cpuSpeed() || GameState?.settings?.cpuSpeed || 'default';
+}
 
 function isCpuFastMode() {
-    return GameState?.settings?.cpuSpeed === 'fast';
+    return getCpuSpeedMode() === 'fast';
 }
 
 function resolveCpuDelay(ms) {
-    return isCpuFastMode() ? 0 : ms;
+    if (isCpuFastMode()) return 0;
+    return getCpuSpeedMode() === 'relaxed' ? Math.max(1600, ms * 2) : ms;
 }
 
 function getCpuTurnStartDelay() {
+    // cpuTurn owns the relaxed thinking pause and its visible indicator.
+    if (getCpuSpeedMode() === 'relaxed') return 0;
     return resolveCpuDelay(CPU_THINK_DELAY);
 }
 
-function cpuPause(ms) {
+async function cpuPause(ms) {
+    const match = GameState.matchStartedAt;
+    if (!isCpuTurnCurrent(match)) return false;
+    await window.DishEffects?.waitForActive();
+    if (!isCpuTurnCurrent(match)) return false;
     const waitMs = resolveCpuDelay(ms);
-    if (waitMs <= 0) return Promise.resolve();
-    return new Promise(resolve => setTimeout(resolve, waitMs));
+    if (waitMs <= 0) return true;
+    if (getCpuSpeedMode() === 'relaxed') setCPUStatus('考え中…');
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+    if (!isCpuTurnCurrent(match)) {
+        if (GameState.matchStartedAt === match && GameState.currentTurn !== 'cpu') setCPUStatus('');
+        return false;
+    }
+    return true;
 }
 
 function getCpuSelectableIngredientCards(cpu) {
@@ -131,7 +154,15 @@ function chooseCpuRomanCards(cpu, openedCards) {
 }
 
 async function cpuTurn() {
-    if (GameState.gameEnded) return;
+    const match = GameState.matchStartedAt;
+    if (!isCpuTurnCurrent(match) || cpuTurnInFlight === match) return;
+    cpuTurnInFlight = match;
+    try { await runCpuTurn(match); }
+    finally { if (cpuTurnInFlight === match) cpuTurnInFlight = null; }
+}
+
+async function runCpuTurn(matchStartedAt) {
+    if (!isCpuTurnCurrent(matchStartedAt)) return;
 
     const cpu = GameState.players.cpu;
     const player = GameState.players.player;
@@ -141,7 +172,7 @@ async function cpuTurn() {
     updateUI();
 
     await cpuPause(CPU_THINK_DELAY);
-    if (GameState.gameEnded) return;
+    if (!isCpuTurnCurrent(matchStartedAt)) return;
 
     setCPUStatus('CPUドロー中...');
     GameState.currentPhase = 'ドローフェイズ';
@@ -155,7 +186,7 @@ async function cpuTurn() {
 
         updateUI();
         await cpuPause(CPU_ACTION_DELAY);
-        if (GameState.gameEnded) return;
+        if (!isCpuTurnCurrent(matchStartedAt)) return;
     }
 
     if (typeof triggerBattleModeDiscardPickupAfterDrawForCpu === 'function') {
@@ -166,13 +197,14 @@ async function cpuTurn() {
     setCPUStatus('CPU行動選択中...');
     updateUI();
     await cpuPause(CPU_ACTION_DELAY);
+    if (!isCpuTurnCurrent(matchStartedAt)) return;
 
     const boughtPack = cpuTryBuyPack(cpu);
     if (boughtPack) {
         setCPUStatus('CPU加工アイテム購入中...');
         updateUI();
         await cpuPause(CPU_BIG_ACTION_DELAY);
-        if (GameState.gameEnded) return;
+        if (!isCpuTurnCurrent(matchStartedAt)) return;
     }
 
     if (typeof activateSkillBySide === 'function') {
@@ -184,7 +216,7 @@ async function cpuTurn() {
             setCPUStatus('CPUスキル発動中...');
             updateUI();
             await cpuPause(CPU_BIG_ACTION_DELAY);
-            if (GameState.gameEnded) return;
+            if (!isCpuTurnCurrent(matchStartedAt)) return;
         }
     }
 
@@ -192,16 +224,17 @@ async function cpuTurn() {
         setCPUStatus('CPUまな板使用中...');
         updateUI();
         await cpuPause(CPU_ACTION_DELAY);
-        if (GameState.gameEnded) return;
+        if (!isCpuTurnCurrent(matchStartedAt)) return;
     }
 
     for (let i = 0; i < 2; i++) {
         const usedEvent = await cpuTryUseEvent(cpu, player);
+        if (!isCpuTurnCurrent(matchStartedAt)) return;
         if (!usedEvent) break;
         setCPUStatus('CPUイベントカード使用中...');
         updateUI();
         await cpuPause(CPU_BIG_ACTION_DELAY);
-        if (GameState.gameEnded) return;
+        if (!isCpuTurnCurrent(matchStartedAt)) return;
     }
 
     if (!cpu.lockedCookingThisTurn) {
@@ -221,18 +254,15 @@ async function cpuTurn() {
 
             updateUI();
 
+            const winner = checkWinner();
+            if (winner) { endGame(winner); return; }
+
             if (window.showSpotlightRecipeCardAsync) {
                 await window.showSpotlightRecipeCardAsync(bestPlan.recipe);
             }
 
             await cpuPause(CPU_BIG_ACTION_DELAY);
-            if (GameState.gameEnded) return;
-
-            const winner = checkWinner();
-            if (winner) {
-                endGame(winner);
-                return;
-            }
+            if (!isCpuTurnCurrent(matchStartedAt)) return;
 
             if (cpu.lockedCookingThisTurn) break;
             possible = findPossibleRecipesForPlayer(cpu);
@@ -255,7 +285,7 @@ async function cpuTurn() {
             updateUI();
 
             await cpuPause(CPU_ACTION_DELAY);
-            if (GameState.gameEnded) return;
+            if (!isCpuTurnCurrent(matchStartedAt)) return;
 
             if (cpu.set.length >= setLimit) break;
             if (cpu.hand.length <= 1) break;
@@ -267,6 +297,7 @@ async function cpuTurn() {
     setCPUStatus('CPU終了処理中...');
     updateUI();
     await cpuPause(500);
+    if (!isCpuTurnCurrent(matchStartedAt)) return;
 
     const handLimit = getEndPhaseHandLimit(cpu);
     while (getCurrentTotalHandCount(cpu) > handLimit) {
@@ -284,7 +315,7 @@ async function cpuTurn() {
 
         updateUI();
         await cpuPause(CPU_ACTION_DELAY);
-        if (GameState.gameEnded) return;
+        if (!isCpuTurnCurrent(matchStartedAt)) return;
     }
 
     cpu.usedEventThisTurn = false;
@@ -298,6 +329,9 @@ async function cpuTurn() {
         return;
     }
 
+    await cpuPause(400);
+    if (!isCpuTurnCurrent(matchStartedAt)) return;
+
     GameState.turnNumber = (GameState.turnNumber || 1) + 1;
     GameState.currentTurn = 'player';
     GameState.currentPhase = 'ドローフェイズ';
@@ -309,8 +343,6 @@ async function cpuTurn() {
     markTurnStartStatus(player, cpu);
     setCPUStatus('');
     updateUI();
-
-    await cpuPause(400);
 
     drawUntilTargetHand(player);
     if (typeof triggerBattleModeDiscardPickupAfterDrawForPlayer === 'function') {
@@ -339,6 +371,8 @@ function cpuTryBuyPack(cpu) {
 }
 
 async function cpuTryUseEvent(cpu, player) {
+    const match = GameState.matchStartedAt;
+    if (!isCpuTurnCurrent(match)) return false;
     if (typeof canUseEventThisTurn === 'function') {
         if (!canUseEventThisTurn(cpu)) return false;
     } else if (cpu.usedEventThisTurn) {
@@ -369,6 +403,7 @@ async function cpuTryUseEvent(cpu, player) {
         await window.showSpotlightEventCardAsync(eventCard);
     }
 
+    if (!isCpuTurnCurrent(match)) return false;
     moveCardToDiscard(eventCard);
     if (typeof consumeEventUse === 'function') {
         consumeEventUse(cpu);

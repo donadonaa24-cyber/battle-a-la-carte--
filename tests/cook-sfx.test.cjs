@@ -85,7 +85,7 @@ async function flush() { for (let i = 0; i < 30; i++) await Promise.resolve(); }
 for (const mobile of [false, true]) {
     const label = mobile ? 'mobile' : 'PC';
     for (const reduced of [false, true]) {
-        const delay = reduced ? 0 : 500;
+        const delay = reduced ? 0 : 1200;
         test(`${label}: player completion sounds once at ${delay} ms, with no sound on a repeated selection`, () => {
             const r = runtime(mobile, reduced), { c } = r;
             const recipe = prepareRecipe(c);
@@ -93,11 +93,11 @@ for (const mobile of [false, true]) {
             c.playerCookSelectedRecipe(recipe.name);
             assert.equal(c.GameState.players.player.cookedRecipes.length, 1);
             assert.equal(r.cooks().length, reduced ? 1 : 0);
-            if (!reduced) { r.tick(499); assert.equal(r.cooks().length, 0); r.tick(1); }
+            if (!reduced) { r.tick(1199); assert.equal(r.cooks().length, 0); r.tick(1); }
             assert.deepEqual(r.cooks().map(sound => sound.at), [delay]);
             r.tick(3000);
             assert.equal(r.cooks().length, 1);
-            assert.deepEqual(r.cards, [{ name: recipe.name, at: reduced ? 0 : 900 }], 'card timing is unchanged');
+            assert.deepEqual(r.cards, [{ name: recipe.name, at: reduced ? 0 : 1200 }], 'fallback card and sound share the reveal moment');
         });
 
         test(`${label}: actual CPU cooking sounds once at ${delay} ms`, async () => {
@@ -110,13 +110,13 @@ for (const mobile of [false, true]) {
             await flush();
             assert.equal(c.GameState.players.cpu.cookedRecipes.length, 1);
             assert.equal(r.cooks().length, reduced ? 1 : 0);
-            if (!reduced) { r.tick(499); assert.equal(r.cooks().length, 0); r.tick(1); }
+            if (!reduced) { r.tick(1199); assert.equal(r.cooks().length, 0); r.tick(1); }
             assert.deepEqual(r.cooks().map(sound => sound.at), [delay]);
-            r.tick(reduced ? 0 : 400);
+            r.tick(0);
             await turn;
             r.tick(3000);
             assert.equal(r.cooks().length, 1);
-            assert.deepEqual(r.cards, [{ name: recipe.name, at: reduced ? 0 : 900 }]);
+            assert.deepEqual(r.cards, [{ name: recipe.name, at: reduced ? 0 : 1200 }]);
         });
 
         for (const side of ['player', 'cpu']) {
@@ -145,7 +145,7 @@ for (const mobile of [false, true]) {
                     assert.equal(c.GameState.lastCookedRecipe.name, recipe.name);
                     assert.deepEqual(r.cards, [{ name: recipe.name, at: 0 }], 'the winning dish stays in the finale');
                     assert.equal(r.cooks().length, reduced ? 1 : 0);
-                    if (!reduced) { r.tick(499); assert.equal(r.cooks().length, 0); r.tick(1); }
+                    if (!reduced) { r.tick(1199); assert.equal(r.cooks().length, 0); r.tick(1); }
                     assert.deepEqual(r.cooks().map(sound => sound.at), [delay]);
                     r.tick(3500);
                     assert.equal(r.cooks().length, 1);
@@ -160,7 +160,7 @@ for (const mobile of [false, true]) {
                 const row = { revision: 1, payload: { state: clone(c.GameState), effects: [effect] } };
                 c.applyView(row); c.applyView(row);
                 assert.equal(r.cooks().length, reduced ? 1 : 0);
-                if (!reduced) { r.tick(499); assert.equal(r.cooks().length, 0); r.tick(1); }
+                if (!reduced) { r.tick(1199); assert.equal(r.cooks().length, 0); r.tick(1); }
                 assert.deepEqual(r.cooks().map(sound => sound.at), [delay]);
                 r.tick(3000);
                 assert.equal(r.cooks().length, 1);
@@ -180,7 +180,7 @@ for (const mobile of [false, true]) {
                     assert.equal(c.GameState.gameEnded, true);
                     assert.deepEqual(r.cards, [{ name: recipe.name, at: 0 }]);
                     assert.equal(r.cooks().length, reduced ? 1 : 0);
-                    if (!reduced) { r.tick(499); assert.equal(r.cooks().length, 0); r.tick(1); }
+                    if (!reduced) { r.tick(1199); assert.equal(r.cooks().length, 0); r.tick(1); }
                     assert.deepEqual(r.cooks().map(sound => sound.at), [delay]);
                     r.tick(3500);
                     assert.equal(r.cooks().length, 1);
@@ -202,7 +202,7 @@ for (const mobile of [false, true]) {
             c.playerCookSelectedRecipe(recipe.name);
             assert.equal(c.GameState.players.player.cookedRecipes.length, 1);
             assert.equal(r.cooks().length, reduced ? 1 : 0);
-            if (!reduced) { r.tick(499); assert.equal(r.cooks().length, 0); r.tick(1); }
+            if (!reduced) { r.tick(1199); assert.equal(r.cooks().length, 0); r.tick(1); }
             assert.deepEqual(r.cooks().map(sound => sound.at), [delay]);
             r.tick(3000);
             assert.equal(r.cooks().length, 1);
@@ -226,7 +226,7 @@ for (const mobile of [false, true]) {
                     }
                     assert.equal(actor.cookedRecipes.length, 1);
                     assert.equal(r.cooks().length, reduced ? 1 : 0);
-                    if (!reduced) { r.tick(499); assert.equal(r.cooks().length, 0); r.tick(1); }
+                    if (!reduced) { r.tick(1199); assert.equal(r.cooks().length, 0); r.tick(1); }
                     assert.deepEqual(r.cooks().map(sound => sound.at), [delay]);
                     r.tick(3000);
                     assert.equal(r.cooks().length, 1);
@@ -243,9 +243,9 @@ for (const mobile of [false, true]) {
         c.playerCookSelectedRecipe(prepareRecipe(c).name);
         c.playSfx('turnStart');
         assert.equal(r.sounds.length, 1, 'other sound effects remain immediate');
-        r.tick(399); assert.equal(r.cooks().length, 0);
-        r.tick(1); assert.deepEqual(r.cooks().map(sound => sound.at), [500]);
-        r.tick(100); assert.deepEqual(r.cooks().map(sound => sound.at), [500, 600]);
+        r.tick(1099); assert.equal(r.cooks().length, 0);
+        r.tick(1); assert.deepEqual(r.cooks().map(sound => sound.at), [1200]);
+        r.tick(100); assert.deepEqual(r.cooks().map(sound => sound.at), [1200, 1300]);
         assert.notEqual(r.cooks()[0].sound, r.cooks()[1].sound, 'sounds can overlap');
         r.tick(3000); assert.equal(r.cooks().length, 2);
     });
@@ -291,7 +291,7 @@ for (const mobile of [false, true]) {
             r.tick(100);
             c.showStartStage('start-menu-stage');
             r.overlay.classList.remove('hidden');
-            r.tick(399); assert.equal(r.cooks().length, 0);
+            r.tick(1099); assert.equal(r.cooks().length, 0);
             r.overlay.classList.add('hidden');
             r.tick(3001);
             assert.equal(r.cooks().length, 0, 'returning to battle cannot revive cancelled sounds');
@@ -304,14 +304,14 @@ for (const mobile of [false, true]) {
         const row = revision => ({ revision, payload: { state: clone(c.GameState), effects: [{ name: 'playCookBgm', args: [] }] } });
         c.applyView(row(1));
         r.tick(100); c.applyView(row(2));
-        r.tick(400); assert.deepEqual(r.cooks().map(sound => sound.at), [500]);
-        r.tick(100); assert.deepEqual(r.cooks().map(sound => sound.at), [500, 600]);
+        r.tick(1100); assert.deepEqual(r.cooks().map(sound => sound.at), [1200]);
+        r.tick(100); assert.deepEqual(r.cooks().map(sound => sound.at), [1200, 1300]);
         c.applyView(row(3));
         r.tick(100);
         const final = row(4); final.payload.state.gameEnded = true; final.payload.effects = [];
         c.applyView(final);
-        r.tick(399); assert.equal(r.cooks().length, 2);
-        r.tick(1); assert.deepEqual(r.cooks().map(sound => sound.at), [500, 600, 1100]);
+        r.tick(1099); assert.equal(r.cooks().length, 2);
+        r.tick(1); assert.deepEqual(r.cooks().map(sound => sound.at), [1200, 1300, 2500]);
         r.tick(3000); assert.equal(r.cooks().length, 3);
     });
 }
@@ -341,7 +341,7 @@ test('host special-dish completion emits exactly one cook cue for the guest', as
             const row = { revision: 1, payload: clone(result.views.guest) };
             r.c.applyView(row); r.c.applyView(row);
             assert.equal(r.cooks().length, 0);
-            r.tick(499); assert.equal(r.cooks().length, 0);
+            r.tick(1199); assert.equal(r.cooks().length, 0);
             r.tick(1); assert.equal(r.cooks().length, 1);
             r.tick(3000); assert.equal(r.cooks().length, 1);
         }
@@ -350,10 +350,10 @@ test('host special-dish completion emits exactly one cook cue for the guest', as
 
 test('cook sound modules and lifecycle mirrors match and updated assets are loaded', () => {
     assert.equal(read('audio.js'), read('mobile/audio-sp.js').replaceAll('../assets/', 'assets/'));
-    for (const name of ['player', 'cpu', 'main']) assert.equal(read(`${name}.js`), read(`mobile/${name}-sp.js`));
+    for (const name of ['player', 'cpu', 'main']) assert.equal(read(`${name}.js`), read(`mobile/${name}-sp.js`).replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
     for (const [html, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
-        assert.ok(read(html).includes(`audio${suffix}.js?v=20261001-cooksfx2`));
-        assert.ok(read(html).includes(`main${suffix}.js?v=20261002-menucard1`));
+        assert.ok(read(html).includes(`audio${suffix}.js?v=20261002-fx1`));
+        assert.ok(read(html).includes(`main${suffix}.js?v=20261002-fx1`));
         assert.ok(read(html).includes(`player${suffix}.js?v=20261002-ach1`));
         assert.ok(read(html).includes('network.js?v=20261002-menucard1'));
     }
