@@ -353,10 +353,10 @@ test('cook sound modules and lifecycle mirrors match and updated assets are load
     for (const name of ['player', 'cpu', 'main']) assert.equal(read(`${name}.js`), read(`mobile/${name}-sp.js`));
     for (const [html, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
         assert.ok(read(html).includes(`audio${suffix}.js?v=20261001-cooksfx2`));
-        assert.ok(read(html).includes(`main${suffix}.js?v=20261001-discard1`));
-        assert.ok(read(html).includes(`player${suffix}.js?v=20261001-cooksfx1`));
-        assert.ok(read(html).includes('network.js?v=20261001-cooksfx1'));
+        assert.ok(read(html).includes(`main${suffix}.js?v=20261002-menucard1`));
+        assert.ok(read(html).includes(`player${suffix}.js?v=20261002-ach1`));
+        assert.ok(read(html).includes('network.js?v=20261002-menucard1'));
     }
-    assert.ok(read('network.js').includes('battle-engine-worker.js?v=20261001-cooksfx1'));
-    assert.ok(read('battle-engine-worker.js').includes('player.js?v=20261001-cooksfx1'));
+    assert.ok(read('network.js').includes('battle-engine-worker.js?v=20261002-menucard1'));
+    assert.ok(read('battle-engine-worker.js').includes('player.js?v=20261002-ach1'));
 });

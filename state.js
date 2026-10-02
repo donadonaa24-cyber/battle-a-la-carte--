@@ -5,6 +5,10 @@
         events: [],
         packs: [],
         score: 0,
+        name: null,
+        title: '',
+        frame: 'none',
+        achievementTracking: createAchievementTracking(),
         boardCycleUsed: 0,
         knifeSelectedName: null,
         knifeUsedThisTurn: false,
@@ -240,6 +244,35 @@ const GameState = {
     }
 };
 
+// Rule-state only: serialized by autosave and projected for both online roles.
+function createAchievementTracking(score = 0, opponentScore = 0) {
+    return { completeHistory: true, minScore: score, maxScore: score, opponentMaxScore: opponentScore,
+        comeback9Seen: opponentScore === 9 && score <= 3, lastDish: null };
+}
+
+function observeAchievementScores(state = GameState) {
+    if (!state?.players) return;
+    for (const side of ['player', 'cpu']) {
+        const own = state.players[side], other = state.players[side === 'player' ? 'cpu' : 'player'];
+        if (!own || !other) continue;
+        const score = Number(own.score) || 0, opponentScore = Number(other.score) || 0;
+        if (!own.achievementTracking || typeof own.achievementTracking !== 'object') {
+            own.achievementTracking = { ...createAchievementTracking(score, opponentScore), completeHistory: false };
+        }
+        const tracking = own.achievementTracking;
+        tracking.minScore = Math.min(tracking.minScore, score);
+        tracking.maxScore = Math.max(tracking.maxScore, score);
+        tracking.opponentMaxScore = Math.max(tracking.opponentMaxScore, opponentScore);
+        if (opponentScore === 9 && score <= 3) tracking.comeback9Seen = true;
+    }
+}
+
+function trackAchievementDish(player, points, beforeScore) {
+    observeAchievementScores();
+    if (player?.achievementTracking) player.achievementTracking.lastDish = { beforeScore, points, afterScore: player.score };
+    window.Achievements?.observeMatch(GameState);
+}
+
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -255,6 +288,10 @@ function resetPlayerState(player) {
     player.events = [];
     player.packs = [];
     player.score = 0;
+    player.name = null;
+    player.title = '';
+    player.frame = 'none';
+    player.achievementTracking = createAchievementTracking();
     player.boardCycleUsed = 0;
     player.knifeSelectedName = null;
     player.knifeUsedThisTurn = false;
@@ -286,6 +323,9 @@ function resetUiState() {
     GameState.surrenderedBy = null;
     GameState.winner = null;
     GameState.matchStartedAt = Date.now();
+    GameState.achievementMatchId = `match-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    GameState.achievementStory = !!window.__storyActiveEpisodeId;
+    window.Achievements?.clearToasts?.();
     GameState.matchEndedAt = null;
     GameState.lastCookedRecipe = null;
     GameState.pendingEventContext = null;
@@ -414,7 +454,9 @@ function buyPack(player, packKey) {
     if (!def) return false;
     if (!canBuyPack(player, packKey)) return false;
 
+    observeAchievementScores();
     player.score -= def.cost;
+    observeAchievementScores();
     player.packsExchangedCount = (Number(player.packsExchangedCount) || 0) + 1;
     player.packs.push({
         key: def.key,
@@ -444,6 +486,7 @@ function getSpecialWinReason(player) {
 }
 
 function checkWinner() {
+    observeAchievementScores();
     if (typeof window.Missions?.observeScores === 'function') window.Missions.observeScores(GameState);
     const playerSpecial = getSpecialWinReason(GameState.players.player);
     if (playerSpecial) {
@@ -543,6 +586,9 @@ window.getCpuPersonalitySkillPriority = getCpuPersonalitySkillPriority;
 window.ensurePlayerSkillState = ensurePlayerSkillState;
 window.getPlayerSkillUseCount = getPlayerSkillUseCount;
 window.setPlayerSelectedSkill = setPlayerSelectedSkill;
+window.observeAchievementScores = observeAchievementScores;
+window.trackAchievementDish = trackAchievementDish;
+window.createAchievementTracking = createAchievementTracking;
 
 
 

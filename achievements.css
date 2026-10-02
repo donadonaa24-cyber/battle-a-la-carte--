@@ -1,0 +1,24 @@
+/* Shared achievement UI inside the existing fixed PC/mobile stages. */
+.achievement-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.achievement-card { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid #7e98be66; border-radius: 12px; background: #102b55; color: #d6e3f5; min-width: 0; }
+.achievement-card.unlocked { border-color: #f3d27b; background: #153e58; color: #fff6d6; }
+.achievement-card strong { font-size: 16px; overflow-wrap: anywhere; }
+.achievement-card p { font-size: 12px; line-height: 1.5; margin: 0; }
+.achievement-card progress { width: 100%; height: 10px; accent-color: #ffcd61; }
+.achievement-card time, .achievement-progress, .achievement-status { font-size: 11px; }
+.achievement-tier { align-self: flex-start; padding: 2px 8px; border-radius: 8px; font-size: 11px; }
+.achievement-tier.silver { background: #bdcad7; color: #23344d; }
+.achievement-tier.gold { background: #f3d27b; color: #58420b; }
+.achievement-migration-summary { font-size: 12px; color: #c3d5ec; margin: 0; }
+.achievement-profile-preview, .result-player-identity { display: flex; align-items: center; gap: 12px; overflow-wrap: anywhere; }
+.achievement-profile-preview .character-icon, .result-player-identity .character-icon { width: 56px; height: 56px; flex: 0 0 56px; box-sizing: border-box; }
+.character-icon.achievement-frame-silver { outline: 3px solid #c4cedb; outline-offset: -3px; box-shadow: inset 0 0 0 5px #74869c, 0 0 8px #b7cce980; }
+.character-icon.achievement-frame-gold { outline: 3px solid #ffdb6a; outline-offset: -3px; box-shadow: inset 0 0 0 5px #af7824, 0 0 10px #f3c45e99; }
+.achievement-toast { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 220000; pointer-events: none; width: max-content; max-width: 90%; box-sizing: border-box; padding: 9px 16px; background: #18384bf5; color: #fff0b7; border: 1px solid #f3d27b; border-radius: 12px; font-size: 16px; text-align: center; box-shadow: 0 4px 16px #0008; }
+.result-achievements { border: 1px solid #f3d27b; border-radius: 12px; padding: 10px 14px; background: #123e46; }
+.result-achievements h3 { margin: 0 0 8px; font-size: 16px; }
+.result-achievements ul { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.7; }
+#player-hud-name, #cpu-hud-name { overflow-wrap: anywhere; }
+#app-stage[data-stage-width="432"] .achievement-list { grid-template-columns: 1fr; }
+#app-stage[data-stage-width="432"] .achievement-toast { font-size: 12px; padding: 8px 10px; }
+#app-stage[data-stage-width="432"] .achievement-card { padding: 10px; }

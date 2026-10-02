@@ -250,7 +250,7 @@ test('both pages load the mission UI and use selected sleeve for card backs', ()
             if (id === 'settings-sleeve-picker') assert.match(read(htmlPath.startsWith('mobile/') ? 'mobile/render-sp.js' : 'render.js'), new RegExp(id));
             else assert.match(html, new RegExp(`id="${id}"`));
         }
-        assert.match(html, /missions\.js\?v=20260929-mission1/);
+        assert.match(html, /missions\.js\?v=20261002-ach1/);
         assert.match(css, /\.card-back\s*\{[^}]*--selected-card-back/s);
         assert.match(css, /\.deck-pile\s*\{[^}]*--selected-card-back/s);
     }

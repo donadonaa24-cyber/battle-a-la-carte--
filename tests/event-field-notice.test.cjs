@@ -256,11 +256,10 @@ test('PC/mobile notice helpers, hints, styles and current asset references stay 
         assert.match(html, /id="field-notice"[^>]*role="status"[^>]*aria-live="polite"/);
         assert.match(html, /id="event-first-turn-hint"[^>]*>1ターン目は使用不可</);
         for (const asset of [`style${suffix}.css`, `player${suffix}.js`, `render${suffix}.js`, 'network.js']) {
-            const version = asset === 'network.js' || asset.startsWith('player') ? '20261001-cooksfx1'
-                : '20261001-discard1';
+            const version = asset.endsWith('.css') || asset === 'network.js' ? '20261002-menucard1' : '20261002-ach1';
             assert.ok(html.includes(`${asset}?v=${version}`), asset);
         }
     }
-    assert.match(read('network.js'), /battle-engine-worker\.js\?v=20261001-cooksfx1/);
-    assert.match(read('battle-engine-worker.js'), /player\.js\?v=20261001-cooksfx1/);
+    assert.match(read('network.js'), /battle-engine-worker\.js\?v=20261002-menucard1/);
+    assert.match(read('battle-engine-worker.js'), /player\.js\?v=20261002-ach1/);
 });

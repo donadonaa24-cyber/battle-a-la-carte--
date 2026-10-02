@@ -48,6 +48,7 @@
         const result = role === 'host' ? clone(snapshot) : swap(snapshot);
         for (const player of Object.values(result.players)) {
             player.boardCycleUsed = Number.isSafeInteger(player.boardCycleUsed) ? player.boardCycleUsed : 0;
+            if (root.Achievements) Object.assign(player, root.Achievements.validateCosmetics(player));
         }
         // Hidden cards carry neither their original IDs nor their type/name.
         const backs = (count, zone) => Array.from({ length: count }, (_, i) => ({ id: `${zone}-${i}`, hidden: true }));

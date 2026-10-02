@@ -200,6 +200,7 @@ function saveUserProfileToStorage(profile) {
     } catch (e) {
         console.warn('failed to save user profile', e);
     }
+    if (typeof window !== 'undefined') window.renderStartMenuPlayerCard?.();
     return normalized;
 }
 

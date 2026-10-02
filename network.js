@@ -3,6 +3,14 @@
     const base = new URL('.', document.currentScript.src);
     const protocol = window.BattleProtocol;
     let client, accountClient, guestClient, clientPromise, user, room, channel, worker, workerSequence = 0;
+    let accountSignedIn = false;
+    // UI reads only sessions already checked by the existing account client.
+    function updateAccountStatus(session) {
+        const next = !!session?.user && !session.user.is_anonymous;
+        if (accountSignedIn === next) return;
+        accountSignedIn = next;
+        window.renderStartMenuPlayerCard?.();
+    }
     let revision = 0, started = false, busy = false, connected = false, peerPresent = false;
     let syncing = false, syncAgain = false, stopped = false, pending = null, deadline, generation = 0;
     const workerRequests = new Map();
@@ -178,14 +186,19 @@
                 { ...options, auth: { storageKey: 'aniani:battle:guest:auth:v1', detectSessionInUrl: false } });
             const account = await accountClient.auth.getSession();
             if (account.error) throw account.error;
+            updateAccountStatus(account.data.session);
             client = account.data.session?.user && !account.data.session.user.is_anonymous ? accountClient : guestClient;
             for (const source of [accountClient, guestClient]) source.auth.onAuthStateChange((_event, session) => {
+                if (source === accountClient) updateAccountStatus(session);
                 if (source !== client) return;
                 const next = session?.user || null;
                 if (room && next?.id !== user?.id) { stopped = true; connected = false; detach(); }
                 user = next;
                 controls();
-                if (source === accountClient && next && !next.is_anonymous) void window.Missions?.syncAccount(accountClient);
+                if (source === accountClient && next && !next.is_anonymous) {
+                    void window.Missions?.syncAccount(accountClient);
+                    void window.Achievements?.syncCurrentAccount();
+                }
                 if (stopped) message('ログイン状態が変わりました。再読み込みしてログインし直してください。');
             });
             const { data, error } = await client.auth.getSession();
@@ -230,6 +243,7 @@
             if (!room) {
                 const account = await accountClient.auth.getSession();
                 if (account.error) throw account.error;
+                updateAccountStatus(account.data.session);
                 client = account.data.session?.user && !account.data.session.user.is_anonymous ? accountClient : guestClient;
             }
             const c = client;
@@ -258,7 +272,8 @@
         const info = {
             name: String(options.userName || profile.name || 'プレイヤー').slice(0, 24),
             character: options.favoriteCharacterId || $('online-character')?.value || profile.favoriteCharacterId || 'chizuru',
-            skill: options.favoriteSkillKey || $('online-skill')?.value || profile.favoriteSkillKey || 'lastOrder'
+            skill: options.favoriteSkillKey || $('online-skill')?.value || profile.favoriteSkillKey || 'lastOrder',
+            ...window.Achievements?.selectedCosmetics()
         };
         if (!['chizuru', 'mai', 'takumi', 'akatsuki'].includes(info.character) ||
             !window.getSkillDefinitionByKey?.(info.skill)) throw new Error('INVALID_SELECTION');
@@ -295,7 +310,7 @@
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20261001-cooksfx1', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20261002-menucard1', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;
@@ -329,7 +344,11 @@
         const wasEnded = GameState.gameEnded;
         if (row.payload.trace?.id) metrics?.mark(row.payload.trace.id, 'received', row.payload.trace);
         Object.assign(GameState, row.payload.state);
-        if (wasEnded && !GameState.gameEnded) window.hideResultOverlay?.();
+        window.Achievements?.observeMatch(GameState, { online: true });
+        if (wasEnded && !GameState.gameEnded) {
+            window.Achievements?.clearToasts();
+            window.hideResultOverlay?.();
+        }
         if (row.payload.trace?.id) metrics?.mark(row.payload.trace.id, 'applied');
         revision = row.revision;
         $('start-overlay')?.classList.add('hidden');
@@ -840,7 +859,9 @@
                 $('online-password').value = '';
                 if (error) throw error;
                 client = accountClient; user = data.user; message('ログインしました。部屋を作成または参加してください。');
+                updateAccountStatus(data.session);
                 void window.Missions?.syncAccount(accountClient);
+                void window.Achievements?.syncCurrentAccount();
             } catch (error) { fail(error); } finally { busy = false; controls(); }
         });
         $('online-resume').onclick = resume;
@@ -880,10 +901,12 @@
     }
     window.FriendBattle = {
         isActive: active, isAvailable: () => !!window.SUPABASE_CONFIG,
+        isAccountSignedIn: () => accountSignedIn,
         getMissionAccountClient: async () => {
             try {
                 await getClient();
                 const result = await accountClient.auth.getSession();
+                if (!result.error) updateAccountStatus(result.data?.session);
                 return result.data?.session?.user && !result.data.session.user.is_anonymous ? accountClient : null;
             } catch (_) { return null; }
         },

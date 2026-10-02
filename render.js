@@ -1036,6 +1036,8 @@ function applyCharacterSkins() {
 
     playerIcon.classList.add(`char-${model.me.characterId || 'chizuru'}`);
     cpuIcon.classList.add(`char-${model.opponent.characterId || 'mai'}`);
+    window.Achievements?.applyFrame(playerIcon, model.online ? model.me : undefined);
+    window.Achievements?.applyFrame(cpuIcon, model.online ? model.opponent : { frame: 'none' });
 
     const playerModeOn = !!model.me.battleALaCarteModeActive;
     const cpuModeOn = !!model.opponent.battleALaCarteModeActive;
@@ -2583,8 +2585,8 @@ function performUIRender() {
         bindRenderEventsOnce();
 
         const model = getBattleViewModel();
-        safeSetText('player-hud-name', model.me.characterName || '千鶴');
-        safeSetText('cpu-hud-name', model.opponent.characterName || '舞依');
+        safeSetText('player-hud-name', window.Achievements?.displayName(model.me.name || window.getUserProfile?.().name, model.online ? model.me : undefined) || model.me.characterName || '千鶴');
+        safeSetText('cpu-hud-name', model.online ? (window.Achievements?.displayName(model.opponent.name || model.opponent.characterName, model.opponent) || model.opponent.characterName) : model.opponent.characterName || '舞依');
 
         safeSetText('player-side-score', String(getBattleViewModel().me.score));
         safeSetText('cpu-side-score', String(getBattleViewModel().opponent.score));

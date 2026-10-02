@@ -62,7 +62,8 @@ const START_STAGE_IDS = [
     'start-gallery-stage',
     'start-friend-stage',
     'start-coin-stage',
-    'start-user-stage'
+    'start-user-stage',
+    'start-achievements-stage'
 ];
 let matchExitGuardBound = false;
 let matchExitBackArmedUntil = 0;
@@ -164,6 +165,8 @@ function normalizeSavedPlayerState(input, fallback) {
     }
     merged.boardCycleUsed = Number.isSafeInteger(source.boardCycleUsed)
         ? Math.max(0, source.boardCycleUsed) : 0;
+    merged.achievementTracking = source.achievementTracking && typeof source.achievementTracking === 'object'
+        ? cloneForAutosave(source.achievementTracking) : null;
     for (const key of ['packsExchangedCount', 'skillsUsedCount', 'eventsUsedCount', 'maxDeficit']) {
         merged[key] = Number.isSafeInteger(source[key]) ? Math.max(0, source[key]) : 0;
     }
@@ -190,6 +193,8 @@ function applySavedMatchSnapshot(snapshot) {
     GameState.matchStartedAt = Number.isFinite(Number(source.matchStartedAt))
         ? Number(source.matchStartedAt) : Date.now();
     GameState.matchEndedAt = null;
+    GameState.achievementMatchId = source.achievementMatchId || `legacy-${source.matchStartedAt || 0}`;
+    GameState.achievementStory = source.achievementStory === true;
     GameState.lastCookedRecipe = source.lastCookedRecipe && typeof source.lastCookedRecipe === 'object'
         ? source.lastCookedRecipe : null;
     GameState.winner = null;
@@ -478,6 +483,35 @@ function setCoinStageMessage(text) {
     messageEl.textContent = text || '';
 }
 
+function renderStartMenuPlayerCard() {
+    if (!document.getElementById('start-menu-player-card')) return;
+    const profile = typeof getUserProfile === 'function' ? getUserProfile() : {};
+    const achievements = window.Achievements;
+    const cosmetics = achievements?.selectedCosmetics();
+    const title = achievements?.getDefinition(cosmetics?.title)?.title || '';
+    const setText = (id, value) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    };
+    setText('menu-player-title', title ? `「${title}」` : '');
+    document.getElementById('menu-player-title')?.classList.toggle('hidden', !title);
+    setText('menu-player-name', profile.name || 'プレイヤー');
+    setText('menu-player-status', window.FriendBattle?.isAccountSignedIn?.()
+        ? 'あにあにアカウント：ログイン中' : 'ゲスト');
+    setText('menu-player-wins', String(profile.stats?.wins || 0));
+    setText('menu-player-matches', String(profile.stats?.matches || 0));
+    const data = achievements?.readLocal();
+    const definitions = achievements?.definitions || [];
+    setText('menu-player-achievement-count', `${definitions.filter(def => data?.unlocked?.[def.id]).length}/${definitions.length || 30}`);
+    const icon = document.getElementById('menu-player-icon');
+    const character = getStartCharacterOptionById(profile.favoriteCharacterId) || START_CHARACTER_OPTIONS[0];
+    if (icon) {
+        for (const option of START_CHARACTER_OPTIONS) icon.classList.toggle(`char-${option.id}`, option.id === character.id);
+        icon.setAttribute('aria-label', character.name);
+        achievements?.applyFrame(icon, cosmetics);
+    }
+}
+
 function renderUserStageProfile() {
     if (typeof getUserProfile !== 'function') return;
     const profile = getUserProfile();
@@ -511,6 +545,7 @@ function renderUserStageProfile() {
     if (winsEl) winsEl.textContent = String(profile.stats?.wins || 0);
     if (dishesEl) dishesEl.textContent = String(profile.stats?.dishes || 0);
     renderUserRecentDishes(profile);
+    window.Achievements?.renderPicker();
 }
 
 function renderUserRecentDishes(profile) {
@@ -702,6 +737,7 @@ function findFriendRoom(passphrase) {
 }
 
 function showStartStage(activeId) {
+    window.Achievements?.clearToasts();
     window.cancelPendingCookSfx?.();
     START_STAGE_IDS.forEach(id => {
         const el = document.getElementById(id);
@@ -710,6 +746,7 @@ function showStartStage(activeId) {
     });
 
     if (activeId === 'start-menu-stage') {
+        renderStartMenuPlayerCard();
         startMenuFloatingBackground();
     } else {
         stopMenuFloatingBackground();
@@ -1733,10 +1770,8 @@ function setupStartOverlay() {
         });
     }
 
-    if (menuUserButton) {
-        menuUserButton.addEventListener('click', () => {
-            openUserStage();
-        });
+    for (const button of [menuUserButton, document.getElementById('menu-player-profile-button')]) {
+        button?.addEventListener('click', openUserStage);
     }
 
     if (menuHomeButton) {
@@ -2022,6 +2057,16 @@ function renderMatchResultSummary() {
     meta.className = 'result-meta';
     meta.textContent = `対戦時間 ${formatMatchDuration(endedAt - startedAt)}　最終得点 ${model.me.score} - ${model.opponent.score}`;
     container.appendChild(meta);
+    const playerIdentity = document.createElement('div');
+    playerIdentity.className = 'result-player-identity';
+    const playerIcon = document.createElement('div');
+    playerIcon.className = `character-icon char-${model.me.characterId || 'chizuru'} face-normal`;
+    window.Achievements?.applyFrame(playerIcon, model.online ? model.me : undefined);
+    playerIdentity.appendChild(playerIcon);
+    const playerName = document.createElement('span');
+    playerName.textContent = window.Achievements?.displayName(model.me.name || window.getUserProfile?.().name, model.online ? model.me : undefined) || model.me.characterName;
+    playerIdentity.appendChild(playerName);
+    container.appendChild(playerIdentity);
     if (GameState.specialWinReason) {
         const reason = document.createElement('div');
         reason.className = 'result-reason';
@@ -2033,6 +2078,7 @@ function renderMatchResultSummary() {
     appendDishSummary(dishes, 'あなたの料理', model.me);
     appendDishSummary(dishes, `${model.opponentLabel}の料理`, model.opponent);
     container.appendChild(dishes);
+    window.Achievements?.renderResult(container, GameState);
 }
 
 function returnToFinalField() {
@@ -2422,6 +2468,8 @@ function endGame(winner) {
     GameState.winner = winner || null;
     GameState.matchEndedAt = Date.now();
     GameState.missionResultText = window.Missions?.complete(GameState, winner) || '';
+    observeAchievementScores();
+    window.Achievements?.observeMatch(GameState);
     clearSavedMatch();
     GameState.currentTurn = null;
     GameState.currentPhase = 'ゲーム終了';

@@ -598,8 +598,10 @@ function executeSkillEffect(selfPlayer, enemyPlayer, skill, side, extra) {
 
         case 'tasteThief': {
             const beforeEnemy = enemyPlayer.score;
+            observeAchievementScores();
             enemyPlayer.score = Math.max(0, enemyPlayer.score - 1);
             selfPlayer.score += 1;
+            observeAchievementScores();
             addLog(`${actorName}はスキル「${skill.name}」で${enemyName}の点数を${beforeEnemy}→${enemyPlayer.score}、自分を+1しました。`);
             break;
         }
@@ -1573,6 +1575,7 @@ function pushSpecialEventDishHistory(player, dishName) {
         fromEvent: true
     });
     player.recipesCookedThisTurn = (player.recipesCookedThisTurn || 0) + 1;
+    trackAchievementDish(player, 3, player.score - 3);
     if (window.playCookBgm) { playCookBgm(); } else if (typeof playSfx === 'function') { playSfx('cook'); }
     if (player === GameState.players.player && typeof recordDishCooked === 'function') {
         recordDishCooked(1, dishName);
@@ -1683,6 +1686,7 @@ function executeEventEffect(selfPlayer, enemyPlayer, eventCard, side, extra) {
                 }
             });
 
+            observeAchievementScores();
             selfPlayer.score += 3;
             selfPlayer.lockedCookingThisTurn = true;
             pushSpecialEventDishHistory(selfPlayer, '創作料理');
@@ -1752,6 +1756,7 @@ function executeEventEffect(selfPlayer, enemyPlayer, eventCard, side, extra) {
             const card = removeIngredientCardByIdFromPlayer(selfPlayer, id);
             if (card) moveCardToDiscard(card);
 
+            observeAchievementScores();
             selfPlayer.score += 3;
             selfPlayer.lockedCookingThisTurn = true;
             pushSpecialEventDishHistory(selfPlayer, '緊急料理');

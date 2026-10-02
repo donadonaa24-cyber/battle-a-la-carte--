@@ -144,6 +144,7 @@
         } catch (e) {
             // ignore
         }
+        window.Achievements?.refreshCompletions({ story: S.progress });
     }
 
     function getEpisode(id) {
@@ -449,6 +450,7 @@
         if (typeof window.__battleSafeStartGame === 'function') window.__battleSafeStartGame();
         if (typeof window.__battleStartBgmOnce === 'function') window.__battleStartBgmOnce();
         if (typeof window.initGame === 'function') window.initGame();
+        if (window.GameState) window.GameState.achievementStory = true;
 
         const gs = window.GameState;
         if (!gs || !gs.players?.player || !gs.players?.cpu) return false;

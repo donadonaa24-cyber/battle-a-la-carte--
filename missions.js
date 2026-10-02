@@ -125,6 +125,7 @@
                 if (!local.cleared[row.mission_id]) local.cleared[row.mission_id] = row.cleared_at || new Date().toISOString();
             }
             writeLocal(local);
+            window.Achievements?.refreshCompletions({ missions: local, silent: true });
             applySleeve();
             renderMissionList();
             renderSleevePicker();
@@ -153,6 +154,7 @@
         if (local.cleared[id]) { void syncCurrentAccount(); return false; }
         local.cleared[id] = new Date().toISOString();
         writeLocal(local);
+        window.Achievements?.refreshCompletions({ missions: local });
         renderMissionList();
         renderSleevePicker();
         void (async () => {

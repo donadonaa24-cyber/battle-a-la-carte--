@@ -227,8 +227,8 @@ test('PC/mobile share setup logic, overlay markup and CSS and load the updated f
     const overlay = html => html.slice(html.indexOf('    <div id="start-overlay"'), html.indexOf('\n</div>\n\n<script', html.indexOf('    <div id="start-overlay"')));
     assert.equal(overlay(read('web.html')), overlay(read('mobile/mobile.html')));
     for (const [html, style, main] of [['web.html', 'style.css', 'main.js'], ['mobile/mobile.html', 'style-sp.css', 'main-sp.js']]) {
-        const version = '20261001-discard1';
+        const version = '20261002-menucard1';
         assert.ok(read(html).includes(`${style}?v=${version}`));
-        assert.ok(read(html).includes(`${main}?v=${version}`));
+        assert.ok(read(html).includes(`${main}?v=20261002-menucard1`));
     }
 });

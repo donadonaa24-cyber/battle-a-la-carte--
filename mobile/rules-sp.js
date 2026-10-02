@@ -308,6 +308,7 @@ function processBattleALaCarteModeAfterDish(player, dishPoints, dishName, ownerK
 
     if (!player.battleALaCarteModeActive && canActivate && totalCooked >= BATTLE_A_LA_CARTE_MODE_REQUIRED_DISHES) {
         player.battleALaCarteModeActive = true;
+        window.Achievements?.observeMatch(GameState);
         player.battleALaCarteModeBonusDrawUsedThisTurn = false;
         player.battleALaCarteModeDiscardPickupUsedThisTurn = false;
         addLog(`${ownerLabel}は Battle à la carte Mode に突入した！`);
@@ -357,8 +358,11 @@ function applyRecipePlan(player, plan) {
     }
 
     usedCards.forEach(card => moveCardToDiscard(card));
+    observeAchievementScores();
+    const beforeScore = player.score;
     player.score += plan.recipe.points;
     pushCookedRecipeHistory(player, plan.recipe, plan.doubledName);
+    trackAchievementDish(player, plan.recipe.points, beforeScore);
     processBattleALaCarteModeAfterDish(player, plan.recipe.points, plan.recipe.name, getOwnerKeyFromPlayerRef(player));
 
     return true;

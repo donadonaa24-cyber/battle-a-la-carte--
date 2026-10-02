@@ -3511,6 +3511,34 @@ body:has(.recipe-hints-overlay:not(.hidden), .spotlight-overlay:not(.hidden), #s
 #start-panel .start-rules-scroll, #start-panel .start-gallery-list,
 #start-panel .story-episode-list, #start-panel .mission-list { max-height: none; overflow: visible; }
 #start-panel .start-menu-message:empty { display: none; }
+/* Menu player card stays in the scrolling body above the persistent mode buttons. */
+#start-panel .menu-player-card {
+    position: static;
+    flex: 0 0 auto;
+    min-width: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid #91b9dd66;
+    border-radius: 14px;
+    background: #102b55f2;
+    text-align: left;
+    color: #eaf6ff;
+}
+.menu-player-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.menu-player-identity .character-icon { width: 52px; height: 52px; flex: 0 0 52px; box-sizing: border-box; }
+.menu-player-details { display: flex; flex-direction: column; gap: 2px; min-width: 0; line-height: 1.35; }
+.menu-player-title { color: #ffe490; font-size: 11px; }
+#menu-player-name { font-size: 16px; }
+#menu-player-status { color: #c3d5ec; font-size: 11px; }
+.menu-player-details > * { max-width: 100%; overflow-wrap: anywhere; }
+.menu-player-stats { margin: 0; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.menu-player-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.menu-player-links button { min-height: 32px; padding: 5px 10px; border: 1px solid #91b9dd66; border-radius: 8px; background: #203e68; color: #eaf6ff; font-size: 11px; line-height: 1.35; }
+.menu-player-links button:focus-visible { outline: 2px solid #ffe490; outline-offset: 2px; }
 #start-panel #start-cpu-setup-stage > .start-stage-body { overflow: hidden; }
 #start-panel #start-skill-step { flex: 1 1 auto; min-height: 0; }
 #start-panel #start-skill-step > .start-user-form {
