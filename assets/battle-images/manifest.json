@@ -518,5 +518,213 @@
     "bytes": 176432,
     "width": 1024,
     "height": 683
+  },
+  {
+    "original": "assets/images/story/backgrounds/festival-classroom.png",
+    "battle": "assets/battle-images/story/backgrounds/festival-classroom.webp",
+    "originalBytes": 4754794,
+    "bytes": 196058,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/classroom.png",
+    "battle": "assets/battle-images/story/backgrounds/classroom.webp",
+    "originalBytes": 4374635,
+    "bytes": 158276,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/festival-hallway.png",
+    "battle": "assets/battle-images/story/backgrounds/festival-hallway.webp",
+    "originalBytes": 5116839,
+    "bytes": 207178,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/school-gate.png",
+    "battle": "assets/battle-images/story/backgrounds/school-gate.webp",
+    "originalBytes": 5620441,
+    "bytes": 387452,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/festival-courtyard.png",
+    "battle": "assets/battle-images/story/backgrounds/festival-courtyard.webp",
+    "originalBytes": 5588269,
+    "bytes": 355694,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/gym-stage.png",
+    "battle": "assets/battle-images/story/backgrounds/gym-stage.webp",
+    "originalBytes": 4857169,
+    "bytes": 190304,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/cooking-room.png",
+    "battle": "assets/battle-images/story/backgrounds/cooking-room.webp",
+    "originalBytes": 4240160,
+    "bytes": 175670,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/rooftop.png",
+    "battle": "assets/battle-images/story/backgrounds/rooftop.webp",
+    "originalBytes": 4562202,
+    "bytes": 222912,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/shopping-street.png",
+    "battle": "assets/battle-images/story/backgrounds/shopping-street.webp",
+    "originalBytes": 5728669,
+    "bytes": 370248,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/small-restaurant.png",
+    "battle": "assets/battle-images/story/backgrounds/small-restaurant.webp",
+    "originalBytes": 5119101,
+    "bytes": 219010,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-normal.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-normal.webp",
+    "originalBytes": 769036,
+    "bytes": 215016,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-smile.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-smile.webp",
+    "originalBytes": 771811,
+    "bytes": 215476,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-troubled.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-troubled.webp",
+    "originalBytes": 769257,
+    "bytes": 214956,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-surprised.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-surprised.webp",
+    "originalBytes": 768212,
+    "bytes": 214654,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-angry.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-angry.webp",
+    "originalBytes": 767217,
+    "bytes": 215024,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-embarrassed.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-embarrassed.webp",
+    "originalBytes": 769564,
+    "bytes": 214996,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-normal.png",
+    "battle": "assets/battle-images/story/portraits/kanna-normal.webp",
+    "originalBytes": 803629,
+    "bytes": 234444,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-smile.png",
+    "battle": "assets/battle-images/story/portraits/kanna-smile.webp",
+    "originalBytes": 803000,
+    "bytes": 234104,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-smug.png",
+    "battle": "assets/battle-images/story/portraits/kanna-smug.webp",
+    "originalBytes": 802780,
+    "bytes": 234108,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-troubled.png",
+    "battle": "assets/battle-images/story/portraits/kanna-troubled.webp",
+    "originalBytes": 804396,
+    "bytes": 234888,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-surprised.png",
+    "battle": "assets/battle-images/story/portraits/kanna-surprised.webp",
+    "originalBytes": 803881,
+    "bytes": 234626,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/character-icons/kanna-icons.png",
+    "battle": "assets/battle-images/character-icons/kanna-icons.webp",
+    "originalBytes": 2594499,
+    "bytes": 59052,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/battle-mode-icons/kanna-battle-mode-icon.png",
+    "battle": "assets/battle-images/battle-mode-icons/kanna-battle-mode-icon.webp",
+    "originalBytes": 2987307,
+    "bytes": 47174,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/skill-cutins/kanna-skill-cutin.png",
+    "battle": "assets/battle-images/skill-cutins/kanna-skill-cutin.webp",
+    "originalBytes": 4074540,
+    "bytes": 206124,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/battle-mode-cutins/kanna-battle-mode-cutin.png",
+    "battle": "assets/battle-images/battle-mode-cutins/kanna-battle-mode-cutin.webp",
+    "originalBytes": 3684499,
+    "bytes": 194042,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/characters/standing/kanna-standing.png",
+    "battle": "assets/battle-images/characters/standing/kanna-standing.webp",
+    "originalBytes": 2408786,
+    "bytes": 23714,
+    "width": 512,
+    "height": 768
   }
 ]

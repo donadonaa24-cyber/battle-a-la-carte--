@@ -96,6 +96,39 @@ function installGuest(c) {
     vm.runInContext(source.slice(source.indexOf('    function applyView('), source.indexOf('    async function sync(')), c);
 }
 
+for (const mobile of [false, true]) {
+    test(`${mobile ? 'phone' : 'PC'}: ADV waits through normal/short/skip/tap/reduced-motion winning finales`, async () => {
+        for (const option of ['normal', 'short', 'skip', 'tap', 'reduced']) {
+            const r = runtime(mobile, option === 'reduced'), { c } = r;
+            for (const file of ['story-data/characters.js', 'story-data/registry.js', 'story-data/episode4.js']) {
+                vm.runInContext(read(file), c);
+            }
+            vm.runInContext(read('story-adv.js').replace(/\}\)\(window\);\s*$/, 'root.__advState = S;\n})(window);'), c);
+            c.__advState.episode = c.BattleStoryData.get('episode4'); c.__advState.battleActive = true;
+            c.__storyActiveEpisodeId = 'episode4'; c.GameState.storyEpisodeId = 'episode4'; c.GameState.achievementStory = true;
+            c.handleStoryBattleEnded = c.StoryAdv.handleBattleEnded;
+            c.DishEffects.save({ dishMode: ['tap', 'reduced'].includes(option) ? 'normal' : option });
+            c.GameState.players.player.score = 9;
+            c.playerCookSelectedRecipe(prepare(r).name);
+            assert.equal(c.GameState.gameEnded, true);
+            assert.equal(c.__storyResultPending, true);
+            assert.equal(c.__advState.active, false);
+            if (!['skip', 'reduced'].includes(option)) {
+                assert.equal(r.nodes['final-field-actions'].classList.contains('hidden'), true);
+                assert.equal(c.DishEffects.isActive(), true);
+            }
+            if (option === 'tap') { r.tick(200); r.fx().fire('click'); }
+            r.tick(10000); await flush();
+            assert.equal(c.DishEffects.isActive(), false);
+            assert.equal(r.nodes['final-field-actions'].classList.contains('hidden'), false);
+            assert.equal(c.__advState.active, false, 'ADV remains hidden until result exit');
+            assert.equal(c.__advState.pending.stage, 'post');
+            assert.equal(c.GameState.storyEpisodeId, 'episode4', 'result retains story identity');
+            assert.equal(r.cooks().length, 1, 'winning cook sound exactly once');
+        }
+    });
+}
+
 test('local modes and CPU speed persist across runtimes; corrupt/blocked storage falls back safely', () => {
     const r = runtime();
     assert.deepEqual(clone(r.c.DishEffects.preferences()), { dishMode: 'normal', cpuSpeed: 'default' });
@@ -301,7 +334,7 @@ test('points scale aura and winning timings; both pages load the common effect a
         const html = read(file);
         assert.ok(html.includes(`${prefix}dish-effects.js?v=20261002-fx1`));
         assert.ok(html.includes(`${prefix}dish-effects.css?v=20261002-fx1`));
-        for (const name of ['main', 'render', 'cpu', 'audio']) assert.ok(html.includes(`${name}${suffix}.js?v=20261002-fx1`));
+        for (const name of ['main', 'render', 'cpu', 'audio']) assert.ok(html.includes(`${name}${suffix}.js?v=${name === 'cpu' ? '20261002-fx1' : name === 'render' ? '20261003-adv1' : '20261003-adv2'}`));
         assert.ok(html.includes('id="menu-settings-button"')); assert.ok(html.includes('id="start-settings-stage"'));
         assert.ok(read(`main${suffix ? '-sp' : ''}.js`.replace('main-sp.js', 'mobile/main-sp.js')).includes("settingsHtml('start-settings')"));
         const render = read(suffix ? 'mobile/render-sp.js' : 'render.js');

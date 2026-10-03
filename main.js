@@ -16,6 +16,7 @@ let startMenuFloatTimer = null;
 let selectedGalleryType = 'characters';
 let startCpuSetupStep = 1;
 let pendingMissionId = null;
+let storyPreviousCpuPersonality = null;
 let choosingMissionOpponent = false;
 let startOverlayAudioUnlockBound = false;
 const START_MENU_CARD_VISIBLE_MS = 5000;
@@ -29,6 +30,7 @@ const SKILL_CUTIN_IMAGE_PATHS = {
     chizuru: 'assets/images/skill-cutins/chizuru-skill-cutin.png',
     mai: 'assets/images/skill-cutins/mai-skill-cutin.png',
     takumi: 'assets/images/skill-cutins/takumi-skill-cutin.png',
+    kanna: 'assets/images/skill-cutins/kanna-skill-cutin.png',
     akatsuki: 'assets/images/skill-cutins/akatsuki-skill-cutin.png'
 };
 
@@ -36,6 +38,7 @@ const BATTLE_MODE_CUTIN_IMAGE_PATHS = {
     chizuru: 'assets/images/battle-mode-cutins/chizuru-battle-mode-cutin.png',
     mai: 'assets/images/battle-mode-cutins/mai-battle-mode-cutin.png',
     takumi: 'assets/images/battle-mode-cutins/takumi-battle-mode-cutin.png',
+    kanna: 'assets/images/battle-mode-cutins/kanna-battle-mode-cutin.png',
     akatsuki: 'assets/images/battle-mode-cutins/akatsuki-battle-mode-cutin.png'
 };
 const STARTUP_IMAGE_CACHE_NOTICE = '\u521d\u56de\u8d77\u52d5\u6642\u306f\u753b\u50cf\u306e\u8aad\u307f\u8fbc\u307f\u306b\u6642\u9593\u304c\u304b\u304b\u308a\u3001\u8868\u793a\u304c\u9045\u308c\u308b\u5834\u5408\u304c\u3042\u308a\u307e\u3059\u3002\u5c11\u3057\u5f85\u3064\u3068\u30ad\u30e3\u30c3\u30b7\u30e5\u304c\u52b9\u3044\u3066\u8868\u793a\u3055\u308c\u308b\u3088\u3046\u306b\u306a\u308a\u307e\u3059\u3002';
@@ -93,6 +96,7 @@ function shouldGuardMatchExit() {
 }
 
 function shouldAutosaveCurrentMatch() {
+    if (GameState?.storyEpisodeId) return false;
     return !!(gameStartedOnce && GameState && !GameState.gameEnded && isMatchInBattleScreen() && !isFriendBattleActive());
 }
 
@@ -459,6 +463,7 @@ function applyBattleSkillSetup() {
 }
 
 function getOpponentLabelText() {
+    if (GameState?.storyEpisodeId) return GameState.characterNames?.cpu || 'CPU';
     const isFriendMode = !!(window.FriendBattle && typeof window.FriendBattle.isActive === 'function' && window.FriendBattle.isActive());
     return isFriendMode ? 'フレンド' : 'CPU';
 }
@@ -739,6 +744,7 @@ function findFriendRoom(passphrase) {
 }
 
 function showStartStage(activeId) {
+    if (window.__storyActiveEpisodeId && window.StoryAdv) window.StoryAdv.abandonBattle();
     window.Achievements?.clearToasts();
     window.cancelPendingCookSfx?.();
     window.DishEffects?.cancel();
@@ -1251,15 +1257,33 @@ function revealTurnCards(chosenSide) {
     right.classList.toggle('chosen', chosenSide === 'right');
 }
 
-function beginMatchByRole(role) {
+function beginMatchByRole(role, storySetup = null) {
+    window.__storyActiveEpisodeId = storySetup?.episode.id || null;
+    GameState.storyEpisodeId = storySetup?.episode.id || null;
+    GameState.achievementStory = !!storySetup;
     safeStartGame();
     GameState.activeMissionId = window.Missions?.getDefinition(pendingMissionId) ? pendingMissionId : null;
     GameState.missionFailedLogged = false;
     pendingMissionId = null;
     if (typeof unlockAudio === 'function') unlockAudio();
     startBgmOnce();
-    applyCharacterChoice();
-    applyBattleSkillSetup();
+    if (storySetup) {
+        const { episode, skillKey } = storySetup;
+        GameState.storyEpisodeId = episode.id;
+        GameState.achievementStory = true;
+        GameState.characterIds = { player: episode.battle.player, cpu: episode.battle.cpu };
+        GameState.characterNames = {
+            player: window.BattleStoryAssets.characters[episode.battle.player].name,
+            cpu: window.BattleStoryAssets.characters[episode.battle.cpu].name
+        };
+        GameState.settings.cpuPersonality = episode.battle.cpuPersonality;
+        setPlayerSelectedSkill(GameState.players.player, skillKey);
+        setPlayerSelectedSkill(GameState.players.cpu, pickCpuSkillByPersonality(episode.battle.cpuPersonality));
+        addLog('ストーリーモード開始: 第' + episode.number + '話「' + episode.title + '」');
+    } else {
+        applyCharacterChoice();
+        applyBattleSkillSetup();
+    }
     stopMenuFloatingBackground();
     if (startTitleTimer) {
         clearTimeout(startTitleTimer);
@@ -1298,7 +1322,9 @@ function beginMatchByRole(role) {
         ? Math.min(1200, getCpuTurnStartDelay())
         : 1200;
 
+    const cpuStartMatchId = GameState.achievementMatchId;
     setTimeout(() => {
+        if (GameState.achievementMatchId !== cpuStartMatchId) return;
         if (GameState.gameEnded) return;
         if (GameState.currentTurn !== 'cpu') return;
         cpuTurn();
@@ -1437,7 +1463,11 @@ function setupStartOverlay() {
         }
     };
 
+    let storySkillChoice = null;
     const renderCpuSetupStep = () => {
+        const title = document.getElementById('start-cpu-setup-title');
+        if (title) title.textContent = storySkillChoice ? `第${storySkillChoice.episode.number}話 対戦準備` : 'CPU戦セットアップ';
+        startCpuPersonalitySelect?.closest?.('.start-cpu-personality-row')?.classList.toggle('hidden', !!storySkillChoice);
         if (startCharacterStep) startCharacterStep.classList.toggle('hidden', startCpuSetupStep !== 1 || choosingMissionOpponent);
         if (missionOpponentWrap) missionOpponentWrap.classList.toggle('hidden', startCpuSetupStep !== 1 || !pendingMissionId || !choosingMissionOpponent);
         if (startSkillStep) startSkillStep.classList.toggle('hidden', startCpuSetupStep !== 2);
@@ -1448,7 +1478,7 @@ function setupStartOverlay() {
             if (startCpuSetupStep === 1) {
                 startCpuSetupSubtitle.textContent = choosingMissionOpponent ? '1/3 対戦相手を選択' : '1/3 キャラを選択';
             } else if (startCpuSetupStep === 2) {
-                startCpuSetupSubtitle.textContent = '2/3 スキルを選択';
+                startCpuSetupSubtitle.textContent = storySkillChoice ? '千鶴のスキルを選択' : '2/3 スキルを選択';
             } else {
                 startCpuSetupSubtitle.textContent = '3/3 先攻・後攻を決定';
             }
@@ -1460,7 +1490,7 @@ function setupStartOverlay() {
                 startButton.textContent = pendingMissionId && !choosingMissionOpponent ? '次へ（対戦相手を選択）' : '次へ（スキル選択）';
             } else if (startCpuSetupStep === 2) {
                 startButton.classList.remove('hidden');
-                startButton.textContent = '次へ（先攻・後攻決め）';
+                startButton.textContent = storySkillChoice ? 'BATTLE START' : '次へ（先攻・後攻決め）';
             } else {
                 startButton.classList.add('hidden');
             }
@@ -1470,7 +1500,7 @@ function setupStartOverlay() {
             if (startCpuSetupStep === 1) {
                 backMenuButton.textContent = choosingMissionOpponent ? 'キャラ選択へ戻る' : 'メニューへ戻る';
             } else if (startCpuSetupStep === 2) {
-                backMenuButton.textContent = pendingMissionId ? '対戦相手へ戻る' : 'キャラ選択へ戻る';
+                backMenuButton.textContent = storySkillChoice ? 'ストーリー選択へ戻る' : (pendingMissionId ? '対戦相手へ戻る' : 'キャラ選択へ戻る');
             } else {
                 backMenuButton.textContent = 'スキル選択へ戻る';
             }
@@ -1668,6 +1698,12 @@ function setupStartOverlay() {
 
     if (startButton) {
         startButton.addEventListener('click', () => {
+            if (storySkillChoice) {
+                const picked = getSkillDefinitionByKeySafe(selectedStartSkillKey);
+                if (!picked) return;
+                const choice = storySkillChoice; storySkillChoice = null;
+                renderCpuSetupStep(); choice.onStart(picked.key); return;
+            }
             if (startCpuSetupStep === 1) {
                 if (pendingMissionId && !choosingMissionOpponent) {
                     choosingMissionOpponent = true;
@@ -1695,7 +1731,17 @@ function setupStartOverlay() {
         });
     }
 
+    window.openStorySkillChoice = (episode, onStart, onBack) => {
+        pendingMissionId = null; choosingMissionOpponent = false;
+        storySkillChoice = { episode, onStart, onBack };
+        selectedStartSkillKey = getPreferredStartSkillKey();
+        resetTurnStage(); renderStartSkillSelection(); setCpuSetupStep(2);
+        document.getElementById('start-overlay')?.classList.remove('hidden');
+        showStartStage('start-cpu-setup-stage');
+    };
+
     const openCpuSetup = (missionId = null) => {
+            storySkillChoice = null;
             pendingMissionId = window.Missions?.getDefinition(missionId) ? missionId : null;
             choosingMissionOpponent = false;
             if (typeof unlockAudio === 'function') unlockAudio();
@@ -1796,6 +1842,10 @@ function setupStartOverlay() {
 
     if (backMenuButton) {
         backMenuButton.addEventListener('click', () => {
+            if (storySkillChoice) {
+                const choice = storySkillChoice; storySkillChoice = null;
+                renderCpuSetupStep(); choice.onBack(); return;
+            }
             if (startCpuSetupStep <= 1) {
                 if (choosingMissionOpponent) {
                     choosingMissionOpponent = false;
@@ -2077,7 +2127,7 @@ function renderMatchResultSummary() {
     window.Achievements?.applyFrame(playerIcon, model.online ? model.me : undefined);
     playerIdentity.appendChild(playerIcon);
     const playerName = document.createElement('span');
-    playerName.textContent = window.Achievements?.displayName(model.me.name || window.getUserProfile?.().name, model.online ? model.me : undefined) || model.me.characterName;
+    playerName.textContent = GameState.storyEpisodeId ? model.me.characterName : window.Achievements?.displayName(model.me.name || window.getUserProfile?.().name, model.online ? model.me : undefined) || model.me.characterName;
     playerIdentity.appendChild(playerName);
     container.appendChild(playerIdentity);
     if (GameState.specialWinReason) {
@@ -2088,7 +2138,7 @@ function renderMatchResultSummary() {
     }
     const dishes = document.createElement('div');
     dishes.className = 'result-dish-grid';
-    appendDishSummary(dishes, 'あなたの料理', model.me);
+    appendDishSummary(dishes, GameState.storyEpisodeId ? model.me.characterName + 'の料理' : 'あなたの料理', model.me);
     appendDishSummary(dishes, `${model.opponentLabel}の料理`, model.opponent);
     container.appendChild(dishes);
     window.Achievements?.renderResult(container, GameState);
@@ -2102,6 +2152,7 @@ function returnToFinalField() {
 }
 
 async function finishCompletedMatch() {
+    if (window.StoryAdv?.finishBattleReturn()) return;
     if (!GameState.gameEnded) return;
     const exitButtons = [document.getElementById('result-exit-button'), document.getElementById('final-field-exit-button')];
     exitButtons.forEach(button => { if (button) button.disabled = true; });
@@ -2572,6 +2623,24 @@ window.__battleStartBgmOnce = () => {
     startBgmOnce();
 };
 window.__showStartStage = showStartStage;
+window.startStoryCpuBattle = (episode, skillKey) => {
+    storyPreviousCpuPersonality = GameState.settings?.cpuPersonality || 'default';
+    gameStartedOnce = false; pendingMissionId = null;
+    window.__storyResultPending = false;
+    beginMatchByRole(Math.random() < 0.5 ? '先攻' : '後攻', { episode, skillKey });
+};
+window.resetStoryBattleContext = () => {
+    window.__storyActiveEpisodeId = null;
+    GameState.storyEpisodeId = null; GameState.achievementStory = false;
+    window.cancelPendingCookSfx?.(); hideResultOverlay(); hideSpotlightCard();
+    if (typeof closePackShop === 'function') closePackShop();
+    if (typeof stopBGM === 'function') stopBGM();
+    gameStartedOnce = false;
+    // Fresh match identity prevents delayed CPU actions from reaching the next battle.
+    if (typeof initGame === 'function') initGame();
+    if (storyPreviousCpuPersonality != null && GameState.settings) GameState.settings.cpuPersonality = storyPreviousCpuPersonality;
+    storyPreviousCpuPersonality = null;
+};
 window.getOpponentLabelText = getOpponentLabelText;
 
 function updateBattleMenu() {

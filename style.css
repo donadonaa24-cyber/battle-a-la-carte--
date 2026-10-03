@@ -1562,6 +1562,20 @@ button.selection-choice:focus-visible {
     background: linear-gradient(180deg, #eefbff 0%, #d7f3ff 100%);
 }
 
+/* 栞那 is a story CPU only. Sprite geometry follows the existing three-face sheets. */
+.character-icon.char-kanna {
+    background-image: url("assets/battle-images/character-icons/kanna-icons.webp");
+    background-size: 380% auto;
+}
+.character-icon.char-kanna.face-normal { background-position: calc(0% - 14px) 38%; }
+.character-icon.char-kanna.face-happy { background-position: calc(50% - 8px) 38%; }
+.character-icon.char-kanna.face-worried { background-position: calc(100% - 2px) 38%; }
+.character-icon.battle-mode-chef.char-kanna {
+    background-image: url("assets/battle-images/battle-mode-icons/kanna-battle-mode-icon.webp");
+    background-size: 368% auto;
+    background-position: 50% 16%;
+}
+
 .character-icon.char-chizuru,
 .start-char-portrait.char-chizuru {
     background-image: url("assets/battle-images/character-icons/chizuru-icons.webp");

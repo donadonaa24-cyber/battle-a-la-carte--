@@ -122,13 +122,15 @@
     }
 
     function loadProgress() {
-        const fallback = { episode1: false, episode2: false, episode3: false };
+        const fallback = { episode1: false, episode2: false, episode3: false, episode4: false };
         try {
             const raw = localStorage.getItem(STORY_PROGRESS_KEY);
             if (!raw) return fallback;
             const parsed = safeJsonParse(raw, null);
             if (!parsed || typeof parsed !== 'object') return fallback;
             return {
+                ...parsed,
+                episode4: !!parsed.episode4,
                 episode1: !!parsed.episode1,
                 episode2: !!parsed.episode2,
                 episode3: !!parsed.episode3
@@ -140,6 +142,7 @@
 
     function saveProgress() {
         try {
+            S.progress = { ...loadProgress(), ...S.progress };
             localStorage.setItem(STORY_PROGRESS_KEY, JSON.stringify(S.progress));
         } catch (e) {
             // ignore
@@ -248,6 +251,7 @@
                 </article>
             `;
         }).join('');
+        window.StoryAdv?.appendEpisodeCards?.(list);
     }
 
     function renderObjectiveList(containerId, itemClass) {
@@ -312,6 +316,8 @@
     }
 
     function openSelection(message) {
+        window.StoryAdv?.abandonBattle();
+        window.StoryAdv?.stop();
         if (storyResultTimer) { clearTimeout(storyResultTimer); storyResultTimer = null; }
         window.__storyResultPending = false;
         const overlay = byId('start-overlay');
@@ -339,7 +345,7 @@
         if (panel) panel.classList.add('hidden');
         hideGuide();
         setHudVisible(false);
-        setStorySubtitle('初心者向けチュートリアル（全3話）');
+        setStorySubtitle('チュートリアル第1〜3話 ／ 第4話から文化祭ストーリー');
         renderEpisodeList();
         setStoryMessage(message || '');
         setActionButton('primary', false, '', null);
@@ -875,6 +881,7 @@
     }
 
     function handleStoryBattleEnded(winner) {
+        if (window.StoryAdv?.handleBattleEnded(winner)) return;
         if (!S.battleActive) return;
         const episodeId = S.episodeId;
         S.battleActive = false;
@@ -907,6 +914,10 @@
                 const button = event.target.closest('button[data-story-episode-id]');
                 if (!button) return;
                 const id = button.getAttribute('data-story-episode-id') || '';
+                if (window.BattleStoryData?.get(id)) {
+                    window.StoryAdv.start(id, button.getAttribute('data-story-resume') === '1');
+                    return;
+                }
                 startIntro(id);
             });
         }
@@ -959,6 +970,10 @@
         S.inited = true;
     }
 
+    window.BattleStoryProgress = Object.freeze({
+        load: loadProgress,
+        complete(id) { S.progress = { ...loadProgress(), [id]: true }; saveProgress(); }
+    });
     window.openStoryStage = openStoryStage;
     window.handleStoryBattleEnded = handleStoryBattleEnded;
 

@@ -9,7 +9,7 @@
         const me = participant('player'), opponent = participant('cpu');
         return {
             me, opponent, turn: ownSide(state.currentTurn), winner: ownSide(state.winner), online,
-            opponentLabel: online ? '相手' : 'CPU',
+            opponentLabel: online ? '相手' : (state.storyEpisodeId ? opponent.characterName || 'CPU' : 'CPU'),
             forSide: key => key === 'me' || key === 'player' ? me : opponent
         };
     }

@@ -1020,7 +1020,7 @@ function applyCharacterSkins() {
     if (!playerIcon || !cpuIcon) return;
 
     const model = getBattleViewModel();
-    const classes = ['char-chizuru', 'char-mai', 'char-takumi', 'char-akatsuki'];
+    const classes = ['char-chizuru', 'char-mai', 'char-takumi', 'char-akatsuki', 'char-kanna'];
 
     playerIcon.classList.remove(...classes);
     cpuIcon.classList.remove(...classes);
@@ -2510,6 +2510,7 @@ function hideDiscardBanner() {
 
 function addLog(message) {
     let text = String(message ?? '');
+    if (GameState.storyEpisodeId) text = text.replace(/CPU/g, GameState.characterNames?.cpu || 'CPU').replace(/あなた/g, GameState.characterNames?.player || 'あなた');
     if (/[繧縺螟譛蝗ｺ]/.test(text)) {
         text = '進行ログを更新しました。';
     }
@@ -2572,7 +2573,7 @@ function performUIRender() {
         bindRenderEventsOnce();
 
         const model = getBattleViewModel();
-        safeSetText('player-hud-name', window.Achievements?.displayName(model.me.name || window.getUserProfile?.().name, model.online ? model.me : undefined) || model.me.characterName || '千鶴');
+        safeSetText('player-hud-name', GameState.storyEpisodeId ? model.me.characterName : window.Achievements?.displayName(model.me.name || window.getUserProfile?.().name, model.online ? model.me : undefined) || model.me.characterName || '千鶴');
         safeSetText('cpu-hud-name', model.online ? (window.Achievements?.displayName(model.opponent.name || model.opponent.characterName, model.opponent) || model.opponent.characterName) : model.opponent.characterName || '舞依');
 
         safeSetText('player-side-score', String(getBattleViewModel().me.score));

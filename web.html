@@ -7,10 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261002-ui5">
+<link rel="stylesheet" href="style.css?v=20261003-adv1">
 <link rel="stylesheet" href="dish-effects.css?v=20261002-fx1">
     <link rel="stylesheet" href="online.css?v=20260929-ui1">
     <link rel="stylesheet" href="achievements.css?v=20261002-ach1">
+<link rel="stylesheet" href="story-adv.css?v=20261003-adv2">
 </head>
 <body>
 <div id="app-stage" data-stage-width="1440" data-stage-height="810">
@@ -380,7 +381,7 @@
             </div>
             <div id="start-cpu-setup-stage" class="start-stage hidden">
                 <div class="start-stage-header">
-                    <h2 class="start-section-title">CPU戦セットアップ</h2>
+                    <h2 id="start-cpu-setup-title" class="start-section-title">CPU戦セットアップ</h2>
                     <p id="start-cpu-setup-subtitle" class="start-subtitle">1/3 キャラを選択</p>
                 </div>
                 <div class="start-stage-body">
@@ -437,7 +438,7 @@
                         <button type="button" class="active" data-story-tab="story">ストーリー</button>
                         <button type="button" data-story-tab="missions">ミッション</button>
                     </div>
-                    <p id="story-stage-subtitle" class="start-subtitle story-only">初心者向けチュートリアル（全3話）</p>
+                    <p id="story-stage-subtitle" class="start-subtitle story-only">チュートリアル第1〜3話 ／ 第4話から文化祭ストーリー</p>
                 </div>
                 <div class="start-stage-body">
                     <div id="story-episode-list" class="story-episode-list story-only"></div>
@@ -663,22 +664,24 @@
 <script src="recipe-hints.js?v=20260930-hint1"></script>
 <script src="player.js?v=20261002-ach1"></script>
 <script src="cpu.js?v=20261002-fx1"></script>
-    <script src="battle-view-model.js?v=20260916"></script>
+    <script src="battle-view-model.js?v=20261003-adv1"></script>
     <script src="battle-images.js?v=20261001-discard1"></script>
-    <script src="render.js?v=20261002-fx1"></script>
-    <script src="audio.js?v=20261002-fx1"></script>
+    <script src="render.js?v=20261003-adv1"></script>
+    <script src="audio.js?v=20261003-adv2"></script>
     <script src="supabase-config.js?v=20260912"></script>
 <script src="battle-protocol.js?v=20261002-ach1"></script>
     <script src="battle-chat.js?v=20260916"></script>
     <script src="battle-metrics.js?v=20260916"></script>
 <script src="network.js?v=20261002-menucard1"></script>
-    <script src="main.js?v=20261002-fx1"></script>
+    <script src="main.js?v=20261003-adv2"></script>
 <script src="card-drag.js?v=20260928-stage1"></script>
-<script src="story-mode.js?v=20261002-ach1"></script>
+<script src="story-data/characters.js?v=20261003-adv2"></script>
+<script src="story-data/registry.js?v=20261003-adv1"></script>
+<script src="story-data/episode4.js?v=20261003-adv2"></script>
+<script src="story-adv.js?v=20261003-adv2"></script>
+<script src="story-mode.js?v=20261003-adv1"></script>
 </body>
 </html>
-
-
 
 
 

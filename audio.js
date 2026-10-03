@@ -288,6 +288,7 @@ function playSfx(name) {
 }
 
 function cancelPendingCookSfx() {
+    window.stopStoryCues?.();
     window.DishEffects?.cancel();
     pendingCookSfxTimers.forEach(timer => clearTimeout(timer));
     pendingCookSfxTimers.clear();
@@ -319,13 +320,13 @@ function scheduleCookSfx() {
     pendingCookSfxTimers.add(timer);
 }
 
-function playSfxNow(name) {
+function playSfxNow(name, volumeScale = 1) {
     const base = AudioManager.sounds[name];
     if (!base) return;
 
     try {
         const sound = base.cloneNode();
-        sound.volume = base.volume;
+        sound.volume = base.volume * volumeScale;
         sound.play().catch(() => {});
     } catch (error) {
         console.log(`SE playback skipped: ${name}`);
@@ -357,3 +358,50 @@ window.setBgmVolume = setBgmVolume;
 window.getBgmVolume = getBgmVolume;
 window.setBattleModeBgmLocked = setBattleModeBgmLocked;
 window.getBgmTrackOptions = getBgmTrackOptions;
+
+// ADV cues use the existing sound and volume/mute controls; no new audio files.
+(function (root) {
+    let context = null;
+    const nodes = new Set();
+    function stopStoryCues() {
+        nodes.forEach(node => { try { node.stop(); } catch (_) {} });
+        nodes.clear();
+    }
+    function playStoryCue(kind) {
+        if (!getBgmEnabled() || getBgmVolume() <= 0) return;
+        const AudioContextClass = root.AudioContext || root.webkitAudioContext;
+        if (!AudioContextClass) return;
+        try {
+            context ||= new AudioContextClass();
+            context.resume().catch(() => {});
+            const time = context.currentTime, volume = getBgmVolume();
+            const voice = (node, offset, duration, level) => {
+                const gain = context.createGain();
+                gain.gain.setValueAtTime(0, time + offset);
+                gain.gain.linearRampToValueAtTime(level * volume, time + offset + .025);
+                gain.gain.exponentialRampToValueAtTime(.0001, time + offset + duration);
+                node.connect(gain); gain.connect(context.destination); nodes.add(node);
+                node.onended = () => { nodes.delete(node); node.disconnect(); gain.disconnect(); };
+                node.start(time + offset); node.stop(time + offset + duration);
+            };
+            if (kind === 'chime') {
+                [659.25, 523.25].forEach((frequency, index) => {
+                    const node = context.createOscillator(); node.type = 'sine'; node.frequency.value = frequency;
+                    voice(node, index * .34, .48, .13);
+                });
+            } else if (kind === 'crowd') {
+                const buffer = context.createBuffer(1, Math.floor(context.sampleRate * .65), context.sampleRate);
+                const samples = buffer.getChannelData(0);
+                let last = 0;
+                for (let i = 0; i < samples.length; i++) {
+                    last = last * .96 + (Math.random() * 2 - 1) * .04;
+                    samples[i] = last;
+                }
+                const node = context.createBufferSource(); node.buffer = buffer;
+                voice(node, 0, .65, .18);
+            }
+        } catch (_) { /* browsers may defer audio until a user gesture */ }
+    }
+    root.playStoryCue = playStoryCue;
+    root.stopStoryCues = stopStoryCues;
+})(window);
