@@ -31,7 +31,12 @@
         ['shutout', '完封勝利', '相手を0点のまま勝つ', '', '', 0, '相手に何もさせない…？'],
         ['comeback9', '一発逆転', '相手が9点・自分が3点以下の状態から勝つ', '', '', 0, '絶体絶命からの…'],
         ['oneShot', '一撃必殺', '0点から10点料理1皿で一気に勝つ', '', '', 0, '一皿ですべてを決める'],
-        ['feast8', '食べ放題', '1試合で料理を8回作る', '', '', 0, 'とにかくたくさん作ってみよう']
+        ['feast8', '食べ放題', '1試合で料理を8回作る', '', '', 0, 'とにかくたくさん作ってみよう'],
+        ...[['Chizuru', 'chizuru', '千鶴'], ['Mai', 'mai', '舞依'], ['Takumi', 'takumi', '拓海'], ['Akatsuki', 'akatsuki', '暁']]
+            .flatMap(([key, character, name]) => [5, 20, 50].map(count =>
+                [`char${key}${count}`, `${name}${count === 5 ? '見習い' : count === 20 ? 'の相棒' : 'マスター'}`,
+                    `${name}を自分のキャラとして${count}回使う`, count === 50 ? 'silver' : '', `character:${character}`, count])),
+        ['storyFestival', '文化祭の思い出', '出会い・文化祭編（第4〜10話）をすべてクリア', 'gold', 'festivalClears', 7]
     ].map(([id, title, condition, frame = '', progress = '', target = 0, hint = '']) =>
         Object.freeze({ id, title, condition, frame, progress, target, hint, hidden: !!hint })));
     const getDefinition = id => DEFINITIONS.find(d => d.id === id) || null;
@@ -45,8 +50,9 @@
     const toastQueue = [];
     function empty() {
         return { unlocked: {}, counters: { dishes: 0, wins: 0, matches: 0, onlineWins: 0, missionClears: 0,
-            storyClears: 0, retroactiveUnlocked: 0, matchRecords: {} },
-        sets: { recipes: [], skillsWon: [], charactersWon: [] }, selectedTitle: '', selectedFrame: 'none', migratedFromProfileAt: null };
+            storyClears: 0, festivalClears: 0, characterUses: {}, retroactiveUnlocked: 0, matchRecords: {} },
+        sets: { recipes: [], skillsWon: [], charactersWon: [] }, selectedTitle: '', selectedFrame: 'none',
+        migratedFromProfileAt: null, rewardsMigratedAt: null };
     }
     function validateCosmetics(info = {}) {
         return { title: getDefinition(info?.title) ? info.title : '', frame: ['silver', 'gold'].includes(info?.frame) ? info.frame : 'none' };
@@ -61,12 +67,16 @@
             const when = date(raw.unlocked?.[d.id]);
             if (when) value.unlocked[d.id] = when;
         }
-        for (const key of Object.keys(value.counters)) if (key !== 'matchRecords') value.counters[key] = number(raw.counters?.[key]);
+        for (const key of Object.keys(value.counters)) if (!['matchRecords', 'characterUses'].includes(key)) value.counters[key] = number(raw.counters?.[key]);
+        for (const id of characters) value.counters.characterUses[id] = number(raw.counters?.characterUses?.[id]);
         for (const def of DEFINITIONS) if (!def.progress) value.counters[def.id] = number(raw.counters?.[def.id]);
         for (const [key, entry] of Object.entries(raw.counters?.matchRecords || {})) {
             if (!entry || typeof entry !== 'object' || key === '__proto__' || key === 'constructor') continue;
             value.counters.matchRecords[key] = { dishes: number(entry.dishes), ended: entry.ended === true,
-                newIds: unique(entry.newIds).filter(getDefinition) };
+                newIds: unique(entry.newIds).filter(getDefinition),
+                characterId: characters.includes(entry.characterId) ? entry.characterId : null,
+                story: entry.story === true || entry.achievementStory === true || !!entry.storyEpisodeId,
+                characterCounted: entry.characterCounted === true };
         }
         value.sets.recipes = unique(raw.sets?.recipes).filter(name => recipeNames().includes(name));
         value.sets.skillsWon = unique(raw.sets?.skillsWon).filter(key => skills.includes(key));
@@ -74,6 +84,7 @@
         value.selectedTitle = value.unlocked[raw.selectedTitle] && getDefinition(raw.selectedTitle) ? raw.selectedTitle : '';
         value.selectedFrame = availableFrames(value).includes(raw.selectedFrame) ? raw.selectedFrame : 'none';
         value.migratedFromProfileAt = date(raw.migratedFromProfileAt);
+        value.rewardsMigratedAt = date(raw.rewardsMigratedAt);
         return value;
     }
     function readJson(key) {
@@ -107,6 +118,7 @@
         if (name === '創作料理') data.counters.sousaku = 1;
     }
     function progressFor(def, data = readLocal()) {
+        if (def.progress.startsWith('character:')) return { value: number(data.counters.characterUses[def.progress.slice(10)]), target: def.target };
         return def.progress ? { value: data.sets[def.progress]?.length ?? number(data.counters[def.progress]), target: def.target } : null;
     }
     function check(data, { silent = false, state = null, options = {} } = {}) {
@@ -119,8 +131,10 @@
         }
         if (!silent && state && newIds.length) receipt(data, state, options).newIds.push(...newIds);
         writeLocal(data);
+        if (newIds.length) root.Missions?.refreshCosmetics?.();
         if (!silent && newIds.length) {
-            if (state && !state.gameEnded && !state.achievementStory && !root.__storyActiveEpisodeId) enqueueToasts(newIds);
+            if (state && ((!state.gameEnded && !state.achievementStory && !root.__storyActiveEpisodeId) ||
+                newIds.some(id => id.startsWith('char') || id === 'storyFestival'))) enqueueToasts(newIds);
             renderScreen(); renderPicker();
             void syncCurrentAccount();
         }
@@ -130,23 +144,42 @@
         const missionIds = root.Missions?.definitions?.map(d => d.id) || ['noItems', 'bakudanOnigiri', 'manpukuCurry', 'noSkill', 'noEvent', 'comeback'];
         data.counters.missionClears = Math.max(data.counters.missionClears, missionIds.filter(id => missions?.cleared?.[id]).length);
         data.counters.storyClears = Math.max(data.counters.storyClears, ['episode1', 'episode2', 'episode3'].filter(id => story?.[id]).length);
+        data.counters.festivalClears = Math.max(data.counters.festivalClears,
+            ['episode4', 'episode5', 'episode6', 'episode7', 'episode8', 'episode9', 'episode10'].filter(id => story?.[id] === true).length);
     }
     function initialize() {
         const data = readLocal();
-        if (data.migratedFromProfileAt) return data;
+        if (data.migratedFromProfileAt && data.rewardsMigratedAt) return data;
         const profile = readJson('battle-a-la-carte:user-profile:v1') || {};
-        for (const key of ['dishes', 'wins', 'matches']) data.counters[key] = Math.max(data.counters[key], number(profile.stats?.[key]));
-        for (const entry of Array.isArray(profile.recentDishes) ? profile.recentDishes : []) addRecipe(data, entry?.name);
-        const missions = readJson('balc_missions_v1');
-        completionCounters(data, missions, readJson('battleAlaCarteStoryProgressV1'));
-        if (missions?.cleared?.bakudanOnigiri) addRecipe(data, '爆弾おにぎり');
-        if (missions?.cleared?.manpukuCurry) addRecipe(data, '満腹カレー');
-        data.migratedFromProfileAt = new Date().toISOString();
-        data.counters.retroactiveUnlocked = check(data, { silent: true }).length;
-        // An old autosave's existing dishes are already in the old profile totals.
-        const saved = readJson('battle-a-la-carte:match-autosave:v1')?.snapshot;
-        if (saved && !saved.gameEnded) receipt(data, saved).dishes = saved.players?.player?.cookedRecipes?.length || 0;
-        writeLocal(data);
+        if (!data.migratedFromProfileAt) {
+            for (const key of ['dishes', 'wins', 'matches']) data.counters[key] = Math.max(data.counters[key], number(profile.stats?.[key]));
+            for (const entry of Array.isArray(profile.recentDishes) ? profile.recentDishes : []) addRecipe(data, entry?.name);
+            const missions = readJson('balc_missions_v1');
+            completionCounters(data, missions, readJson('battleAlaCarteStoryProgressV1'));
+            if (missions?.cleared?.bakudanOnigiri) addRecipe(data, '爆弾おにぎり');
+            if (missions?.cleared?.manpukuCurry) addRecipe(data, '満腹カレー');
+            data.migratedFromProfileAt = new Date().toISOString();
+            data.counters.retroactiveUnlocked = check(data, { silent: true }).length;
+            // An old autosave's existing dishes are already in the old profile totals.
+            const saved = readJson('battle-a-la-carte:match-autosave:v1')?.snapshot;
+            if (saved && !saved.gameEnded) receipt(data, saved).dishes = saved.players?.player?.cookedRecipes?.length || 0;
+            writeLocal(data);
+        }
+        // Existing profile totals did not retain usage: never infer it from a favourite or a win.
+        if (!data.rewardsMigratedAt) {
+            const counts = Object.fromEntries(characters.map(id => [id, 0]));
+            for (const record of Object.values(data.counters.matchRecords)) {
+                if (!record.ended || record.story || !characters.includes(record.characterId)) continue;
+                counts[record.characterId]++; record.characterCounted = true;
+            }
+            for (const id of characters) data.counters.characterUses[id] = Math.max(number(data.counters.characterUses[id]),
+                counts[id], number(profile.stats?.characterUses?.[id]));
+            completionCounters(data, readJson('balc_missions_v1'), readJson('battleAlaCarteStoryProgressV1'));
+            data.rewardsMigratedAt = new Date().toISOString();
+            const retroactive = check(data, { silent: true }).length;
+            data.counters.retroactiveUnlocked += retroactive;
+            writeLocal(data);
+        }
         return readLocal();
     }
     function observeMatch(state, options = {}) {
@@ -154,7 +187,7 @@
         if (typeof document === 'undefined' || !state?.players?.player) return [];
         initialize();
         if (root.__storyActiveEpisodeId) state.achievementStory = true;
-        if (state.achievementStory) return [];
+        if (state.achievementStory || state.storyEpisodeId) return [];
         const data = readLocal(), record = receipt(data, state, options), own = state.players.player;
         const history = Array.isArray(own.cookedRecipes) ? own.cookedRecipes : [];
         const extra = Math.max(0, history.length - record.dishes);
@@ -163,6 +196,11 @@
         record.dishes = Math.max(record.dishes, history.length);
         if (history.length >= 8) data.counters.feast8 = 1;
         if (own.battleALaCarteModeActive) data.counters.battleMode = 1;
+        if (state.gameEnded && !record.characterCounted && characters.includes(state.characterIds?.player)) {
+            record.characterId = state.characterIds.player;
+            record.characterCounted = true;
+            data.counters.characterUses[record.characterId] = number(data.counters.characterUses[record.characterId]) + 1;
+        }
         if (state.gameEnded && !record.ended) {
             record.ended = true;
             data.counters.matches++;
@@ -230,13 +268,16 @@
                 const when = date(row.unlocked_at) || new Date().toISOString();
                 if (!data.unlocked[row.achievement_id] || when < data.unlocked[row.achievement_id]) data.unlocked[row.achievement_id] = when;
             }
-            writeLocal(data); renderScreen(); renderPicker();
+            writeLocal(data); renderScreen(); renderPicker(); root.Missions?.refreshCosmetics?.();
+            let uploaded = true;
             for (const id of Object.keys(data.unlocked)) {
                 if (remote.has(id)) continue;
-                const response = await client.rpc('balc_record_achievement', { p_achievement_id: id });
-                if (response.error) return false;
+                try {
+                    const response = await client.rpc('balc_record_achievement', { p_achievement_id: id });
+                    if (response.error) uploaded = false;
+                } catch (_) { uploaded = false; }
             }
-            return true;
+            return uploaded;
         } catch (_) { return false; }
     }
     async function syncCurrentAccount() {
@@ -262,7 +303,7 @@
         if (!list) return;
         const data = readLocal(); list.replaceChildren();
         const header = document.getElementById('achievement-count');
-        if (header) header.textContent = `達成 ${Object.keys(data.unlocked).length} / 30`;
+        if (header) header.textContent = `達成 ${Object.keys(data.unlocked).length} / ${DEFINITIONS.length}`;
         const summary = document.getElementById('achievement-migration-summary');
         if (summary) summary.textContent = `これまでの記録から ${data.counters.retroactiveUnlocked} 個を達成済みにしました`;
         for (const def of DEFINITIONS) {
@@ -272,6 +313,8 @@
             append(card, 'strong', concealed ? '？？？' : def.title);
             append(card, 'p', concealed ? def.hint : def.condition);
             if (def.frame) append(card, 'span', def.frame === 'gold' ? '金枠' : '銀枠', `achievement-tier ${def.frame}`);
+            const reward = root.Missions?.rewardForAchievement?.(def.id);
+            if (reward) append(card, 'span', reward, 'achievement-reward');
             const progress = progressFor(def, data);
             if (progress && !concealed) {
                 const value = Math.min(progress.value, progress.target);
@@ -312,7 +355,7 @@
         const block = append(parent, 'section', '', 'result-achievements');
         append(block, 'h3', '今回のアチーブメント');
         const list = append(block, 'ul', '');
-        for (const def of ids) append(list, 'li', `『${def.title}』${def.frame ? (def.frame === 'gold' ? '・金枠解放' : '・銀枠解放') : ''}`);
+        for (const def of ids) append(list, 'li', `『${def.title}』${def.frame ? (def.frame === 'gold' ? '・金枠解放' : '・銀枠解放') : ''}${root.Missions?.rewardForAchievement?.(def.id) ? `・${root.Missions.rewardForAchievement(def.id)}` : ''}`);
     }
     function enqueueToasts(ids) {
         toastQueue.push(...ids.map(getDefinition).filter(Boolean));

@@ -13,10 +13,28 @@
     ]);
     const isMobile = /\/mobile\//.test(window.location?.pathname || '');
     const imageRoot = `${isMobile ? '../' : ''}assets/battle-images/`;
+    const REWARD_SLEEVES = Object.freeze([
+        { id: 'sleeve-char-chizuru', sleeveName: '千鶴のスリーブ', achievement: 'charChizuru20' },
+        { id: 'sleeve-char-mai', sleeveName: '舞依のスリーブ', achievement: 'charMai20' },
+        { id: 'sleeve-char-takumi', sleeveName: '拓海のスリーブ', achievement: 'charTakumi20' },
+        { id: 'sleeve-char-akatsuki', sleeveName: '暁のスリーブ', achievement: 'charAkatsuki20' },
+        { id: 'sleeve-festival-six', sleeveName: '六人集合のスリーブ', achievement: 'storyFestival' }
+    ].map(Object.freeze));
+    const BOARDS = Object.freeze([
+        { id: 'board-char-chizuru', name: '千鶴の盤面背景', achievement: 'charChizuru50' },
+        { id: 'board-char-mai', name: '舞依の盤面背景', achievement: 'charMai50' },
+        { id: 'board-char-takumi', name: '拓海の盤面背景', achievement: 'charTakumi50' },
+        { id: 'board-char-akatsuki', name: '暁の盤面背景', achievement: 'charAkatsuki50' },
+        { id: 'board-festival-classroom', name: '文化祭の教室', achievement: 'storyFestival' }
+    ].map(Object.freeze));
     let accountNote = '';
 
     function getDefinition(id) { return DEFINITIONS.find(item => item.id === id) || null; }
-    function emptyStorage() { return { cleared: {}, selectedSleeve: 'default' }; }
+    function emptyStorage() { return { cleared: {}, selectedSleeve: 'default', selectedBoard: 'default' }; }
+    function rewardUnlocked(def) { return !!def && !!window.Achievements?.readLocal().unlocked[def.achievement]; }
+    function sleeveUnlocked(id, cleared) {
+        return id === 'default' || !!(getDefinition(id) && cleared[id]) || rewardUnlocked(REWARD_SLEEVES.find(def => def.id === id));
+    }
     function readLocal() {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
@@ -26,10 +44,10 @@
             for (const [id, date] of Object.entries(value.cleared || {})) {
                 if (getDefinition(id) && typeof date === 'string') cleared[id] = date;
             }
-            const selectedSleeve = value.selectedSleeve === 'default' ||
-                (getDefinition(value.selectedSleeve) && Object.prototype.hasOwnProperty.call(cleared, value.selectedSleeve))
+            const selectedSleeve = sleeveUnlocked(value.selectedSleeve, cleared)
                 ? value.selectedSleeve : 'default';
-            return { cleared, selectedSleeve };
+            const selectedBoard = rewardUnlocked(BOARDS.find(def => def.id === value.selectedBoard)) ? value.selectedBoard : 'default';
+            return { cleared, selectedSleeve, selectedBoard };
         } catch (_) { return emptyStorage(); }
     }
     function writeLocal(value) {
@@ -41,6 +59,7 @@
         catch (_) { return false; }
     }
     function sleevePath(id) {
+        if (REWARD_SLEEVES.some(def => def.id === id)) return `${imageRoot}sleeves/${id}.webp`;
         const def = getDefinition(id);
         return def ? `${imageRoot}sleeves/sleeve-${def.imageId}.webp` : `${imageRoot}card-back.webp`;
     }
@@ -50,13 +69,46 @@
     }
     function selectSleeve(id) {
         const value = readLocal();
-        if (id !== 'default' && (!getDefinition(id) || !value.cleared[id])) return false;
+        if (!sleeveUnlocked(id, value.cleared)) return false;
         value.selectedSleeve = id;
         writeLocal(value);
         applySleeve();
         renderSleevePicker();
         return true;
     }
+    function boardPath(id) { return BOARDS.some(def => def.id === id) ? `${imageRoot}boards/${id}.webp` : null; }
+    function applyBoard() {
+        const path = boardPath(readLocal().selectedBoard);
+        // A device cosmetic only: never read it from match state or send it to the opponent.
+        const field = document.getElementById('pc-player-field') || document.getElementById('mobile-player-field');
+        if (!field) return;
+        field.style.setProperty('--selected-board-background', path ? `url("${path}")` : 'none');
+        field.classList.toggle('has-board-background', !!path);
+    }
+    function selectBoard(id) {
+        if (id !== 'default' && !rewardUnlocked(BOARDS.find(def => def.id === id))) return false;
+        const value = readLocal(); value.selectedBoard = id; writeLocal(value);
+        applyBoard(); renderBoardPicker(); return true;
+    }
+    function rewardForAchievement(id) {
+        return [...REWARD_SLEEVES.filter(def => def.achievement === id).map(def => def.sleeveName),
+            ...BOARDS.filter(def => def.achievement === id).map(def => def.name)].join('・');
+    }
+    function renderBoardPicker() {
+        const selected = readLocal().selectedBoard;
+        for (const picker of [document.getElementById('board-picker'), document.getElementById('settings-board-picker')].filter(Boolean)) {
+            picker.replaceChildren();
+            for (const def of [{ id: 'default', name: 'デフォルト' }, ...BOARDS.filter(rewardUnlocked)]) {
+                const button = appendText(picker, 'button', `board-choice${selected === def.id ? ' selected' : ''}`, '');
+                button.type = 'button'; button.dataset.boardId = def.id;
+                button.setAttribute('aria-pressed', String(selected === def.id));
+                const path = boardPath(def.id);
+                if (path) { const image = document.createElement('img'); image.src = path; image.alt = ''; button.appendChild(image); }
+                appendText(button, 'span', '', def.name);
+            }
+        }
+    }
+    function refreshCosmetics() { applySleeve(); applyBoard(); renderSleevePicker(); renderBoardPicker(); }
     function observeScores(state) {
         if (!state?.players) return;
         for (const side of ['player', 'cpu']) {
@@ -212,14 +264,16 @@
         const data = readLocal();
         for (const picker of [document.getElementById('sleeve-picker'), document.getElementById('settings-sleeve-picker')].filter(Boolean)) {
         picker.replaceChildren();
-        for (const option of [{ id: 'default', sleeveName: 'デフォルト', name: '' }, ...DEFINITIONS]) {
-            const unlocked = option.id === 'default' || !!data.cleared[option.id];
+        for (const option of [{ id: 'default', sleeveName: 'デフォルト', name: '' }, ...DEFINITIONS, ...REWARD_SLEEVES]) {
+            const unlocked = sleeveUnlocked(option.id, data.cleared);
             const button = document.createElement('button');
             button.type = 'button'; button.className = `sleeve-choice${unlocked ? '' : ' locked'}${data.selectedSleeve === option.id ? ' selected' : ''}`;
             button.dataset.sleeveId = option.id; button.disabled = !unlocked;
             const image = document.createElement('img'); image.src = sleevePath(option.id); image.alt = '';
             button.appendChild(image);
-            appendText(button, 'span', '', unlocked ? option.sleeveName : `🔒 ${option.name}で解放`);
+            button.setAttribute('aria-pressed', String(data.selectedSleeve === option.id));
+            const condition = option.achievement ? window.Achievements?.getDefinition(option.achievement)?.title : option.name;
+            appendText(button, 'span', '', unlocked ? option.sleeveName : `🔒 ${condition}で解放`);
             picker.appendChild(button);
         }
         }
@@ -237,10 +291,10 @@
             button.classList.toggle('active', button.dataset.storyTab === (mission ? 'missions' : 'story'));
         }
         if (mission) renderMissionList();
+        else window.CharacterNotice?.showOnce();
     }
     function init() {
-        applySleeve();
-        renderSleevePicker();
+        refreshCosmetics();
         document.getElementById('mission-list')?.addEventListener('click', event => {
             const button = event.target.closest('button[data-mission-id]');
             if (button && isUnlocked()) window.startMissionCpuSetup?.(button.dataset.missionId);
@@ -252,12 +306,19 @@
         document.getElementById('info-overlay-content')?.addEventListener('click', event => {
             const button = event.target.closest('#settings-sleeve-picker button[data-sleeve-id]');
             if (button) selectSleeve(button.dataset.sleeveId);
+            const board = event.target.closest('#settings-board-picker button[data-board-id]');
+            if (board) selectBoard(board.dataset.boardId);
+        });
+        document.getElementById('board-picker')?.addEventListener('click', event => {
+            const button = event.target.closest('button[data-board-id]');
+            if (button) selectBoard(button.dataset.boardId);
         });
         document.querySelectorAll('[data-story-tab]').forEach(button => button.addEventListener('click', () => openTab(button.dataset.storyTab)));
         document.getElementById('menu-story-button')?.addEventListener('click', () => openTab('story'));
         void syncCurrentAccount();
     }
     window.Missions = { definitions: DEFINITIONS, getDefinition, isUnlocked, readLocal, selectSleeve, sleevePath,
+        rewardSleeves: REWARD_SLEEVES, boards: BOARDS, selectBoard, boardPath, applyBoard, renderBoardPicker, refreshCosmetics, rewardForAchievement,
         getCardBackPath, applySleeve, observeScores, conditionMet, impossible, progressHint, refreshBanner,
         complete, recordClear, syncAccount, syncCurrentAccount, renderMissionList, renderSleevePicker, openTab };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

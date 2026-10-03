@@ -59,17 +59,16 @@ test('battle WebP assets are small and all original PNGs are retained', () => {
     }
 });
 
-test('Battle a la carte Mode BGM exists at the path used by both game pages', () => {
-    const audioPath = path.join(root, 'assets/audio/battle-mode.mp3');
-    assert.ok(fs.existsSync(audioPath), 'assets/audio/battle-mode.mp3 is required');
+test('Battle a la carte Mode BGM pack exists for both game pages', () => {
+    const audioPath = path.join(root, 'assets/audio-pack/battle-mode.balc');
+    assert.ok(fs.existsSync(audioPath), 'assets/audio-pack/battle-mode.balc is required');
     assert.ok(fs.statSync(audioPath).size > 1024 * 1024, 'Mode BGM must not be an empty placeholder');
-    assert.match(fs.readFileSync(path.join(root, 'audio.js'), 'utf8'), /assets\/audio\/battle-mode\.mp3/);
-    assert.match(fs.readFileSync(path.join(root, 'mobile/audio-sp.js'), 'utf8'), /\.\.\/assets\/audio\/battle-mode\.mp3/);
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'assets/audio-pack/manifest.json'), 'utf8'));
     for (const file of ['audio.js', 'mobile/audio-sp.js']) {
         const code = fs.readFileSync(path.join(root, file), 'utf8');
-        for (const [, relative] of code.matchAll(/new Audio\(['"](?:\.\.\/)?(assets\/audio\/[^?'"]+)/g)) {
-            assert.ok(fs.existsSync(path.join(root, relative)), `${file} references missing ${relative}`);
-        }
+        assert.match(code, /battleMode: 'battle-mode'/);
+        assert.ok(fs.existsSync(path.join(root, 'assets/audio-pack', manifest.tracks['battle-mode'].file)));
+        assert.doesNotMatch(code, /\.mp3/);
     }
 });
 

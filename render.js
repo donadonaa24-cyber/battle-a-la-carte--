@@ -350,7 +350,7 @@ function ensureGameSettings() {
     if (typeof GameState.settings.backgroundTheme === 'undefined') GameState.settings.backgroundTheme = 'default';
     if (typeof GameState.settings.backgroundDesign === 'undefined') GameState.settings.backgroundDesign = 'default';
     if (typeof GameState.settings.bgmEnabled === 'undefined') GameState.settings.bgmEnabled = true;
-    if (typeof GameState.settings.bgmTrack === 'undefined') GameState.settings.bgmTrack = 'default';
+    if (typeof GameState.settings.bgmTrack === 'undefined') GameState.settings.bgmTrack = window.CharacterThemes?.savedChoice() || 'characterTheme';
     if (typeof GameState.settings.bgmVolume === 'undefined') GameState.settings.bgmVolume = 0.8;
     GameState.settings.bgmVolume = clampBgmVolumeSetting(GameState.settings.bgmVolume);
     return GameState.settings;
@@ -391,6 +391,7 @@ function applyRuntimeSettings() {
 
     applyBackgroundTheme(settings.backgroundTheme);
     applyBackgroundDesign(settings.backgroundDesign);
+    window.Missions?.applyBoard();
 
     if (typeof setBgmVolume === 'function') {
         setBgmVolume(clampBgmVolumeSetting(settings.bgmVolume));
@@ -399,7 +400,8 @@ function applyRuntimeSettings() {
         }
     }
     if (typeof setBgmTrack === 'function') {
-        setBgmTrack(settings.bgmTrack || 'default');
+        settings.bgmTrack = window.CharacterThemes?.savedChoice(settings.bgmTrack) || settings.bgmTrack;
+        setBgmTrack(settings.bgmTrack || 'characterTheme');
         if (typeof getCurrentBgmTrack === 'function') {
             settings.bgmTrack = getCurrentBgmTrack() || 'default';
         }
@@ -574,7 +576,7 @@ function bindSettingsOverlayControls() {
         bgmTrackSelect.value = settings.bgmTrack || 'default';
         bgmTrackSelect.addEventListener('change', () => {
             const selected = bgmTrackSelect.value || 'default';
-            const changed = typeof setBgmTrack === 'function' ? setBgmTrack(selected) : true;
+            const changed = typeof setBgmTrack === 'function' ? setBgmTrack(selected, { save: true }) : true;
             if (!changed) {
                 bgmTrackSelect.value = settings.bgmTrack || 'default';
                 addLog('設定: 選択したBGMはまだ使用できません。');
@@ -990,9 +992,11 @@ function renderInfoOverlay() {
                     <div class="settings-note">0%で無音、100%で最大です。</div>
                 </div>
                 <div class="reference-item"><div class="reference-title">カードスリーブ</div><div id="settings-sleeve-picker" class="sleeve-picker"></div></div>
+                <div class="reference-item"><div class="reference-title">盤面背景</div><div id="settings-board-picker" class="board-picker"></div></div>
             </div>
         `;
         window.Missions?.renderSleevePicker();
+        window.Missions?.renderBoardPicker();
         bindSettingsOverlayControls();
         return;
     }
@@ -2614,6 +2618,7 @@ function performUIRender() {
         bindRenderEventsOnce();
 
         const model = getBattleViewModel();
+        window.refreshCharacterBattleBGM?.();
         safeSetText('player-hud-name', GameState.storyEpisodeId ? model.me.characterName : window.Achievements?.displayName(model.me.name || window.getUserProfile?.().name, model.online ? model.me : undefined) || model.me.characterName || '千鶴');
         safeSetText('cpu-hud-name', model.online ? (window.Achievements?.displayName(model.opponent.name || model.opponent.characterName, model.opponent) || model.opponent.characterName) : model.opponent.characterName || '舞依');
 

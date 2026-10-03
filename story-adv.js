@@ -5,7 +5,8 @@
     const S = { episode: null, sceneId: '', lineIndex: 0, stage: 'pre', active: false,
         battleActive: false, pending: null, actors: new Map(), backlog: [], token: 0,
         busy: false, loading: false, typing: false, text: '', chars: [], typed: 0, logOpen: false,
-        fastForward: false, ctrlHeld: false, paused: false, skipOpen: false, continuedAsWin: false };
+        fastForward: false, ctrlHeld: false, paused: false, skipOpen: false, continuedAsWin: false,
+        conversation: null };
     let layer, typeTimer, autoTimer;
     const waits = new Map();
     const playbackTimers = new Set();
@@ -13,6 +14,12 @@
     const frozen = () => S.paused || S.logOpen || S.skipOpen;
     const timerNow = () => root.performance?.now() ?? Date.now();
     const effectDelay = ms => fast() ? Math.min(ms, 100) : ms;
+    const reducedMotion = () => root.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+    const markArt = Object.freeze({
+        '!': '!', '?': '?', '!?': '!?', note: '♪', sparkle: '✦', '…': '…',
+        sweat: '<svg viewBox="0 0 32 40" aria-hidden="true"><path d="M16 3C12 12 4 21 4 27a12 12 0 0 0 24 0C28 21 20 12 16 3Z" fill="#83def8" stroke="#102654" stroke-width="3"/><path d="M10 25q-2 7 4 8" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>',
+        anger: '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 16h9V5M26 5v11h9M35 26h-9v9M14 35v-9H5" fill="none" stroke="#fff1c5" stroke-width="8" stroke-linejoin="round"/><path d="M5 16h9V5M26 5v11h9M35 26h-9v9M14 35v-9H5" fill="none" stroke="#d45340" stroke-width="4" stroke-linejoin="round"/></svg>'
+    });
     function armTimer(job) {
         if (frozen() || job.started !== null) return;
         job.started = timerNow();
@@ -52,12 +59,13 @@
             background(scene.background);
             scene.lines.forEach(item => {
                 background(item.background);
-                if (!item.offscreen) {
+                if (!item.offscreen && !item.monologue) {
                     if (!['narration', 'announce'].includes(item.speaker)) portrait(item.speaker, item.expression);
                     if (Array.isArray(item.show)) item.show.forEach(actor => portrait(actor.id, actor.expression));
                 }
             });
         });
+        episode.clear?.arc?.characters.forEach(id => portrait(id, 'normal'));
         return [...files];
     }
     function loadImage(file) {
@@ -127,7 +135,7 @@
     }
     const autoDelay = text => Math.max(2000, Math.min(6500, 1500 + 70 * Array.from(text || '').length));
     function savePosition() {
-        if (!S.episode) return;
+        if (!S.episode || S.conversation) return;
         saved.resume = { episodeId: S.episode.id, sceneId: S.sceneId, lineIndex: S.lineIndex,
             stage: S.stage, savedAt: Date.now() };
         if (S.continuedAsWin) saved.resume.continuedAsWin = true;
@@ -138,6 +146,7 @@
     function wait(ms) { return new Promise(resolve => playbackTimer(resolve, effectDelay(ms), 'effect', resolve)); }
     function cancelTimers() {
         [...playbackTimers].forEach(cancelTimer);
+        clearLinePresentation();
         waits.forEach((resolve, timer) => { clearTimeout(timer); resolve(); });
         waits.clear();
         root.stopStoryCues?.();
@@ -148,6 +157,7 @@
         cancelTimers();
         if (S.pending) { abandonBattle(); return; }
         S.active = false; S.typing = false; S.busy = false; S.logOpen = false; S.paused = false; S.skipOpen = false;
+        S.conversation = null;
         setLoading(false);
         if (layer) layer.hidden = true;
     }
@@ -178,8 +188,9 @@
             <div class="adv-dialogue" id="adv-dialogue" tabindex="0" role="button" aria-label="会話を進める">
                 <div class="adv-name" id="adv-name"></div>
                 <div class="adv-text" id="adv-text" aria-live="polite"></div>
-                <span class="adv-next" id="adv-next" hidden>▼</span>
+                <span class="adv-next" id="adv-next" aria-hidden="true" hidden><svg viewBox="0 0 42 24"><ellipse cx="21" cy="12" rx="12" ry="9" fill="none" stroke="currentColor" stroke-width="2"/><ellipse cx="21" cy="12" rx="8" ry="5" fill="none" stroke="currentColor"/><path d="M3 2v7m3-7v7m3-7v7M3 7q3 6 6 0M6 10v12M37 2v20m0-20q-7 8 0 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
             </div>
+            <div class="adv-line-effects" id="adv-line-effects" aria-hidden="true"></div>
             <div class="adv-effect" id="adv-effect" aria-hidden="true"></div>
             <section class="adv-log" id="adv-log" hidden aria-label="会話ログ">
                 <h2>会話ログ</h2><div id="adv-log-lines"></div><button type="button" id="adv-log-close">閉じる</button>
@@ -201,7 +212,10 @@
         const toolbar = layer.querySelector('.adv-toolbar');
         const measureToolbar = () => layer.style.setProperty('--adv-toolbar-height', `${toolbar.getBoundingClientRect().height}px`);
         if (root.ResizeObserver) new root.ResizeObserver(measureToolbar).observe(toolbar);
+        const measureDialogue = () => layer.style.setProperty('--adv-dialogue-height', `${byId('adv-dialogue').getBoundingClientRect().height}px`);
+        if (root.ResizeObserver) new root.ResizeObserver(measureDialogue).observe(byId('adv-dialogue'));
         root.addEventListener?.('resize', measureToolbar);
+        root.addEventListener?.('resize', measureDialogue);
         layer.addEventListener('click', event => {
             if (event.target.closest('button, .adv-log, .adv-panel, .adv-ending, .adv-toolbar')) return;
             advance();
@@ -273,6 +287,7 @@
     function enableFastForward(held = false) {
         if (!S.active || S.loading || frozen() || !byId('adv-ending').hidden) return;
         if (held) S.ctrlHeld = true; else S.fastForward = true;
+        clearLinePresentation(); root.stopStoryCues?.();
         saved.auto = false; writeSave(); updateAutoButton(); updateFastButton();
         // Shorten an effect already in progress, while preserving its continuation.
         playbackTimers.forEach(job => {
@@ -355,14 +370,19 @@
         else show(); // failed images keep the CSS gradient
     }
     function stageLine(item) {
-        if (item.offscreen) { S.actors.clear(); return; }
+        if (item.offscreen || item.monologue) { S.actors.clear(); return; }
         if (item.hide === 'all') S.actors.clear();
         else if (Array.isArray(item.hide)) item.hide.forEach(id => S.actors.delete(id));
         const speaking = !['narration', 'announce'].includes(item.speaker);
         if (speaking && !Array.isArray(item.show)) {
             for (const id of S.actors.keys()) if (id !== item.speaker) S.actors.delete(id);
         }
-        if (Array.isArray(item.show)) item.show.forEach(actor => S.actors.set(actor.id, { ...actor }));
+        if (Array.isArray(item.show)) item.show.forEach(actor => {
+            if (actor.onlyIfShown) {
+                const current = S.actors.get(actor.id);
+                if (current) S.actors.set(actor.id, { ...current, expression: actor.expression || current.expression });
+            } else S.actors.set(actor.id, { ...actor });
+        });
         if (speaking) S.actors.set(item.speaker, { id: item.speaker, position: item.position,
             expression: item.expression || 'normal' });
         if (item.speaker === 'announce') S.actors.clear();
@@ -387,6 +407,7 @@
             const framing = assets.characters[actor.id];
             element.style.setProperty('--adv-focus-y', String(framing?.focusY ?? .055));
             element.style.setProperty('--adv-portrait-scale', String(framing?.scale ?? 1.35));
+            element.style.setProperty('--adv-mark-y', String({ mai: .08, takumi: .08, akatsuki: .07 }[actor.id] ?? .13));
             element.classList.toggle('speaking', actor.id === speaker);
             element.classList.toggle('dimmed', S.actors.size > 1 && actor.id !== speaker);
             const candidates = assets.portraitCandidates(actor.id, actor.expression);
@@ -409,6 +430,35 @@
     function nameFor(item) {
         return item.name || assets.characters[item.speaker]?.name || (item.speaker === 'announce' ? '校内放送' : item.speaker === 'narration' ? '' : String(item.speaker || ''));
     }
+    function clearLinePresentation() {
+        if (!layer) return;
+        const screen = byId('adv-line-effects');
+        if (screen) screen.className = 'adv-line-effects';
+        layer.classList.remove('adv-screen-shake');
+        for (const portrait of byId('adv-portraits').children) {
+            for (const motion of root.BattleStoryData.presentation.motions) portrait.classList.remove(`adv-motion-${motion}`);
+            portrait.querySelector('.adv-emotion-mark')?.remove();
+        }
+    }
+    // Decorative line beats run alongside typing: never make input wait for a motion.
+    function presentLine(item) {
+        if (fast()) return;
+        const portrait = [...byId('adv-portraits').children].find(el => el.dataset.actor === item.speaker && !el.classList.contains('leaving'));
+        const cleanup = () => clearLinePresentation();
+        if (portrait && item.mark && portrait.children.length) {
+            const mark = document.createElement('span');
+            mark.className = 'adv-emotion-mark'; mark.dataset.mark = item.mark;
+            if (markArt[item.mark].startsWith('<svg')) mark.innerHTML = markArt[item.mark];
+            else mark.textContent = markArt[item.mark];
+            portrait.appendChild(mark);
+        }
+        if (!reducedMotion()) {
+            if (portrait && item.motion) portrait.classList.add(`adv-motion-${item.motion}`);
+            if (item.screen === 'screenShake') layer.classList.add('adv-screen-shake');
+            else if (item.screen) byId('adv-line-effects').classList.add(`adv-screen-${item.screen}`);
+        }
+        if (item.motion || item.mark || item.screen) playbackTimer(cleanup, 850, 'portrait', cleanup);
+    }
     function completeText() {
         cancelTimer(typeTimer); S.typing = false; S.typed = S.chars.length;
         byId('adv-text').textContent = S.text; byId('adv-next').hidden = false; scheduleAuto();
@@ -418,49 +468,52 @@
         if (S.typed >= S.chars.length) return completeText();
         typeTimer = playbackTimer(typeText, 30, 'type');
     }
-    async function effect(name, token) {
+    async function effect(name, token, item = {}) {
         const element = byId('adv-effect');
         if (['chime', 'crowd', 'notify'].includes(name)) { root.playStoryCue?.(name, fast() ? .12 : 1); await wait(name === 'chime' ? 850 : name === 'notify' ? 350 : 650); return; }
         if (name === 'battleTease') {
             element.replaceChildren();
             const img = document.createElement('img'); img.src = assets.url('assets/battle-images/card-back.webp'); img.alt = '';
-            const title = document.createElement('strong'); title.textContent = 'Battle à la carte';
-            element.append(img, title); element.className = 'adv-effect battle-tease';
-            await wait(950);
+            const title = document.createElement('strong'); title.textContent = item.finalBattle ? 'FINAL BATTLE' : 'Battle à la carte';
+            element.append(img, title); element.className = 'adv-effect battle-tease' + (item.finalBattle ? ' final-battle' : '');
+            await wait(item.finalBattle ? 1600 : 950);
             if (token === S.token) { element.className = 'adv-effect'; element.replaceChildren(); }
         } else if (name === 'fadeOut') {
             await wait(850); // chime completes before the blackout
             if (token !== S.token) return;
             element.className = 'adv-effect fade-out'; await wait(700);
         } else if (name === 'shake') {
-            layer.classList.add('adv-shake'); await wait(250);
+            if (!reducedMotion()) layer.classList.add('adv-shake'); await wait(250);
             if (token === S.token) layer.classList.remove('adv-shake');
         }
     }
     async function renderCurrent() {
         cancelTimers(); const token = ++S.token;
         const item = line();
-        if (S.stage === 'battle') return chooseBattle();
+        if (S.stage === 'battle' && !item?.finalBattle) return chooseBattle();
         if (!item) return endScene();
         savePosition(); S.busy = true; S.typing = false; byId('adv-next').hidden = true;
         layer.classList.toggle('adv-battle-intro', scene()?.battleIntro === true);
+        layer.classList.toggle('adv-monologue', scene()?.lines.slice(0, S.lineIndex + 1).findLast(item => item.text)?.monologue === true);
         stageLine(item); renderActors(item.speaker);
         setBackground(item.background !== undefined ? item.background : currentBackground());
-        if (item.battle) { S.busy = false; return chooseBattle(); }
-        if (['chime', 'crowd', 'notify'].includes(item.se)) root.playStoryCue?.(item.se, fast() ? .12 : 1);
+        presentLine(item);
+        if (root.BattleStoryData.presentation.cues.includes(item.se)) root.playStoryCue?.(item.se, fast() ? .12 : 1);
         else if (item.se) root.playSfx?.(item.se);
-        if (item.effect) await effect(item.effect, token);
+        if (item.effect) await effect(item.effect, token, item);
         else if (!item.wait && ['chime', 'crowd', 'notify'].includes(item.se)) await wait(item.se === 'chime' ? 850 : item.se === 'notify' ? 350 : 650);
         if (token !== S.token || !S.active) return;
+        if (item.battle) { S.busy = false; return chooseBattle(); }
         if (item.wait) await wait(Math.max(0, Number(item.wait) || 0));
         if (token !== S.token || !S.active) return;
         S.busy = false;
         if (!item.text) { S.lineIndex++; return renderCurrent(); }
         S.text = item.text; S.chars = Array.from(S.text); S.typed = 0;
         byId('adv-name').textContent = nameFor(item);
+        byId('adv-name').dataset.speaker = item.speaker;
         byId('adv-text').textContent = '';
         S.backlog.push({ name: nameFor(item), text: item.text });
-        if (fast() || root.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) completeText();
+        if (fast() || reducedMotion()) completeText();
         else { S.typing = true; typeText(); }
     }
     function currentBackground() {
@@ -482,10 +535,11 @@
     }
     function enterScene(id, stage) {
         S.sceneId = id; S.lineIndex = 0; S.stage = stage;
-        if (scene()?.bgm !== false) root.playStoryBGM?.();
+        if (scene()?.bgm !== false) root.playStoryBGM?.(S.episode.protagonist);
         renderCurrent();
     }
     function endScene() {
+        if (S.conversation) return showConversationChoices();
         if (S.stage === 'lose') return showLoseChoices();
         if (scene()?.next) return enterScene(scene().next, S.stage);
         if (S.stage === 'post') return clearEpisode();
@@ -536,7 +590,7 @@
         root.resetStoryBattleContext?.();
         S.sceneId = pending.sceneId; S.lineIndex = 0; S.stage = pending.stage;
         activate();
-        if (scene()?.bgm !== false) root.playStoryBGM?.();
+        if (scene()?.bgm !== false) root.playStoryBGM?.(S.episode.protagonist);
         beginPlayback(); return true;
     }
     function abandonBattle() {
@@ -548,11 +602,11 @@
         ensureLayer(); S.active = true; S.busy = false; S.logOpen = false; S.paused = false; S.skipOpen = false;
         layer.hidden = false; byId('adv-log').hidden = true; byId('adv-ending').hidden = true;
         byId('adv-pause-panel').hidden = true; byId('adv-skip-panel').hidden = true;
-        layer.classList.remove('adv-cleared', 'adv-frozen', 'adv-shake', 'adv-panel-open');
+        layer.classList.remove('adv-cleared', 'adv-frozen', 'adv-shake', 'adv-panel-open', 'adv-monologue', 'adv-arc-cleared');
         byId('adv-portraits').replaceChildren(); byId('adv-background').style.backgroundImage = '';
         byId('adv-text').textContent = ''; byId('adv-name').textContent = ''; byId('adv-next').hidden = true;
         byId('adv-effect').className = 'adv-effect'; byId('adv-effect').replaceChildren();
-        byId('adv-episode-label').textContent = `第${S.episode.number}話「${S.episode.title}」`;
+        byId('adv-episode-label').textContent = `${root.BattleStoryData.arcs[S.episode.arc]}　第${S.episode.number}話「${S.episode.title}」`;
         updateAutoButton(); updateFastButton();
         ['adv-fast', 'adv-skip', 'adv-pause'].forEach(id => { byId(id).disabled = false; });
         const toolbarHeight = layer.querySelector('.adv-toolbar').getBoundingClientRect().height;
@@ -560,6 +614,7 @@
         root.stopMenuFloatingBackground?.();
     }
     function playbackRoute() {
+        if (S.conversation) return [scene()];
         const post = outcomeScenes(S.episode.afterBattle.win);
         const lose = outcomeScenes(S.episode.afterBattle.lose);
         const initial = S.episode.scenes.filter(item => ![...post, ...lose].includes(item));
@@ -567,7 +622,7 @@
             S.stage === 'lose' ? [...initial, ...lose] : initial;
     }
     function rebuildBeforePosition() {
-        S.actors.clear(); S.backlog = [];
+        S.actors.clear(); S.backlog = S.conversation ? S.conversation.backlog.slice() : [];
         for (const current of playbackRoute()) {
             let count = current.id === S.sceneId ? S.lineIndex : current.lines.length;
             if (current.id === S.sceneId && S.stage === 'battle' && !line()?.battle && line()?.id === S.episode.battle?.after) count++;
@@ -582,7 +637,8 @@
         if (!S.skipOpen) return;
         const route = playbackRoute();
         let position;
-        if (S.stage === 'pre') position = battlePosition(S.episode);
+        if (S.conversation) position = { sceneId: S.sceneId, lineIndex: scene().lines.length };
+        else if (S.stage === 'pre') position = battlePosition(S.episode);
         else {
             const last = route[route.length - 1];
             if (last) {
@@ -603,6 +659,7 @@
         S.text = previous?.text || ''; byId('adv-text').textContent = S.text;
         byId('adv-name').textContent = previous?.name || '';
         renderActors(); setBackground(currentBackground());
+        if (S.conversation) return showConversationChoices();
         if (S.stage === 'pre') {
             const marker = line();
             if (marker) {
@@ -610,6 +667,7 @@
                 if (marker.text && !marker.battle) S.backlog.push({ name: nameFor(marker), text: marker.text });
                 renderActors(marker.speaker);
             }
+            if (marker?.finalBattle) return renderCurrent();
             return chooseBattle();
         }
         if (S.stage === 'lose') return showLoseChoices();
@@ -631,6 +689,7 @@
     }
     function start(id, resume = false) {
         const episode = root.BattleStoryData.get(id); if (!episode) return;
+        if (root.CharacterNotice && !root.CharacterNotice.beforeStory(() => start(id, resume))) return;
         stop(); S.episode = episode; S.pending = null;
         const position = resume && saved.resume?.episodeId === id ? saved.resume : null;
         S.continuedAsWin = position?.continuedAsWin === true;
@@ -647,11 +706,39 @@
         S.text = previous?.text || '';
         byId('adv-text').textContent = S.text;
         byId('adv-name').textContent = previous?.name || '';
-        root.playStoryBGM?.(); return beginPlayback();
+        root.playStoryBGM?.(S.episode.protagonist); return beginPlayback();
     }
     function endingButton(text, action) {
         const button = document.createElement('button'); button.type = 'button'; button.textContent = text; button.onclick = action;
         byId('adv-ending').appendChild(button);
+    }
+    // Conversations only: the existing tutorial owns every battle and progress decision.
+    function playConversation(episode, lines, options) {
+        const backlog = options.phase === 'post' && S.episode?.tutorial && S.episode.id === episode.id
+            ? S.backlog.slice() : [];
+        stop();
+        S.episode = root.BattleStoryData.validate({
+            id: episode.id, number: Number(episode.id.replace('episode', '')), arc: episode.arc,
+            title: episode.title.replace(/^第\d+話\s*/, ''), tutorial: true, protagonist: episode.protagonist,
+            defaultPositions: Object.fromEntries(Object.keys(assets.characters).map(id =>
+                [id, id === episode.protagonist ? 'right' : 'left'])),
+            scenes: [{ id: options.phase, background: episode.background, lines }]
+        });
+        S.conversation = { getActions: options.getActions, backlog };
+        S.sceneId = options.phase; S.stage = options.phase; S.lineIndex = 0;
+        S.battleActive = false; S.pending = null; S.continuedAsWin = false;
+        rebuildBeforePosition(); activate();
+        root.playStoryBGM?.(S.episode.protagonist);
+        return beginPlayback();
+    }
+    function showConversationChoices() {
+        S.busy = false; stopFastForward(); cancelTimer(autoTimer);
+        ['adv-fast', 'adv-skip', 'adv-pause'].forEach(id => { byId(id).disabled = true; });
+        const ending = byId('adv-ending'); ending.replaceChildren(); ending.hidden = false;
+        S.conversation.getActions().forEach(({ text, action }) => {
+            endingButton(text, () => { stop(); action?.(); });
+        });
+        ending.children[0]?.focus();
     }
     function showLoseChoices() {
         S.busy = false; stopFastForward(); cancelTimer(autoTimer); savePosition();
@@ -664,7 +751,7 @@
         endingButton('勝ったことにして進める', () => {
             S.continuedAsWin = true; S.sceneId = S.episode.afterBattle.win; S.lineIndex = 0; S.stage = 'post';
             savePosition(); rebuildBeforePosition(); activate();
-            if (scene()?.bgm !== false) root.playStoryBGM?.();
+            if (scene()?.bgm !== false) root.playStoryBGM?.(S.episode.protagonist);
             renderCurrent(); byId('adv-dialogue').focus();
         });
         endingButton('ストーリー選択へ戻る', returnToSelection);
@@ -678,6 +765,7 @@
         S.busy = false;
         ['adv-fast', 'adv-skip', 'adv-pause'].forEach(id => { byId(id).disabled = true; });
         layer.classList.add('adv-cleared');
+        layer.classList.remove('adv-monologue', 'adv-battle-intro');
         byId('adv-effect').className = 'adv-effect';
         byId('adv-effect').replaceChildren();
         setBackground(currentBackground());
@@ -690,6 +778,31 @@
             next.textContent = `NEXT 第${S.episode.clear.next.number}話「${S.episode.clear.next.title}」`;
             ending.appendChild(next);
         }
+        if (S.episode.clear.arc) endingButton('出会い・文化祭編 CLEARへ', showArcClear);
+        else endingButton('ストーリー選択へ戻る', () => { stop(); root.openStoryStage?.(); });
+        ending.children[ending.children.length - 1]?.focus();
+    }
+    function showArcClear() {
+        const arc = S.episode.clear.arc;
+        if (S.stage !== 'clear' || !arc) return;
+        const ending = byId('adv-ending'); ending.replaceChildren();
+        layer.classList.add('adv-arc-cleared');
+        const heading = document.createElement('h2'); heading.textContent = arc.title;
+        const portraits = document.createElement('div'); portraits.className = 'adv-arc-portraits';
+        arc.characters.forEach(id => {
+            const character = assets.characters[id];
+            if (!character) return;
+            const figure = document.createElement('figure');
+            const file = assets.portraitPath(id, 'normal');
+            if (file) { const img = document.createElement('img'); img.src = assets.url(file); img.alt = ''; figure.appendChild(img); }
+            const name = document.createElement('figcaption'); name.textContent = character.name;
+            figure.appendChild(name); portraits.appendChild(figure);
+        });
+        const text = document.createElement('p'); text.className = 'adv-arc-message'; text.textContent = arc.text;
+        ending.append(heading, portraits, text);
+        const notice = document.createElement('p'); notice.className = 'character-notice adv-arc-notice';
+        notice.textContent = root.CharacterNotice.shortText;
+        ending.appendChild(notice);
         endingButton('ストーリー選択へ戻る', () => { stop(); root.openStoryStage?.(); });
         ending.children[ending.children.length - 1]?.focus();
     }
@@ -697,7 +810,13 @@
         if (S.active && S.stage !== 'clear') savePosition(); stop(); });
     function appendEpisodeCards(list) {
         const progress = root.BattleStoryProgress?.load() || {};
+        let currentArc;
         root.BattleStoryData.all().forEach(episode => {
+            if (currentArc !== episode.arc) {
+                currentArc = episode.arc;
+                const heading = document.createElement('h2'); heading.className = 'story-arc-heading';
+                heading.textContent = root.BattleStoryData.arcs[currentArc]; list.appendChild(heading);
+            }
             const card = document.createElement('article'); card.className = 'story-episode-card';
             const unlocked = !episode.unlockRequires || !!progress[episode.unlockRequires];
             for (const [className, text] of [
@@ -719,6 +838,6 @@
             list.appendChild(card);
         });
     }
-    root.StoryAdv = Object.freeze({ start, stop, abandonBattle, handleBattleEnded, finishBattleReturn, appendEpisodeCards,
+    root.StoryAdv = Object.freeze({ start, playConversation, stop, abandonBattle, handleBattleEnded, finishBattleReturn, appendEpisodeCards,
         hasResume: id => saved.resume?.episodeId === id, autoDelay });
 })(window);

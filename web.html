@@ -10,10 +10,20 @@
 <link rel="stylesheet" href="style.css?v=20261003-adv1">
 <link rel="stylesheet" href="dish-effects.css?v=20261002-fx1">
     <link rel="stylesheet" href="online.css?v=20260929-ui1">
-    <link rel="stylesheet" href="achievements.css?v=20261002-ach1">
-<link rel="stylesheet" href="story-adv.css?v=20261003-story-approved1">
+    <link rel="stylesheet" href="achievements.css?v=20261003-rewards-bgm1">
+<link rel="stylesheet" href="story-adv.css?v=20261004-character-notice1">
 </head>
 <body>
+<dialog id="character-notice-dialog" class="character-notice-dialog" aria-labelledby="character-notice-title" aria-describedby="character-notice-body" aria-modal="true">
+    <h2 id="character-notice-title">ストーリーをお楽しみいただく前に</h2>
+    <div id="character-notice-body" class="character-notice-body">
+        <p>Battle à la carte に登場するキャラクター（千鶴・栞那・舞依・拓海・暁・剛）は、フェニチルさんが手がける創作作品『天涯比隣（てんがいひりん）』のキャラクターデザインと名前を、フェニチルさんの許可を得てお借りしています。</p>
+        <p>本作のストーリー、キャラクターの性格・口調・関係性・学校などの設定は、すべて Battle à la carte 独自の二次創作です。原作『天涯比隣』の内容や設定とは関係がなく、原作のキャラクター像を表すものではありません。</p>
+        <p>『天涯比隣』は現在フェニチルさんの手元にある作品で、まだ公開されていません。</p>
+        <p>本作についてのお問い合わせは、制作者（あにあに）までお願いします。</p>
+    </div>
+    <button type="button" id="character-notice-confirm" class="start-main-button" autofocus>確認しました</button>
+</dialog>
 <div id="app-stage" data-stage-width="1440" data-stage-height="810">
     <div id="achievement-toast" class="achievement-toast hidden" role="status" aria-live="polite"></div>
     <dialog id="surrender-dialog" aria-modal="true" aria-labelledby="surrender-question">
@@ -352,7 +362,7 @@
                                     <span id="menu-player-status" role="status">ゲスト</span>
                                 </div>
                             </div>
-                            <p class="menu-player-stats">勝利 <span id="menu-player-wins">0</span> ／ 対戦 <span id="menu-player-matches">0</span> ／ アチーブメント <span id="menu-player-achievement-count">0/30</span></p>
+                            <p class="menu-player-stats">勝利 <span id="menu-player-wins">0</span> ／ 対戦 <span id="menu-player-matches">0</span> ／ アチーブメント <span id="menu-player-achievement-count">0/43</span></p>
                             <div class="menu-player-links">
                                 <button id="menu-player-profile-button" type="button">ユーザー情報</button>
                                 <button id="menu-player-achievements-button" type="button">アチーブメント</button>
@@ -376,7 +386,14 @@
             </div>
             <div id="start-settings-stage" class="start-stage hidden">
                 <div class="start-stage-header"><h2 class="start-section-title">設定</h2></div>
-                <div id="start-settings-content" class="start-stage-body settings-group"></div>
+                <div class="start-stage-body">
+                    <div id="start-settings-content" class="settings-group"></div>
+                    <section id="start-credits" class="reference-item">
+                        <h3 class="reference-title">クレジット</h3>
+                        <p>キャラクターデザイン・キャラクター名：フェニチル（『天涯比隣』より）</p>
+                        <p class="character-notice">本作のキャラクターは、フェニチルさんの創作作品『天涯比隣』のキャラクターデザインと名前をお借りした二次創作です。性格・関係性・ストーリー・設定はすべて本作独自のもので、原作とは関係ありません。</p>
+                    </section>
+                </div>
                 <div class="start-stage-footer"><button id="start-settings-back-button" class="start-sub-button wide">メニューへ戻る</button></div>
             </div>
             <div id="start-cpu-setup-stage" class="start-stage hidden">
@@ -438,7 +455,11 @@
                         <button type="button" class="active" data-story-tab="story">ストーリー</button>
                         <button type="button" data-story-tab="missions">ミッション</button>
                     </div>
-                    <p id="story-stage-subtitle" class="start-subtitle story-only">チュートリアル第1〜3話 ／ 第4話から文化祭ストーリー</p>
+                    <p id="story-stage-subtitle" class="start-subtitle story-only">再会編（チュートリアル）／出会い・文化祭編</p>
+                    <div class="story-only">
+                        <p id="story-character-notice" class="character-notice">本作のキャラクターは、フェニチルさんの創作作品『天涯比隣』のキャラクターデザインと名前をお借りした二次創作です。性格・関係性・ストーリー・設定はすべて本作独自のもので、原作とは関係ありません。</p>
+                        <button type="button" id="story-character-notice-link" class="character-notice-link">キャラクターについて</button>
+                    </div>
                 </div>
                 <div class="start-stage-body">
                     <div id="story-episode-list" class="story-episode-list story-only"></div>
@@ -508,6 +529,7 @@
                         <button class="start-gallery-filter" data-gallery-type="events">イベントカード一覧</button>
                         <button class="start-gallery-filter" data-gallery-type="recipes">料理カード一覧</button>
                     </div>
+                    <p id="gallery-character-notice" class="character-notice">本作のキャラクターは、フェニチルさんの創作作品『天涯比隣』のキャラクターデザインと名前をお借りした二次創作です。性格・関係性・ストーリー・設定はすべて本作独自のもので、原作とは関係ありません。</p>
                 </div>
                 <div class="start-stage-body">
                     <div id="start-gallery-list" class="start-gallery-list"></div>
@@ -576,7 +598,7 @@
             <div id="start-achievements-stage" class="start-stage hidden">
                 <div class="start-stage-header">
                     <h2 class="start-section-title">アチーブメント</h2>
-                    <p id="achievement-count" class="start-subtitle">達成 0 / 30</p>
+                    <p id="achievement-count" class="start-subtitle">達成 0 / 43</p>
                 </div>
                 <div class="start-stage-body">
                     <p id="achievement-migration-summary" class="achievement-migration-summary"></p>
@@ -633,9 +655,15 @@
                             <label class="start-field-label">よく作る料理</label>
                             <div id="user-recent-dishes" class="start-user-recent-list"></div>
                         </div>
-                        <div class="start-user-recent-wrap">
-                            <label class="start-field-label">カードスリーブ</label>
-                            <div id="sleeve-picker" class="sleeve-picker"></div>
+                        <div class="profile-cosmetic-pickers">
+                            <div class="start-user-recent-wrap">
+                                <label class="start-field-label">カードスリーブ</label>
+                                <div id="sleeve-picker" class="sleeve-picker"></div>
+                            </div>
+                            <div class="start-user-recent-wrap">
+                                <label class="start-field-label">盤面背景</label>
+                                <div id="board-picker" class="board-picker"></div>
+                            </div>
                         </div>
                     </div>
                     <p id="user-stage-message" class="start-menu-message"></p>
@@ -653,11 +681,12 @@
 </div>
 
 <script src="stage-layout.js?v=20260929-ui1"></script>
+<script src="character-themes.js?v=20261004-audio-pack1"></script>
 <script src="cards.js?v=20260929-board1"></script>
-<script src="state.js?v=20261002-ach1"></script>
-<script src="missions.js?v=20261002-ach1"></script>
+<script src="state.js?v=20261003-rewards-bgm1"></script>
+<script src="missions.js?v=20261004-character-notice1"></script>
 <script src="profile.js?v=20261002-menucard1"></script>
-<script src="achievements.js?v=20261002-menucard1"></script>
+<script src="achievements.js?v=20261003-rewards-bgm1"></script>
 <script src="dish-effects.js?v=20261002-fx1"></script>
 <script src="quick-confirm.js?v=20260928-quick1"></script>
 <script src="rules.js?v=20261002-ach1"></script>
@@ -666,29 +695,30 @@
 <script src="cpu.js?v=20261002-fx1"></script>
     <script src="battle-view-model.js?v=20261003-adv1"></script>
     <script src="battle-images.js?v=20261001-discard1"></script>
-    <script src="render.js?v=20261003-adv1"></script>
-    <script src="audio.js?v=20261003-playback1"></script>
+    <script src="render.js?v=20261003-rewards-bgm1"></script>
+    <script src="audio-pack-codec.js?v=20261004-audio-pack1"></script>
+    <script src="audio-pack.js?v=20261004-audio-pack1"></script>
+    <script src="audio.js?v=20261004-adv-menu1"></script>
     <script src="supabase-config.js?v=20260912"></script>
 <script src="battle-protocol.js?v=20261002-ach1"></script>
     <script src="battle-chat.js?v=20260916"></script>
     <script src="battle-metrics.js?v=20260916"></script>
-<script src="network.js?v=20261002-menucard1"></script>
-    <script src="main.js?v=20261003-ep5-7"></script>
+<script src="network.js?v=20261003-rewards-bgm1"></script>
+    <script src="main.js?v=20261004-character-notice1"></script>
 <script src="card-drag.js?v=20260928-stage1"></script>
-<script src="story-data/characters.js?v=20261003-ep5-7"></script>
-<script src="story-data/registry.js?v=20261003-adv1"></script>
-<script src="story-data/episode4.js?v=20261003-adv2"></script>
-<script src="story-data/episode5.js?v=20261003-story-approved1"></script>
-<script src="story-data/episode6.js?v=20261003-story-approved1"></script>
-<script src="story-data/episode7.js?v=20261003-story-approved1"></script>
-<script src="story-adv.js?v=20261003-playback1"></script>
-<script src="story-mode.js?v=20261003-adv1"></script>
+<script src="story-data/characters.js?v=20261003-expressions-80d1"></script>
+<script src="story-data/registry.js?v=20261004-adv-menu1"></script>
+<script src="story-data/episode4.js?v=20261004-adv-menu1"></script>
+<script src="story-data/episode5.js?v=20261004-adv-menu1"></script>
+<script src="story-data/episode6.js?v=20261004-adv-menu1"></script>
+<script src="story-data/episode7.js?v=20261004-adv-menu1"></script>
+<script src="story-data/episode8.js?v=20261004-adv-menu1"></script>
+<script src="story-data/episode9.js?v=20261004-adv-menu1"></script>
+<script src="story-data/episode10.js?v=20261004-adv-menu1"></script>
+<script src="story-adv.js?v=20261004-character-notice1"></script>
+<script src="story-mode.js?v=20261004-character-notice1"></script>
 </body>
 </html>
-
-
-
-
 
 
 

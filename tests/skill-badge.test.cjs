@@ -176,6 +176,6 @@ test('both layouts reuse the cooking badge styles, preserve buttons and load the
         assert.match(source, /id="player-skill-button" class="main-action skill-action">スキル発動<\/button>/);
         const version = '20261003-adv1';
         assert.ok(source.includes(`${style}?v=${version}`));
-        assert.ok(source.includes(`${render}?v=20261003-adv1`));
+        assert.ok(source.includes(`${render}?v=20261003-rewards-bgm1`));
     }
 });

@@ -1,0 +1,85 @@
+{
+  "format": "BALCAUD1",
+  "tracks": {
+    "battle-mode": {
+      "file": "battle-mode.balc",
+      "originalByteSize": 5426248,
+      "sha256": "835104adcd7f276074ca422aa6e274115d66ac0c8c8c2bd21980af1672ce5f0a"
+    },
+    "bgm-code241-2": {
+      "file": "bgm-code241-2.balc",
+      "originalByteSize": 2801978,
+      "sha256": "d92c1318c146a1b5998d9c286e43dd8ed57c128bb41112d95e38c24a92051528"
+    },
+    "bgm-miracle": {
+      "file": "bgm-miracle.balc",
+      "originalByteSize": 9965393,
+      "sha256": "3c53e690212aff393f5c1b97e0e1e8dbd2a227d2edaa085d223dfef603dac803"
+    },
+    "bgm-sky-high-refrain": {
+      "file": "bgm-sky-high-refrain.balc",
+      "originalByteSize": 6223505,
+      "sha256": "d41d6f669bb20d9d1957065f24d10841716c8d4d6875d6bb40fe028c63d0aeef"
+    },
+    "bgm": {
+      "file": "bgm.balc",
+      "originalByteSize": 15183360,
+      "sha256": "14365431c5b6af3b56b1ca8c5ce7c8d442a7ceab8b1880d2020830f9cad80c07"
+    },
+    "cook": {
+      "file": "cook.balc",
+      "originalByteSize": 42804,
+      "sha256": "81cfdb716afb6524c6a7daba3c37b5b5597f9ee903a679e9c6cf562a1286ec9d"
+    },
+    "match-result": {
+      "file": "match-result.balc",
+      "originalByteSize": 5808256,
+      "sha256": "5bff0e1da2621381968f022be38f21ad72a5795083b8c1c4a4e36ae7fd1bc9cb"
+    },
+    "story-dialogue": {
+      "file": "story-dialogue.balc",
+      "originalByteSize": 4707612,
+      "sha256": "8105b45f5a0de427cebd6abfddd06315565ccac00fbe5f7914fcff62d8435dc5"
+    },
+    "theme-akatsuki": {
+      "file": "theme-akatsuki.balc",
+      "originalByteSize": 4500468,
+      "sha256": "87bcd8384f38ae5c9225b9d3b6dd627e443992ac34c64289983e3f7bb909acc9"
+    },
+    "theme-chizuru": {
+      "file": "theme-chizuru.balc",
+      "originalByteSize": 3443924,
+      "sha256": "54de1e9a9da68a96733acdba2cb5c8985f1f6ac83367b88039503e3f651fc338"
+    },
+    "theme-kanna": {
+      "file": "theme-kanna.balc",
+      "originalByteSize": 2362572,
+      "sha256": "f2b6b97b8eaf590479cc1b1c8f1a43ca6fc1fef68b76a1024fb8db86e8c09f58"
+    },
+    "theme-mai": {
+      "file": "theme-mai.balc",
+      "originalByteSize": 2524935,
+      "sha256": "a39f8721d67264111a50926e3112c7272074f5cb67b38ac9ef9362465485b243"
+    },
+    "theme-takumi": {
+      "file": "theme-takumi.balc",
+      "originalByteSize": 7419623,
+      "sha256": "f0b03012bf2272ac075c1315831a21796f2e935084cb6ee7bc32ade33ce81f78"
+    },
+    "theme-tsuyoshi": {
+      "file": "theme-tsuyoshi.balc",
+      "originalByteSize": 4605713,
+      "sha256": "2f6edd17e47d463c4d9418de48d7d5cc55e5f7c20f77028d66d85229f548baf4"
+    },
+    "title-screen": {
+      "file": "title-screen.balc",
+      "originalByteSize": 8981056,
+      "sha256": "84cf13ab433f950bdabff2e2a9d63a300b4974158e00c3b2b9a6979dae8b06f6"
+    },
+    "turn-start": {
+      "file": "turn-start.balc",
+      "originalByteSize": 5014,
+      "sha256": "9e0f87e646391287758a83dfc3717745e7af1582322290262ecaed584157dfc4"
+    }
+  }
+}

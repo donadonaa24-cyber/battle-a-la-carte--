@@ -33,6 +33,9 @@ function runtime(mobile, reduced = false) {
         matchMedia: query => { assert.equal(query, '(prefers-reduced-motion: reduce)'); return { matches: reduced }; }
     });
     c.window = c;
+    c.AudioPack = require('./helpers/audio-pack-stub.cjs')(FakeAudio, sound => {
+        if (!sound.loop) sounds.push({ src: sound.src, at: now, sound });
+    });
     for (const name of ['cards', 'state', 'rules', 'player', 'cpu', 'audio', 'main']) {
         const file = mobile ? `mobile/${name}-sp.js` : `${name}.js`;
         vm.runInContext(read(file), c, { filename: file });
@@ -60,7 +63,7 @@ function runtime(mobile, reduced = false) {
         }
         now = end;
     }
-    return { c, tick, cards, listeners, overlay, cooks: () => sounds.filter(sound => sound.src.endsWith('/cook.mp3')),
+    return { c, tick, cards, listeners, overlay, cooks: () => sounds.filter(sound => sound.src.endsWith('/cook')),
         sounds, jobs };
 }
 
@@ -352,11 +355,11 @@ test('cook sound modules and lifecycle mirrors match and updated assets are load
     assert.equal(read('audio.js'), read('mobile/audio-sp.js').replaceAll('../assets/', 'assets/'));
     for (const name of ['player', 'cpu', 'main']) assert.equal(read(`${name}.js`), read(`mobile/${name}-sp.js`).replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
     for (const [html, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
-        assert.ok(read(html).includes(`audio${suffix}.js?v=20261003-playback1`));
-        assert.ok(read(html).includes(`main${suffix}.js?v=20261003-ep5-7`));
+        assert.ok(read(html).includes(`audio${suffix}.js?v=20261004-adv-menu1`));
+        assert.ok(read(html).includes(`main${suffix}.js?v=20261004-character-notice1`));
         assert.ok(read(html).includes(`player${suffix}.js?v=20261002-ach1`));
-        assert.ok(read(html).includes('network.js?v=20261002-menucard1'));
+        assert.ok(read(html).includes('network.js?v=20261003-rewards-bgm1'));
     }
-    assert.ok(read('network.js').includes('battle-engine-worker.js?v=20261002-menucard1'));
+    assert.ok(read('network.js').includes('battle-engine-worker.js?v=20261003-rewards-bgm1'));
     assert.ok(read('battle-engine-worker.js').includes('player.js?v=20261002-ach1'));
 });

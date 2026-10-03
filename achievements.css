@@ -22,3 +22,24 @@
 #app-stage[data-stage-width="432"] .achievement-list { grid-template-columns: 1fr; }
 #app-stage[data-stage-width="432"] .achievement-toast { font-size: 12px; padding: 8px 10px; }
 #app-stage[data-stage-width="432"] .achievement-card { padding: 10px; }
+
+.achievement-reward { font-size: 12px; line-height: 1.5; }
+.profile-cosmetic-pickers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.board-picker { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.board-choice { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 64px; padding: 6px; border: 1px solid #7e98be; border-radius: 8px; background: #102b55; color: #fff6d6; font-size: 12px; cursor: pointer; }
+.board-choice img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 5px; }
+.board-choice.selected { outline: 2px solid #f3d27b; outline-offset: -2px; }
+.gallery-theme-preview { margin-top: 8px; }
+/* Dark, quiet artwork; PC text keeps a light backing and phone text its dark backing. */
+#game-container .player-side.has-board-background {
+    background-image: linear-gradient(#101820cc, #101820cc), var(--selected-board-background);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-radius: 14px;
+}
+.pc-field-ui .player-side.has-board-background .character-panel,
+.pc-field-ui .player-side.has-board-background .panel-box { background-color: #fffcf3ed; border-radius: 8px; }
+.mobile-field-ui .player-side.has-board-background .zone-block,
+.mobile-field-ui .player-side.has-board-background .player-main-hud { background-color: #04122ee8; }
+#app-stage[data-stage-width="432"] .profile-cosmetic-pickers { gap: 8px; }

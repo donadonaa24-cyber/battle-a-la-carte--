@@ -38,7 +38,7 @@ function createGameSettings() {
         backgroundTheme: 'default',
         backgroundDesign: 'default',
         bgmEnabled: true,
-        bgmTrack: 'default',
+        bgmTrack: window.CharacterThemes?.savedChoice() || 'characterTheme',
         bgmVolume: 0.8
     };
 }

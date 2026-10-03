@@ -509,7 +509,7 @@ function renderStartMenuPlayerCard() {
     setText('menu-player-matches', String(profile.stats?.matches || 0));
     const data = achievements?.readLocal();
     const definitions = achievements?.definitions || [];
-    setText('menu-player-achievement-count', `${definitions.filter(def => data?.unlocked?.[def.id]).length}/${definitions.length || 30}`);
+    setText('menu-player-achievement-count', `${definitions.filter(def => data?.unlocked?.[def.id]).length}/${definitions.length || 43}`);
     const icon = document.getElementById('menu-player-icon');
     const character = getStartCharacterOptionById(profile.favoriteCharacterId) || START_CHARACTER_OPTIONS[0];
     if (icon) {
@@ -865,7 +865,8 @@ function getGalleryItemsByType(type) {
         return START_GALLERY_CHARACTER_OPTIONS.map(item => ({
             title: item.name,
             meta: 'キャラクター',
-            characterClass: item.className
+            characterClass: item.className,
+            characterId: item.id
         }));
     }
 
@@ -902,6 +903,7 @@ function getGalleryItemsByType(type) {
 function renderStartGallery(type) {
     const safeType = ['characters', 'ingredients', 'events', 'recipes'].includes(type) ? type : 'characters';
     selectedGalleryType = safeType;
+    document.getElementById('gallery-character-notice')?.classList.toggle('hidden', safeType !== 'characters');
 
     const filterButtons = document.querySelectorAll('.start-gallery-filter[data-gallery-type]');
     filterButtons.forEach(button => {
@@ -933,9 +935,14 @@ function renderStartGallery(type) {
                 ${artHtml}
                 <div class="start-gallery-title">${escapeHtmlText(item.title)}</div>
                 <div class="start-gallery-meta">${escapeHtmlText(item.meta)}</div>
+                ${item.characterId ? `<button type="button" class="start-sub-button gallery-theme-preview" data-theme-character="${escapeHtmlText(item.characterId)}" aria-label="${escapeHtmlText(item.title)}のテーマ曲を試聴">テーマ曲を試聴</button>` : ''}
             </article>
         `;
     }).join('');
+    list.onclick = event => {
+        const button = event.target.closest?.('button[data-theme-character]');
+        if (button) window.previewCharacterTheme?.(button.dataset.themeCharacter);
+    };
 }
 
 function bindIfExists(id, handler) {
@@ -1182,13 +1189,7 @@ function startBgmOnce() {
         return;
     }
 
-    if (!bgmStarted) {
-        if (GameState && GameState.settings) {
-            GameState.settings.bgmEnabled = true;
-        }
-        if (typeof setBgmEnabled === 'function') setBgmEnabled(true);
-        bgmStarted = true;
-    }
+    if (!bgmStarted) bgmStarted = true;
     if (typeof playBGM === 'function') playBGM();
     if (typeof playSfx === 'function') {
         playSfx('gameStart');

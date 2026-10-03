@@ -74,7 +74,7 @@ for (const mobile of [false, true]) {
         assert.equal(text('menu-player-title'), '「百品の料理人」');
         assert.equal(text('menu-player-wins'), '7');
         assert.equal(text('menu-player-matches'), '9');
-        assert.equal(text('menu-player-achievement-count'), '5/30');
+        assert.equal(text('menu-player-achievement-count'), '5/43');
         const icon = nodes.get('menu-player-icon');
         assert.ok(icon.classList.contains('char-mai'));
         assert.ok(!icon.classList.contains('char-chizuru'));
@@ -102,7 +102,7 @@ for (const mobile of [false, true]) {
         assert.equal(text('menu-player-matches'), '10');
         assert.equal(text('menu-player-wins'), '7');
         c.Achievements.refreshCompletions({ missions: { cleared: { noItems: true } }, silent: true });
-        assert.equal(text('menu-player-achievement-count'), '7/30');
+        assert.equal(text('menu-player-achievement-count'), '7/43');
         nodes.get('menu-player-name').textContent = 'stale';
         c.showStartStage('start-menu-stage');
         assert.equal(text('menu-player-name'), '<b>guest</b>', 'reopening renders current data');
@@ -110,7 +110,7 @@ for (const mobile of [false, true]) {
         assert.equal(text('menu-player-name'), 'Player');
         assert.equal(text('menu-player-wins'), '0');
         assert.equal(text('menu-player-matches'), '0');
-        assert.equal(text('menu-player-achievement-count'), '7/30', 'profile reset preserves existing achievements');
+        assert.equal(text('menu-player-achievement-count'), '7/43', 'profile reset preserves existing achievements');
     });
 
     test(`${label}: card links open the existing profile and achievements and close back to the menu`, () => {
@@ -239,10 +239,10 @@ test('PC/mobile share menu card logic, markup, styles and cache versions', () =>
     assert.equal(cardCss(read('style.css')), cardCss(read('mobile/style-sp.css')));
     for (const [file, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
         for (const asset of [`style${suffix}.css`, `main${suffix}.js`, 'profile.js', 'achievements.js', 'network.js']) {
-            const version = asset.startsWith('style') ? '20261003-adv1' : asset.startsWith('main') ? '20261003-ep5-7' : '20261002-menucard1';
+            const version = asset.startsWith('style') ? '20261003-adv1' : asset === 'profile.js' ? '20261002-menucard1' : asset.startsWith('main') ? '20261004-character-notice1' : '20261003-rewards-bgm1';
             assert.ok(read(file).includes(`${asset}?v=${version}`), `${file}: ${asset}`);
         }
     }
-    assert.match(read('battle-engine-worker.js'), /achievements\.js\?v=20261002-menucard1/);
-    assert.match(read('network.js'), /battle-engine-worker\.js\?v=20261002-menucard1/);
+    assert.match(read('battle-engine-worker.js'), /achievements\.js\?v=20261003-rewards-bgm1/);
+    assert.match(read('network.js'), /battle-engine-worker\.js\?v=20261003-rewards-bgm1/);
 });

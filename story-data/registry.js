@@ -3,6 +3,21 @@
     const episodes = new Map(), warned = new Set();
     const positions = ['left', 'right', 'center', 'farLeft', 'farRight'];
     const assets = root.BattleStoryAssets;
+    const arcs = Object.freeze({ reunion: '再会編', festival: '出会い・文化祭編' });
+    const presentation = Object.freeze({
+        cues: Object.freeze(['chime', 'notify', 'crowd', 'pop', 'shock', 'laugh', 'idea', 'thud', 'sparkle', 'swish']),
+        motions: Object.freeze(['hop', 'shake', 'zoom', 'tremble', 'slideIn']),
+        marks: Object.freeze(['!', '?', '!?', 'sweat', 'anger', 'note', 'sparkle', '…']),
+        screens: Object.freeze(['flash', 'screenShake', 'speedLines']),
+        effects: Object.freeze(['chime', 'notify', 'crowd', 'battleTease', 'fadeOut', 'shake'])
+    });
+    function validatePresentation(result) {
+        for (const [field, catalog] of [['se', 'cues'], ['motion', 'motions'], ['mark', 'marks'], ['screen', 'screens'], ['effect', 'effects']]) {
+            if (result[field] == null || presentation[catalog].includes(result[field])) continue;
+            warn(`unknown ${field}: ${result[field]}`); delete result[field];
+        }
+        return result;
+    }
     function warn(message) {
         if (warned.has(message)) return;
         warned.add(message);
@@ -31,10 +46,10 @@
         if (!episode || typeof episode.id !== 'string' || !Array.isArray(episode.scenes)) {
             warn('invalid episode'); return null;
         }
-        return { ...episode, afterBattle: { ...(episode.afterBattle || {}) },
+        return { ...episode, arc: episode.arc || 'festival', afterBattle: { ...(episode.afterBattle || {}) },
             clear: { title: episode.title || '', ...(episode.clear || {}) }, scenes: episode.scenes.map(scene => ({ ...scene, background: background(scene.background),
             lines: (Array.isArray(scene.lines) ? scene.lines : []).map(line => {
-                const result = { ...line };
+                const result = validatePresentation({ ...line });
                 if (!['narration', 'announce'].includes(line.speaker)) {
                     const speaker = actor({ id: line.speaker, position: line.position || episode.defaultPositions?.[line.speaker], expression: line.expression });
                     result.position = speaker.position;
@@ -48,6 +63,6 @@
     root.BattleStoryData = Object.freeze({
         register(episode) { const value = validate(episode); if (value) episodes.set(value.id, value); return value; },
         get: id => episodes.get(id) || null,
-        all: () => [...episodes.values()], validate
+        all: () => [...episodes.values()], arcs, presentation, validate
     });
 })(window);

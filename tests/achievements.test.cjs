@@ -10,6 +10,7 @@ class Element {
     constructor(tag = 'div') {
         this.tagName = tag; this.children = []; this.dataset = {}; this.textContent = ''; this.className = '';
         this.attributes = {}; this.handlers = {};
+        this.style = { setProperty(name, value) { this[name] = value; } };
         this.classList = {
             contains: name => this.className.split(' ').includes(name),
             toggle: (name, on) => {
@@ -33,7 +34,9 @@ function runtime(mobile = false, storage = new Map()) {
     const elements = new Map(), timers = new Map(), listeners = [], logs = [];
     for (const id of ['achievement-list', 'achievement-count', 'achievement-migration-summary', 'achievement-toast',
         'achievement-title-picker', 'achievement-frame-picker', 'achievement-profile-name', 'achievement-profile-icon',
-        'menu-achievements-button', 'user-achievements-button', 'achievement-close-button', 'result-summary']) elements.set(id, new Element());
+        'menu-achievements-button', 'user-achievements-button', 'achievement-close-button', 'result-summary',
+        'sleeve-picker', 'settings-sleeve-picker', 'board-picker', 'settings-board-picker',
+        mobile ? 'mobile-player-field' : 'pc-player-field', 'opponent-test-field']) elements.set(id, new Element());
     elements.get('achievement-toast').className = 'hidden';
     const c = vm.createContext({ console, Date, Math, crypto: require('node:crypto').webcrypto,
         setTimeout: (fn, ms) => { const id = timers.size + 1; timers.set(id, { fn, ms }); return id; },
@@ -265,10 +268,10 @@ test('retroactive recipeComplete uses all 18 retained normal recipes, excludes e
     const { c } = runtime(false, storage); has(c, 'recipeComplete', 'sousaku');
     assert.equal(c.Achievements.readLocal().sets.recipes.length, 18); assert.equal(c.Achievements.readLocal().counters.wins, 0);
 });
-test('screen has 30 entries, hidden hints, progress, dates, tier markers and both navigation routes; selection validates unlocked titles and tiers', () => {
+test('screen has 43 entries, hidden hints, progress, dates, tier markers and both navigation routes; selection validates unlocked titles and tiers', () => {
     const { c, elements, achievementInit } = runtime();
     achievementInit();
-    assert.equal(elements.get('achievement-list').children.length, 30);
+    assert.equal(elements.get('achievement-list').children.length, 43);
     const hidden = elements.get('achievement-list').children.find(card => card.dataset.achievementId === 'oneShot');
     assert.match(hidden.text, /？？？.*一皿ですべてを決める/); assert.doesNotMatch(hidden.text, /一撃必殺/);
     assert.equal(c.Achievements.selectTitle('dish500'), false); assert.equal(c.Achievements.selectFrame('gold'), false);
@@ -431,10 +434,10 @@ test('shared mirrors, UI containment, cache versions and account hooks remain wi
     for (const name of ['state', 'rules', 'player', 'main']) assert.equal(read(name + '.js').replaceAll('../assets/', 'assets/'), read('mobile/' + name + '-sp.js').replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
     for (const [file, prefix, suffix] of [['web.html', '', ''], ['mobile/mobile.html', '../', '-sp']]) {
         const html = read(file);
-        for (const module of ['achievements.js', 'network.js']) assert.ok(html.includes(`${prefix}${module}?v=20261002-menucard1`), file + ': ' + module);
-        for (const module of ['missions.js', 'battle-protocol.js', 'story-mode.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'story-mode.js' ? '20261003-adv1' : '20261002-ach1'}`), file + ': ' + module);
+        for (const module of ['achievements.js', 'network.js']) assert.ok(html.includes(`${prefix}${module}?v=20261003-rewards-bgm1`), file + ': ' + module);
+        for (const module of ['missions.js', 'battle-protocol.js', 'story-mode.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'battle-protocol.js' ? '20261002-ach1' : '20261004-character-notice1'}`), file + ': ' + module);
         for (const module of ['state', 'rules', 'player', 'main', 'render']) {
-            const version = module === 'main' ? '20261003-ep5-7' : module === 'render' ? '20261003-adv1' : '20261002-ach1';
+            const version = module === 'main' ? '20261004-character-notice1' : ['render', 'state'].includes(module) ? '20261003-rewards-bgm1' : '20261002-ach1';
             assert.ok(html.includes(`${module}${suffix}.js?v=${version}`));
         }
         const panel = html.slice(html.indexOf('<div id="start-achievements-stage"'), html.indexOf('<div id="start-user-stage"'));
@@ -442,7 +445,162 @@ test('shared mirrors, UI containment, cache versions and account hooks remain wi
         assert.equal((html.match(/id="achievement-list"/g) || []).length, 1);
     }
     assert.match(read('achievements.css'), /achievement-toast[^}]*pointer-events: none/);
-    assert.match(read('battle-engine-worker.js'), /achievements\.js\?v=20261002-menucard1/);
+    assert.match(read('battle-engine-worker.js'), /achievements\.js\?v=20261003-rewards-bgm1/);
     assert.match(read('network.js'), /Achievements\?\.observeMatch\(GameState, \{ online: true \}\)/);
     assert.match(read('network.js'), /!next.is_anonymous[\s\S]*Achievements\?\.syncCurrentAccount/);
+});
+
+const rewardCharacters = [['Chizuru', 'chizuru', '千鶴'], ['Mai', 'mai', '舞依'], ['Takumi', 'takumi', '拓海'], ['Akatsuki', 'akatsuki', '暁']];
+for (const mobile of [false, true]) {
+    for (const [key, character, name] of rewardCharacters) test(`${mobile ? 'phone' : 'PC'}: ${character} rewards at 5/20/50 finished matches, selectable title/frame/sleeve/board, replay-safe`, () => {
+        const r = runtime(mobile), { c, elements } = r;
+        assert.equal(c.Missions.selectSleeve(`sleeve-char-${character}`), false);
+        assert.equal(c.Missions.selectBoard(`board-char-${character}`), false);
+        for (let n = 1; n <= 50; n++) {
+            c.initGame(); c.GameState.characterIds = { player: character, cpu: character === 'mai' ? 'chizuru' : 'mai' };
+            c.GameState.activeMissionId = n % 3 === 0 ? 'noSkill' : null;
+            c.Achievements.observeMatch(c.GameState);
+            assert.equal(c.Achievements.readLocal().counters.characterUses[character], n - 1);
+            if (n % 2) c.playerSurrender(); else c.endGame('player');
+            c.Achievements.observeMatch(c.GameState); c.endGame('player');
+            const data = c.Achievements.readLocal();
+            assert.equal(data.counters.characterUses[character], n);
+            assert.equal(data.counters.matches, n);
+            for (const target of [5, 20, 50]) assert.equal(!!data.unlocked[`char${key}${target}`], n >= target);
+            if ([5, 20, 50].includes(n)) {
+                // Other achievements unlocked by this result appear first in the same toast queue.
+                if (!elements.get('achievement-toast').text.includes(name)) [...r.timers.values()].at(-1).fn();
+                assert.match(elements.get('achievement-toast').text, new RegExp(name));
+                assert.ok(c.Achievements.matchUnlocks().some(d => d.id === `char${key}${n}`));
+                assert.equal(c.Achievements.selectTitle(`char${key}${n}`), true);
+            }
+            c.Achievements.clearToasts();
+        }
+        assert.equal(c.Missions.selectSleeve(`sleeve-char-${character}`), true);
+        assert.equal(c.Missions.selectBoard(`board-char-${character}`), true);
+        assert.equal(c.Achievements.selectFrame('silver'), true);
+        const field = elements.get(mobile ? 'mobile-player-field' : 'pc-player-field');
+        assert.match(field.style['--selected-board-background'], new RegExp(`assets/battle-images/boards/board-char-${character}\\.webp`));
+        assert.equal(field.classList.contains('has-board-background'), true);
+        assert.equal(elements.get('opponent-test-field').style['--selected-board-background'], undefined);
+        c.GameState.storyEpisodeId = 'episode4'; c.Missions.applyBoard();
+        c.FriendBattle.isActive = () => true; c.Missions.applyBoard();
+        assert.equal(c.Missions.readLocal().selectedBoard, `board-char-${character}`);
+        const result = new Element(); c.Achievements.renderResult(result);
+        assert.match(result.text, new RegExp(`${name}マスター.*銀枠解放.*盤面背景`));
+        const reloaded = runtime(mobile, r.storage).c;
+        Object.assign(reloaded.GameState, plain(c.GameState), { storyEpisodeId: null });
+        reloaded.Achievements.observeMatch(reloaded.GameState);
+        assert.equal(reloaded.Achievements.readLocal().counters.characterUses[character], 50);
+        assert.equal(reloaded.Missions.readLocal().selectedSleeve, `sleeve-char-${character}`);
+        assert.equal(reloaded.Missions.readLocal().selectedBoard, `board-char-${character}`);
+        assert.equal(reloaded.Missions.selectBoard('default'), true);
+        assert.equal(reloaded.Missions.selectBoard('unknown'), false);
+        assert.equal(reloaded.Missions.selectSleeve('sleeve-char-kanna'), false);
+    });
+    test(`${mobile ? 'phone' : 'PC'}: character usage excludes opponents, incomplete matches, tutorials, ADV and nonplayable IDs`, () => {
+        const { c } = runtime(mobile);
+        for (const guard of ['achievementStory', 'storyEpisodeId', 'activeEpisode']) {
+            c.initGame(); c.GameState.characterIds = { player: 'takumi', cpu: 'akatsuki' };
+            if (guard === 'achievementStory') c.GameState.achievementStory = true;
+            if (guard === 'storyEpisodeId') c.GameState.storyEpisodeId = 'episode1';
+            if (guard === 'activeEpisode') c.__storyActiveEpisodeId = 'episode4';
+            c.GameState.gameEnded = true; c.Achievements.observeMatch(c.GameState);
+            c.__storyActiveEpisodeId = null; c.GameState.storyEpisodeId = null;
+        }
+        c.initGame(); c.GameState.characterIds = { player: 'chizuru', cpu: 'takumi' };
+        c.Achievements.observeMatch(c.GameState);
+        assert.equal(c.Achievements.readLocal().counters.matches, 0);
+        c.GameState.gameEnded = true; c.Achievements.observeMatch(c.GameState);
+        assert.equal(c.Achievements.readLocal().counters.characterUses.chizuru, 1);
+        assert.equal(c.Achievements.readLocal().counters.characterUses.takumi, 0);
+        c.initGame(); c.GameState.characterIds.player = 'kanna'; c.GameState.gameEnded = true;
+        c.Achievements.observeMatch(c.GameState);
+        assert.equal(c.Achievements.readLocal().counters.characterUses.kanna, undefined);
+    });
+    test(`${mobile ? 'phone' : 'PC'}: festival requires all seven clears, migrates for existing users, unlocks both cosmetics and gold`, () => {
+        const story = Object.fromEntries([4, 5, 6, 7, 8, 9].map(n => ['episode' + n, true]));
+        const saved = new Map([['balc_achievements_v1', JSON.stringify({ migratedFromProfileAt: '2026-10-01T00:00:00Z' })],
+            ['battleAlaCarteStoryProgressV1', JSON.stringify(story)]]);
+        const { c, elements } = runtime(mobile, saved);
+        assert.equal(c.Achievements.readLocal().counters.festivalClears, 6);
+        assert.ok(!ids(c).includes('storyFestival'));
+        assert.equal(c.Missions.selectSleeve('sleeve-festival-six'), false);
+        assert.equal(elements.get('board-picker').children.length, 0);
+        c.Missions.renderBoardPicker(); assert.equal(elements.get('board-picker').children.length, 1);
+        story.episode10 = true; c.GameState.achievementStory = true;
+        c.Achievements.refreshCompletions({ story }); has(c, 'storyFestival');
+        assert.match(elements.get('achievement-toast').text, /文化祭の思い出/);
+        assert.equal(c.Achievements.selectTitle('storyFestival'), true);
+        assert.equal(c.Achievements.selectFrame('gold'), true);
+        assert.equal(c.Missions.selectSleeve('sleeve-festival-six'), true);
+        assert.equal(c.Missions.selectBoard('board-festival-classroom'), true);
+        assert.equal(elements.get('board-picker').children.length, 2);
+        assert.ok(!ids(c).includes('storyComplete'));
+        c.Achievements.refreshCompletions({ story: { ...story, episode1: true, episode2: true, episode3: true } }); has(c, 'storyComplete');
+        const old = new Map([['balc_achievements_v1', JSON.stringify({ migratedFromProfileAt: '2026-10-01T00:00:00Z' })],
+            ['battleAlaCarteStoryProgressV1', JSON.stringify(story)]]);
+        const migrated = runtime(mobile, old); has(migrated.c, 'storyFestival');
+        assert.equal(migrated.timers.size, 0);
+        assert.equal(migrated.c.Achievements.readLocal().counters.retroactiveUnlocked, 1);
+    });
+}
+
+test('usage migration counts only confirmed retained characters, once; never infers a favourite or totals without characters', () => {
+    const records = Object.fromEntries(Array.from({ length: 5 }, (_, n) => ['old' + n, { ended: true, characterId: 'chizuru' }]));
+    Object.assign(records, { story: { ended: true, characterId: 'chizuru', story: true }, unfinished: { characterId: 'chizuru' }, unknown: { ended: true, characterId: 'alien' } });
+    const storage = new Map([['balc_achievements_v1', JSON.stringify({ migratedFromProfileAt: '2026-10-01T00:00:00Z', counters: { matchRecords: records } })],
+        ['battle-a-la-carte:user-profile:v1', JSON.stringify({ favoriteCharacterId: 'takumi', stats: { matches: 500, characterUses: { chizuru: 5, mai: 20, takumi: -1 } } })]]);
+    const { c } = runtime(false, storage); has(c, 'charChizuru5', 'charMai5', 'charMai20');
+    assert.deepEqual(plain(c.Achievements.readLocal().counters.characterUses), { chizuru: 5, mai: 20, takumi: 0, akatsuki: 0 });
+    const again = runtime(false, storage).c;
+    assert.deepEqual(plain(again.Achievements.readLocal().counters.characterUses), plain(c.Achievements.readLocal().counters.characterUses));
+    const noCharacters = runtime(false, new Map([['battle-a-la-carte:user-profile:v1', JSON.stringify({ favoriteCharacterId: 'takumi', stats: { matches: 500 } })]])).c;
+    assert.equal(noCharacters.Achievements.readLocal().counters.characterUses.takumi, 0);
+});
+
+test('real online host and guest projections count their own characters after surrender, including reconnect', async () => {
+    const e = worker(), host = runtime(), guest = runtime(true);
+    for (let n = 0; n < 5; n++) {
+        const initial = await e.execute({ kind: 'init', host: { character: 'takumi' }, guest: { character: 'akatsuki' } });
+        const result = await e.execute({ kind: 'action', role: n % 2 ? 'guest' : 'host', snapshot: initial.snapshot, action: { name: 'playerSurrender', args: [] } });
+        for (const [r, role, character] of [[host, 'host', 'takumi'], [guest, 'guest', 'akatsuki']]) {
+            Object.assign(r.c.GameState, plain(result.views[role].state));
+            r.c.Achievements.observeMatch(r.c.GameState, { online: true }); r.c.Achievements.observeMatch(r.c.GameState, { online: true });
+            assert.equal(r.c.Achievements.readLocal().counters.characterUses[character], n + 1);
+            assert.doesNotMatch(JSON.stringify(result.views[role]), /selectedBoard|selectedSleeve/);
+        }
+    }
+    has(host.c, 'charTakumi5'); has(guest.c, 'charAkatsuki5');
+    assert.equal(host.c.Achievements.readLocal().counters.characterUses.akatsuki, 0);
+    assert.equal(guest.c.Achievements.readLocal().counters.characterUses.takumi, 0);
+    const reloaded = runtime(true, guest.storage).c;
+    Object.assign(reloaded.GameState, plain(guest.c.GameState)); reloaded.Achievements.observeMatch(reloaded.GameState, { online: true });
+    assert.equal(reloaded.Achievements.readLocal().counters.characterUses.akatsuki, 5);
+});
+
+test('new ID rejection remains silent, keeps local rewards, and does not block subsequent uploads; unknown remote IDs are ignored', async () => {
+    const { c, elements } = runtime();
+    const calls = [];
+    const client = { async rpc(name, args) {
+        if (name === 'balc_get_achievements') return { data: [
+            { achievement_id: 'charMai20', unlocked_at: '2026-10-03T00:00:00Z' },
+            { achievement_id: 'alien', unlocked_at: '2026-10-03T00:00:00Z' } ] };
+        calls.push(args.p_achievement_id);
+        return args.p_achievement_id.startsWith('char') ? { error: { code: '22023', message: 'INVALID_ACHIEVEMENT' } } : {};
+    } };
+    assert.equal(await c.Achievements.syncAccount(client), true); has(c, 'charMai20');
+    assert.equal(c.Missions.selectSleeve('sleeve-char-mai'), true);
+    c.Achievements.refreshCompletions({ story: Object.fromEntries([4, 5, 6, 7, 8, 9, 10].map(n => ['episode' + n, true])), silent: true });
+    const reject = { async rpc(name, args) {
+        if (name === 'balc_get_achievements') return { data: [] };
+        calls.push(args.p_achievement_id);
+        if (args.p_achievement_id.startsWith('char')) throw Error('INVALID_ACHIEVEMENT');
+        return {};
+    } };
+    assert.equal(await c.Achievements.syncAccount(reject), false);
+    assert.deepEqual(calls, ['charMai20', 'storyFestival']);
+    assert.doesNotMatch(elements.get('achievement-list').text, /INVALID|エラー|alien/);
+    assert.ok(!ids(c).includes('alien')); has(c, 'charMai20', 'storyFestival');
+    assert.equal(c.Missions.selectBoard('board-festival-classroom'), true);
 });

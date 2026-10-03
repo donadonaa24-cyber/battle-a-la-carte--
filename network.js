@@ -310,7 +310,7 @@
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20261002-menucard1', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20261003-rewards-bgm1', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;

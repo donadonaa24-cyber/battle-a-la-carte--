@@ -14,8 +14,11 @@
     const EPISODES = [
         {
             id: 'episode1',
+            arc: 'reunion',
+            background: 'classroom',
+            protagonist: 'takumi',
             title: '第1話 ルールレッスン',
-            summary: '舞依が拓海に、対戦の基本ルールを教える回。',
+            summary: '文化祭のあと。久しぶりでルールを忘れてしまった拓海に、舞依があらためて教える。',
             implemented: true,
             unlockRequires: null,
             note: 'セット / イベント / 料理 / 手札調整を順番に体験',
@@ -26,22 +29,35 @@
                 { key: 'adjustHand', text: 'エンドフェイズの手札調整を完了する' }
             ],
             pre: [
-                { speaker: 'mai', text: '拓海、今日はこのゲームの基本を一緒に覚えよう。順番通りにやれば大丈夫！' },
-                { speaker: 'takumi', text: 'ありがとう舞依！ まずは何からやればいい？' },
-                { speaker: 'mai', text: 'まず材料をセット、次にイベント、次に料理、最後に手札調整までやってみよう。' },
-                { speaker: 'takumi', text: 'よし、実戦で覚える！' }
+                { speaker: 'mai', expression: 'normal', text: '拓海先輩、ちょっといいですか' },
+                { speaker: 'takumi', expression: 'smile', text: 'どうしたの？' },
+                { speaker: 'mai', expression: 'normal', text: '今度みんなで集まるとき、Battle à la carte をやると思うんです' },
+                { speaker: 'mai', expression: 'normal', text: '拓海先輩、ルール覚えてますか？' },
+                { speaker: 'takumi', expression: 'exasperated', text: '……久しぶりだから、ちょっと怪しいかも', motion: 'tremble', mark: 'sweat' },
+                { speaker: 'mai', expression: 'cold', text: 'やっぱり' },
+                { speaker: 'mai', expression: 'serious', text: 'このままだと、千鶴ちゃんに一日中付き合わされますよ' },
+                { speaker: 'takumi', expression: 'exasperated', text: 'それはそれで楽しそうだけどね' },
+                { speaker: 'mai', expression: 'cold', text: '私が困るんです' },
+                { speaker: 'takumi', expression: 'smile', text: '分かった。じゃあ一から教えてもらおうかな' },
+                { speaker: 'mai', expression: 'normal', text: '材料をセット、イベント、料理、最後に手札調整。この順番でやってみてください' },
+                { speaker: 'mai', expression: 'smug', text: '先攻は私です。よく見ててください' }
             ],
             postWin: [
-                { speaker: 'mai', text: '完璧！ 1ターンの基本の流れはこれでOKだよ。' },
-                { speaker: 'takumi', text: '実際にやるとすごく分かりやすいね！' },
-                { speaker: 'mai', text: '次はスキルの使い方をやってみよう。' },
-                { speaker: 'mai', text: '慣れてきたら、設定で『クイック』にするとターン終了などの確認を省けるよ。いつでも戻せるからね。' }
+                { speaker: 'mai', expression: 'smile', text: '完璧です。1ターンの流れはこれで大丈夫です' },
+                { speaker: 'takumi', expression: 'happy', text: 'やってみたら思い出してきた', mark: 'sparkle', se: 'idea' },
+                { speaker: 'takumi', expression: 'smile', text: '部活のときと立場が逆だね' },
+                { speaker: 'mai', expression: 'smug', text: '今は私が先輩です' },
+                { speaker: 'mai', expression: 'normal', text: '次はスキルの使い方です' },
+                { speaker: 'mai', expression: 'gentle', text: '慣れてきたら、設定で『クイック』にするとターン終了などの確認を省けます。いつでも戻せますよ' }
             ]
         },
         {
             id: 'episode2',
+            arc: 'reunion',
+            background: 'classroom',
+            protagonist: 'takumi',
             title: '第2話 スキルレッスン',
-            summary: 'スキル「切り札調達」を実戦形式で学ぶ回。',
+            summary: 'スキル「切り札調達」を使って勝つ練習。舞依先生のレッスンは続く。',
             implemented: true,
             unlockRequires: 'episode1',
             note: '「切り札調達」を使ってから勝利する',
@@ -50,24 +66,33 @@
                 { key: 'winBattle', text: 'そのまま勝利する' }
             ],
             pre: [
-                { speaker: 'mai', text: '第2話はスキル練習！ 今回は「切り札調達」を実際に使ってみよう。' },
-                { speaker: 'takumi', text: '条件がそろった時に発動するんだよね。今は使える？' },
-                { speaker: 'mai', text: 'うん、使える状態だよ。先にスキルを使ってから料理で決めよう！' }
+                { speaker: 'mai', expression: 'normal', text: '今日はスキルの練習です' },
+                { speaker: 'mai', expression: 'normal', text: '使うのは『切り札調達』。条件がそろったときに発動できます' },
+                { speaker: 'takumi', expression: 'thinking', text: '今は使える？' },
+                { speaker: 'mai', expression: 'smile', text: '使えます。先にスキルを使ってから、料理で決めてください' },
+                { speaker: 'takumi', expression: 'normal', text: 'スキルを使うまで、料理もターン終了もできないんだよね' },
+                { speaker: 'mai', expression: 'smug', text: 'ちゃんと聞いてて偉いです' },
+                { speaker: 'takumi', expression: 'exasperated', text: 'なんで僕が褒められてるの', mark: '?' }
             ],
             postWin: [
-                { speaker: 'takumi', text: 'やった！ スキルを使ってから勝てた！' },
-                { speaker: 'mai', text: 'ナイス！ これでスキルの流れもばっちり。' },
-                { speaker: 'mai', text: '次は第3話、Battle à la carte Mode 編だよ。実戦っぽく学んでいこう！' }
+                { speaker: 'takumi', expression: 'happy', text: '勝てた！ スキルを使うと一気に楽になるね', motion: 'hop', mark: 'sparkle', se: 'sparkle' },
+                { speaker: 'mai', expression: 'smile', text: 'ナイスです。これでスキルの流れもばっちりです' },
+                { speaker: 'mai', expression: 'gentle', text: '次に集まる日、千鶴ちゃんと暁さんの勝負があるらしいです' },
+                { speaker: 'takumi', expression: 'smile', text: '約束してたもんね。見に行こうか' },
+                { speaker: 'mai', expression: 'happy', text: 'Battle à la carte Mode が見られるかもしれません', mark: 'sparkle' }
             ],
             postLose: [
-                { speaker: 'mai', text: '大丈夫、チュートリアルだから何度でも挑戦できるよ。' },
-                { speaker: 'takumi', text: 'ありがとう！ もう一回「切り札調達」から丁寧にやってみる。' }
+                { speaker: 'mai', expression: 'gentle', text: '大丈夫です。練習なので何度でも挑戦できます' },
+                { speaker: 'takumi', expression: 'smile', text: 'ありがとう。もう一回、『切り札調達』から丁寧にやってみる', mark: 'note' }
             ]
         },
         {
             id: 'episode3',
+            arc: 'reunion',
+            background: 'small-restaurant',
+            protagonist: 'chizuru',
             title: '第3話 Battle à la carte Mode',
-            summary: '千鶴と暁のライバル対決で、Battle à la carte Mode の条件と効果を学ぶ回。',
+            summary: '約束どおり六人が集まった日。一勝一敗の千鶴と暁が、決着をかけて因縁の再戦。',
             implemented: true,
             unlockRequires: 'episode2',
             note: '通常料理5品でMode発動（緊急料理・創作料理はカウント外）',
@@ -76,20 +101,32 @@
                 { key: 'finishBattle', text: 'Battle à la carte Mode のまま対戦を最後まで完了する' }
             ],
             pre: [
-                { speaker: 'akatsuki', text: '千鶴、今日は容赦しない。先に流れを取るのは俺だ。' },
-                { speaker: 'chizuru', text: '望むところよ、暁。最後に勝つのは私だから。' },
-                { speaker: 'akatsuki', text: '今は俺が有利だ。このまま押し切ってみせる。' },
-                { speaker: 'chizuru', text: 'いいえ、ここからが本番。あと1品で私のModeが始まるわ。' },
-                { speaker: 'chizuru', text: '今回は中盤から再開するチュートリアル。私を操作して5品目を完成させて。' }
+                { speaker: 'akatsuki', expression: 'smug', text: '約束どおり来たで' },
+                { speaker: 'chizuru', expression: 'smile', text: '今日こそ勝つ！', motion: 'zoom', mark: '!', screen: 'speedLines', se: 'thud' },
+                { speaker: 'akatsuki', expression: 'smug', text: '文化祭のときは一勝一敗やからな。今日で決着や' },
+                { speaker: 'chizuru', expression: 'pout', text: '勝ち越すのは私' },
+                { speaker: 'tsuyoshi', expression: 'laugh', text: '始まる前から燃えてるやん！', motion: 'hop', mark: 'note', se: 'laugh' },
+                { speaker: 'akatsuki', expression: 'smug', text: '今は俺が1点リードや。このまま押し切るで' },
+                { speaker: 'chizuru', expression: 'pout', text: 'まだ。あと1品で私のModeが始まるから' },
+                { speaker: 'kanna', expression: 'gentle', text: '千鶴、通常料理を5品作ると Battle à la carte Mode に入れるよ' },
+                { speaker: 'kanna', expression: 'smug', text: '緊急料理と創作料理は数に入らないから、つまみ食いみたいにカウントしないでね' },
+                { speaker: 'chizuru', expression: 'pout', text: 'つまみ食いは関係ないでしょ！', motion: 'shake', mark: 'anger', se: 'thud' },
+                { speaker: 'narration', text: '中盤から再開。千鶴を操作して、5品目を完成させよう', name: 'ナレーション' }
             ],
             postWin: [
-                { speaker: 'chizuru', text: '見たでしょ？ Battle à la carte Mode に入ると流れをつかみやすいの。' },
-                { speaker: 'akatsuki', text: 'くっ…でもいい勝負だった。次は俺が主導権を握る。' },
-                { speaker: 'chizuru', text: '受けて立つわ。これで第3話クリアよ。' }
+                { speaker: 'chizuru', expression: 'happy', text: '見た？ Mode に入ると流れをつかみやすいの' },
+                { speaker: 'akatsuki', expression: 'sad', text: '……くっそ、ええとこまでいってたのに', motion: 'tremble', mark: '…', se: 'shock' },
+                { speaker: 'tsuyoshi', expression: 'laugh', text: 'また負けとるやん！', motion: 'hop', mark: 'note', se: 'laugh' },
+                { speaker: 'akatsuki', expression: 'cold', text: 'うるさい' },
+                { speaker: 'chizuru', expression: 'smug', text: 'これで二勝一敗', mark: 'sparkle' },
+                { speaker: 'akatsuki', expression: 'smug', text: '次は俺が取り返す' },
+                { speaker: 'chizuru', expression: 'smile', text: '受けて立つよ' }
             ],
             postLose: [
-                { speaker: 'akatsuki', text: '今回は俺の勝ちだな。だがModeの使い方は見せてもらった。' },
-                { speaker: 'chizuru', text: '次は取り返すわ。もう一回挑戦して流れを作り直しましょう。' }
+                { speaker: 'akatsuki', expression: 'smug', text: '今回は俺の勝ちやな' },
+                { speaker: 'chizuru', expression: 'pout', text: '……Mode の使い方は分かったもん' },
+                { speaker: 'akatsuki', expression: 'laugh', text: 'ほな次はちゃんと勝ってみ' },
+                { speaker: 'chizuru', expression: 'pout', text: 'もう一回。次は勝つ！', motion: 'zoom', mark: '!' }
             ]
         }
     ];
@@ -116,6 +153,55 @@
     };
 
     const byId = (id) => document.getElementById(id);
+
+    // Approved by the owner and フェニチルさん on 2026-10-04. Keep this text verbatim.
+    const CHARACTER_NOTICE_SHORT = '本作のキャラクターは、フェニチルさんの創作作品『天涯比隣』のキャラクターデザインと名前をお借りした二次創作です。性格・関係性・ストーリー・設定はすべて本作独自のもので、原作とは関係ありません。';
+    const CHARACTER_NOTICE_KEY = 'battleAlaCarteCharacterNotice20261004';
+    let noticeShownThisPage = false;
+    let noticePendingAction = null;
+
+    function noticeAcknowledged() {
+        if (noticeShownThisPage) return true;
+        try { return localStorage.getItem(CHARACTER_NOTICE_KEY) === '1'; }
+        catch (e) { return false; }
+    }
+
+    function showCharacterNotice(force = false, action = null) {
+        const dialog = byId('character-notice-dialog');
+        if (!dialog) return false;
+        if (dialog.open) {
+            if (action) noticePendingAction = action;
+            return true;
+        }
+        if (!force && noticeAcknowledged()) return false;
+        noticePendingAction = action;
+        dialog.showModal();
+        noticeShownThisPage = true;
+        return true;
+    }
+
+    function beforeStory(action) {
+        return !showCharacterNotice(false, action);
+    }
+
+    function bindCharacterNotice() {
+        const dialog = byId('character-notice-dialog');
+        if (!dialog || dialog.dataset.noticeBound) return;
+        dialog.dataset.noticeBound = '1';
+        // Native dialog keeps focus and pointer input inside the single-button notice.
+        dialog.addEventListener('cancel', event => event.preventDefault());
+        byId('character-notice-confirm')?.addEventListener('click', () => {
+            try { localStorage.setItem(CHARACTER_NOTICE_KEY, '1'); } catch (e) { /* once per page */ }
+            const action = noticePendingAction;
+            noticePendingAction = null;
+            dialog.close();
+            action?.();
+        });
+        byId('story-character-notice-link')?.addEventListener('click', () => showCharacterNotice(true));
+    }
+
+    window.CharacterNotice = Object.freeze({ shortText: CHARACTER_NOTICE_SHORT, beforeStory,
+        showOnce: () => showCharacterNotice(), reopen: () => showCharacterNotice(true) });
 
     function safeJsonParse(text, fallback) {
         try { return JSON.parse(text); } catch (e) { return fallback; }
@@ -190,9 +276,9 @@
         if (el) el.textContent = text || '';
     }
 
-    function playStorySceneBgm() {
+    function playStorySceneBgm(characterId) {
         if (typeof window.playStoryBGM === 'function') {
-            window.playStoryBGM();
+            window.playStoryBGM(characterId);
         }
     }
 
@@ -222,7 +308,7 @@
     function renderEpisodeList() {
         const list = byId('story-episode-list');
         if (!list) return;
-        list.innerHTML = EPISODES.map(ep => {
+        list.innerHTML = `<h2 class="story-arc-heading">${window.BattleStoryData?.arcs[EPISODES[0].arc] || '再会編'}</h2>` + EPISODES.map(ep => {
             const unlocked = isUnlocked(ep);
             const implemented = !!ep.implemented;
             const cleared = !!S.progress[ep.id];
@@ -285,19 +371,22 @@
 
     function renderDialogue() {
         const panel = byId('story-dialogue-panel');
-        const text = byId('story-dialogue-text');
-        const progress = byId('story-line-progress');
-        if (!panel || !text || !progress) return;
-        if (!Array.isArray(S.lines) || S.lines.length === 0) {
-            panel.classList.add('hidden');
-            return;
-        }
-        const idx = Math.max(0, Math.min(S.lineIndex, S.lines.length - 1));
-        const line = S.lines[idx];
-        setSpeaker(line.speaker);
-        text.textContent = line.text || '';
-        progress.textContent = `${idx + 1} / ${S.lines.length}`;
-        panel.classList.remove('hidden');
+        if (panel) panel.classList.add('hidden');
+        const ep = getEpisode(S.episodeId);
+        if (!ep) return;
+        window.StoryAdv.playConversation(ep, S.lines, {
+            phase: S.phase,
+            getActions() {
+                // The tutorial still owns battle setup, results, retries and progress.
+                S.lineIndex = Math.max(0, S.lines.length - 1);
+                updateDialogueButtons();
+                return ['primary', 'secondary'].map(kind => {
+                    const button = byId(`story-${kind}-button`);
+                    return button && !button.classList.contains('hidden')
+                        ? { text: button.textContent, action: S[`${kind}Action`] } : null;
+                }).filter(Boolean);
+            }
+        });
     }
 
     function showGuide() {
@@ -345,7 +434,7 @@
         if (panel) panel.classList.add('hidden');
         hideGuide();
         setHudVisible(false);
-        setStorySubtitle('チュートリアル第1〜3話 ／ 第4話から文化祭ストーリー');
+        setStorySubtitle('再会編（チュートリアル）／出会い・文化祭編');
         renderEpisodeList();
         setStoryMessage(message || '');
         setActionButton('primary', false, '', null);
@@ -790,7 +879,8 @@
         const ep = getEpisode(episodeId);
         if (!ep || !ep.implemented) return setStoryMessage('この話は後日実装予定です。');
         if (!isUnlocked(ep)) return setStoryMessage('前の話をクリアすると解放されます。');
-        playStorySceneBgm();
+        if (!beforeStory(() => startIntro(episodeId))) return;
+        playStorySceneBgm(ep.protagonist);
 
         S.phase = 'pre';
         S.episodeId = ep.id;
@@ -846,7 +936,7 @@
     function beginPost(episodeId, winner) {
         const ep = getEpisode(episodeId);
         if (!ep) return openSelection('');
-        playStorySceneBgm();
+        playStorySceneBgm(ep.protagonist);
 
         S.phase = 'post';
         S.episodeId = ep.id;
@@ -904,6 +994,7 @@
     function openStoryStage() {
         if (!S.inited) init();
         openSelection('第1話から進めると、操作を順番に覚えやすいです。');
+        window.CharacterNotice.showOnce();
     }
 
     function bindUi() {
@@ -962,6 +1053,7 @@
 
     function init() {
         if (S.inited) return;
+        bindCharacterNotice();
         S.progress = loadProgress();
         bindUi();
         installObserver();
