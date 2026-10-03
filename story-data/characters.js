@@ -6,11 +6,11 @@
     // Only these files are requested. Add artwork here before using it in an episode.
     const characters = {
         chizuru: { name: '千鶴', portraits: portraits('chizuru', ['normal', 'smile', 'troubled', 'surprised', 'angry', 'embarrassed']), standing: 'assets/battle-images/characters/standing/chizuru-standing.webp' },
-        kanna: { name: '栞那', portraits: portraits('kanna', ['normal', 'smile', 'smug', 'troubled', 'surprised']), standing: 'assets/battle-images/characters/standing/kanna-standing.webp' },
-        mai: { name: '舞依', portraits: {}, standing: 'assets/battle-images/characters/standing/mai-standing.webp', focusY: .018 },
-        takumi: { name: '拓海', portraits: {}, standing: 'assets/battle-images/characters/standing/takumi-standing.webp', focusY: .018 },
-        akatsuki: { name: '暁', portraits: {}, standing: 'assets/battle-images/characters/standing/akatsuki-standing.webp', focusY: .008 },
-        tsuyoshi: { name: '剛', portraits: {}, standing: null }
+        kanna: { name: '栞那', portraits: portraits('kanna', ['normal', 'smile', 'smug', 'troubled', 'surprised', 'angry']), standing: 'assets/battle-images/characters/standing/kanna-standing.webp' },
+        mai: { name: '舞依', portraits: portraits('mai', ['normal', 'smile', 'surprised', 'troubled', 'angry', 'embarrassed']), standing: 'assets/battle-images/characters/standing/mai-standing.webp', focusY: .018 },
+        takumi: { name: '拓海', portraits: portraits('takumi', ['normal', 'smile', 'troubled', 'surprised', 'embarrassed']), standing: 'assets/battle-images/characters/standing/takumi-standing.webp', focusY: .018 },
+        akatsuki: { name: '暁', portraits: portraits('akatsuki', ['normal', 'smile', 'smug', 'troubled', 'surprised']), standing: 'assets/battle-images/characters/standing/akatsuki-standing.webp', focusY: .008 },
+        tsuyoshi: { name: '剛', portraits: portraits('tsuyoshi', ['normal', 'smile', 'troubled', 'surprised']), standing: null }
     };
     Object.setPrototypeOf(characters, null);
     Object.values(characters).forEach(character => {
@@ -23,7 +23,7 @@
         Object.freeze(character);
     });
     const backgrounds = Object.assign(Object.create(null), Object.fromEntries([
-        'festival-classroom', 'classroom', 'festival-hallway', 'school-gate', 'festival-courtyard',
+        'festival-classroom', 'festival-kitchen', 'classroom', 'festival-hallway', 'school-gate', 'festival-courtyard',
         'gym-stage', 'cooking-room', 'rooftop', 'shopping-street', 'small-restaurant'
     ].map(key => [key, `assets/battle-images/story/backgrounds/${key}.webp`])));
     const battleAssets = [

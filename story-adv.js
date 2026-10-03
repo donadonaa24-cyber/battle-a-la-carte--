@@ -4,10 +4,116 @@
     const assets = root.BattleStoryAssets;
     const S = { episode: null, sceneId: '', lineIndex: 0, stage: 'pre', active: false,
         battleActive: false, pending: null, actors: new Map(), backlog: [], token: 0,
-        busy: false, typing: false, text: '', chars: [], typed: 0, logOpen: false };
-    let layer, typeTimer, autoTimer, effectTimer;
+        busy: false, loading: false, typing: false, text: '', chars: [], typed: 0, logOpen: false,
+        fastForward: false, ctrlHeld: false, paused: false, skipOpen: false, continuedAsWin: false };
+    let layer, typeTimer, autoTimer;
     const waits = new Map();
+    const playbackTimers = new Set();
+    const fast = () => S.fastForward || S.ctrlHeld;
+    const frozen = () => S.paused || S.logOpen || S.skipOpen;
+    const timerNow = () => root.performance?.now() ?? Date.now();
+    const effectDelay = ms => fast() ? Math.min(ms, 100) : ms;
+    function armTimer(job) {
+        if (frozen() || job.started !== null) return;
+        job.started = timerNow();
+        job.id = setTimeout(() => { playbackTimers.delete(job); job.callback(); }, job.remaining);
+    }
+    function playbackTimer(callback, ms, kind = 'effect', onCancel) {
+        const job = { callback, remaining: ms, kind, onCancel, id: null, started: null };
+        playbackTimers.add(job); armTimer(job); return job;
+    }
+    function cancelTimer(job) {
+        if (!job || !playbackTimers.delete(job)) return;
+        clearTimeout(job.id); job.onCancel?.();
+    }
+    function freezeTimers() {
+        playbackTimers.forEach(job => {
+            if (job.started === null) return;
+            clearTimeout(job.id);
+            job.remaining = Math.max(0, job.remaining - (timerNow() - job.started));
+            job.started = null;
+        });
+        layer.classList.add('adv-frozen'); root.pauseStoryCues?.();
+    }
+    function resumeTimers() {
+        if (frozen()) return;
+        layer.classList.remove('adv-frozen'); root.resumeStoryCues?.();
+        playbackTimers.forEach(armTimer);
+        if (!playbackTimers.has(autoTimer)) scheduleAuto();
+    }
+    // Retain both decoded images and failed requests for the lifetime of this page.
+    const imageCache = new Map();
     const byId = id => document.getElementById(id);
+    function episodeImages(episode) {
+        const files = new Set();
+        const background = key => { if (assets.backgrounds[key]) files.add(assets.backgrounds[key]); };
+        const portrait = (id, expression) => assets.portraitCandidates(id, expression).forEach(file => files.add(file));
+        episode.scenes.forEach(scene => {
+            background(scene.background);
+            scene.lines.forEach(item => {
+                background(item.background);
+                if (!item.offscreen) {
+                    if (!['narration', 'announce'].includes(item.speaker)) portrait(item.speaker, item.expression);
+                    if (Array.isArray(item.show)) item.show.forEach(actor => portrait(actor.id, actor.expression));
+                }
+            });
+        });
+        return [...files];
+    }
+    function loadImage(file) {
+        if (imageCache.has(file)) return imageCache.get(file);
+        const img = new Image();
+        let resolve, loaded = false, decoding = typeof img.decode === 'function';
+        const entry = { img, status: 'pending', ready: new Promise(done => { resolve = done; }) };
+        imageCache.set(file, entry);
+        const finish = status => {
+            if (entry.status !== 'pending') return;
+            entry.status = status; img.onload = null; img.onerror = null; resolve(entry);
+        };
+        const fallback = () => {
+            decoding = false;
+            if (loaded || img.complete) finish(loaded || img.naturalWidth > 0 ? 'ready' : 'failed');
+        };
+        entry.useLoadFallback = fallback;
+        img.onload = () => { loaded = true; if (!decoding) finish('ready'); };
+        img.onerror = () => finish('failed');
+        img.src = assets.url(file);
+        if (decoding && entry.status === 'pending') {
+            try { Promise.resolve(img.decode()).then(() => finish('ready'), fallback); }
+            catch (_) { fallback(); }
+        }
+        return entry;
+    }
+    function preloadEpisode(episode) {
+        const entries = episodeImages(episode).map(loadImage);
+        return new Promise(resolve => {
+            const done = () => { clearTimeout(timer); waits.delete(timer); resolve(); };
+            const timer = setTimeout(() => {
+                // After the deadline, keep the old load/error behavior for late images.
+                entries.filter(entry => entry.status === 'pending').forEach(entry => entry.useLoadFallback());
+                done();
+            }, 6000);
+            waits.set(timer, done);
+            Promise.all(entries.map(entry => entry.ready)).then(done);
+        });
+    }
+    function setLoading(loading) {
+        S.loading = loading;
+        if (!layer) return;
+        layer.setAttribute('aria-busy', String(loading));
+        byId('adv-loading').hidden = !loading;
+        byId('adv-dialogue').hidden = loading;
+        byId('adv-log-button').disabled = loading;
+        ['adv-fast', 'adv-skip', 'adv-pause'].forEach(id => { byId(id).disabled = loading; });
+    }
+    async function beginPlayback() {
+        cancelTimers(); const token = ++S.token;
+        S.busy = true; S.typing = false; setLoading(true); savePosition();
+        await preloadEpisode(S.episode);
+        if (token !== S.token || !S.active) return;
+        setLoading(false); S.busy = false;
+        byId('adv-dialogue').focus(); renderCurrent();
+    }
     function loadSave() {
         try {
             const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -24,25 +130,25 @@
         if (!S.episode) return;
         saved.resume = { episodeId: S.episode.id, sceneId: S.sceneId, lineIndex: S.lineIndex,
             stage: S.stage, savedAt: Date.now() };
+        if (S.continuedAsWin) saved.resume.continuedAsWin = true;
         writeSave();
     }
     function scene() { return S.episode?.scenes.find(item => item.id === S.sceneId); }
     function line() { return scene()?.lines[S.lineIndex]; }
-    function wait(ms) { return new Promise(resolve => {
-        const timer = setTimeout(() => { waits.delete(timer); resolve(); }, ms);
-        waits.set(timer, resolve);
-    }); }
+    function wait(ms) { return new Promise(resolve => playbackTimer(resolve, effectDelay(ms), 'effect', resolve)); }
     function cancelTimers() {
-        clearTimeout(typeTimer); clearTimeout(autoTimer); clearTimeout(effectTimer);
+        [...playbackTimers].forEach(cancelTimer);
         waits.forEach((resolve, timer) => { clearTimeout(timer); resolve(); });
         waits.clear();
         root.stopStoryCues?.();
     }
     function stop() {
         S.token++;
+        stopFastForward();
         cancelTimers();
         if (S.pending) { abandonBattle(); return; }
-        S.active = false; S.typing = false; S.busy = false; S.logOpen = false;
+        S.active = false; S.typing = false; S.busy = false; S.logOpen = false; S.paused = false; S.skipOpen = false;
+        setLoading(false);
         if (layer) layer.hidden = true;
     }
     function returnToSelection() {
@@ -58,11 +164,17 @@
         layer.innerHTML = `
             <div class="adv-background" id="adv-background"></div>
             <header class="adv-toolbar"><span id="adv-episode-label"></span><div>
-                <button type="button" id="adv-auto" aria-pressed="false">オート OFF</button>
-                <button type="button" id="adv-log-button">ログ</button>
-                <button type="button" id="adv-menu">メニュー</button>
+                <button type="button" class="adv-control" id="adv-auto" aria-label="オート" aria-pressed="false">オート OFF</button>
+                <button type="button" class="adv-control" id="adv-fast" aria-label="早送り" aria-pressed="false"><span aria-hidden="true">⏩</span>早送り</button>
+                <button type="button" class="adv-control" id="adv-skip" aria-label="スキップ"><span aria-hidden="true">⏭</span>スキップ</button>
+                <button type="button" class="adv-control" id="adv-pause" aria-label="一時停止"><span aria-hidden="true">⏸</span>一時停止</button>
+                <button type="button" class="adv-control" id="adv-log-button" aria-label="ログ">ログ</button>
+                <button type="button" class="adv-control" id="adv-menu" aria-label="メニュー">メニュー</button>
             </div></header>
             <div class="adv-portraits" id="adv-portraits" aria-hidden="true"></div>
+            <div class="adv-loading" id="adv-loading" role="status" aria-live="polite" hidden>
+                <span aria-hidden="true">✦</span><strong>読み込み中…</strong>
+            </div>
             <div class="adv-dialogue" id="adv-dialogue" tabindex="0" role="button" aria-label="会話を進める">
                 <div class="adv-name" id="adv-name"></div>
                 <div class="adv-text" id="adv-text" aria-live="polite"></div>
@@ -72,6 +184,17 @@
             <section class="adv-log" id="adv-log" hidden aria-label="会話ログ">
                 <h2>会話ログ</h2><div id="adv-log-lines"></div><button type="button" id="adv-log-close">閉じる</button>
             </section>
+            <section class="adv-panel" id="adv-pause-panel" role="dialog" aria-modal="true" aria-labelledby="adv-pause-title" hidden>
+                <h2 id="adv-pause-title">一時停止中</h2><div>
+                <button type="button" id="adv-resume">再開</button><button type="button" id="adv-pause-log">ログ</button>
+                <button type="button" id="adv-pause-skip">スキップ</button><button type="button" id="adv-pause-exit">ストーリー選択へ戻る</button>
+                </div>
+            </section>
+            <section class="adv-panel" id="adv-skip-panel" role="dialog" aria-modal="true" aria-labelledby="adv-skip-title" hidden>
+                <h2 id="adv-skip-title">次の区切りまでスキップしますか？</h2><div>
+                <button type="button" id="adv-skip-yes">はい</button><button type="button" id="adv-skip-no">いいえ</button>
+                </div>
+            </section>
             <section class="adv-ending" id="adv-ending" hidden></section>`;
         document.body.appendChild(layer);
         // Keep the portrait's head below the toolbar, including wrapped phone controls.
@@ -80,26 +203,41 @@
         if (root.ResizeObserver) new root.ResizeObserver(measureToolbar).observe(toolbar);
         root.addEventListener?.('resize', measureToolbar);
         layer.addEventListener('click', event => {
-            if (event.target.closest('button, .adv-log, .adv-ending, .adv-toolbar')) return;
+            if (event.target.closest('button, .adv-log, .adv-panel, .adv-ending, .adv-toolbar')) return;
             advance();
         });
-        document.addEventListener('keydown', event => {
-            if (!S.active || S.logOpen || !['Enter', ' '].includes(event.key) || event.repeat ||
-                event.target.closest?.('button, input, select, textarea')) return;
-            event.preventDefault(); advance();
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', event => {
+            if (event.key !== 'Control' || !S.ctrlHeld) return;
+            S.ctrlHeld = false; updateFastButton(); cancelTimer(autoTimer); scheduleAuto();
+        });
+        root.addEventListener?.('blur', () => {
+            if (!S.ctrlHeld) return;
+            S.ctrlHeld = false; updateFastButton(); cancelTimer(autoTimer); scheduleAuto();
         });
         byId('adv-auto').onclick = toggleAuto;
+        byId('adv-fast').onclick = toggleFastForward;
+        byId('adv-skip').onclick = () => askSkip();
+        byId('adv-pause').onclick = () => pausePlayback();
+        byId('adv-resume').onclick = resumePlayback;
+        byId('adv-pause-log').onclick = () => openLog(true);
+        byId('adv-pause-skip').onclick = () => askSkip();
+        byId('adv-pause-exit').onclick = returnToSelection;
+        byId('adv-skip-no').onclick = dismissSkip;
+        byId('adv-skip-yes').onclick = skipToStop;
         byId('adv-menu').onclick = returnToSelection;
         byId('adv-log-button').onclick = () => openLog(true);
         byId('adv-log-close').onclick = () => openLog(false);
         document.addEventListener('visibilitychange', () => {
-            clearTimeout(autoTimer);
+            cancelTimer(autoTimer);
+            if (document.visibilityState === 'hidden') stopFastForward();
             if (document.visibilityState !== 'hidden') scheduleAuto();
         });
     }
     function openLog(open) {
+        if (S.loading) return;
+        if (open) { stopFastForward(); freezeTimers(); }
         S.logOpen = open;
-        clearTimeout(autoTimer);
         byId('adv-log').hidden = !open;
         if (open) {
             const list = byId('adv-log-lines'); list.replaceChildren();
@@ -110,34 +248,114 @@
             });
             list.scrollTop = list.scrollHeight;
             byId('adv-log-close').focus();
-        } else { scheduleAuto(); byId('adv-dialogue').focus(); }
+        } else { resumeTimers(); byId(S.paused ? 'adv-resume' : 'adv-dialogue').focus(); }
     }
     function toggleAuto() {
-        saved.auto = !saved.auto; writeSave();
-        updateAutoButton(); clearTimeout(autoTimer); scheduleAuto();
+        saved.auto = !saved.auto;
+        if (saved.auto) stopFastForward();
+        writeSave(); updateAutoButton(); cancelTimer(autoTimer); scheduleAuto();
     }
     function updateAutoButton() {
         if (!layer) return;
         byId('adv-auto').textContent = `オート ${saved.auto ? 'ON' : 'OFF'}`;
         byId('adv-auto').setAttribute('aria-pressed', String(saved.auto));
     }
+    function updateFastButton() {
+        if (!layer) return;
+        byId('adv-fast').setAttribute('aria-pressed', String(fast()));
+        layer.classList.toggle('adv-fast', fast());
+    }
+    function stopFastForward() {
+        const wasFast = fast(); S.fastForward = false; S.ctrlHeld = false;
+        if (wasFast) cancelTimer(autoTimer);
+        updateFastButton();
+    }
+    function enableFastForward(held = false) {
+        if (!S.active || S.loading || frozen() || !byId('adv-ending').hidden) return;
+        if (held) S.ctrlHeld = true; else S.fastForward = true;
+        saved.auto = false; writeSave(); updateAutoButton(); updateFastButton();
+        // Shorten an effect already in progress, while preserving its continuation.
+        playbackTimers.forEach(job => {
+            if (!['effect', 'portrait'].includes(job.kind)) return;
+            clearTimeout(job.id);
+            job.remaining = Math.min(100, Math.max(0, job.remaining - (timerNow() - job.started)));
+            job.started = null;
+            armTimer(job);
+        });
+        if (S.typing) completeText(); else scheduleAuto();
+    }
+    function toggleFastForward() {
+        if (fast()) { stopFastForward(); scheduleAuto(); }
+        else enableFastForward();
+    }
+    function pausePlayback() {
+        if (!S.active || S.loading || S.paused || !byId('adv-ending').hidden) return;
+        stopFastForward(); freezeTimers(); S.paused = true;
+        layer.classList.add('adv-panel-open');
+        byId('adv-pause-panel').hidden = false; byId('adv-resume').focus();
+    }
+    function resumePlayback() {
+        if (!S.paused || S.logOpen || S.skipOpen) return;
+        S.paused = false; byId('adv-pause-panel').hidden = true;
+        layer.classList.remove('adv-panel-open');
+        resumeTimers(); byId('adv-dialogue').focus();
+    }
+    function askSkip() {
+        if (!S.active || S.loading || S.logOpen || S.skipOpen || !byId('adv-ending').hidden) return;
+        stopFastForward(); freezeTimers(); S.skipOpen = true;
+        layer.classList.add('adv-panel-open'); byId('adv-pause-panel').hidden = true;
+        byId('adv-skip-panel').hidden = false; byId('adv-skip-no').focus();
+    }
+    function dismissSkip() {
+        S.skipOpen = false; byId('adv-skip-panel').hidden = true;
+        byId('adv-pause-panel').hidden = !S.paused;
+        layer.classList.toggle('adv-panel-open', S.paused);
+        resumeTimers(); byId(S.paused ? 'adv-resume' : 'adv-dialogue').focus();
+    }
+    function handleKeyDown(event) {
+        if (!S.active || event.isComposing) return;
+        const panelButtons = S.logOpen ? ['adv-log-close'] : S.skipOpen ? ['adv-skip-yes', 'adv-skip-no'] :
+            S.paused ? ['adv-resume', 'adv-pause-log', 'adv-pause-skip', 'adv-pause-exit'] : [];
+        if (event.key === 'Tab' && panelButtons.length) {
+            const buttons = panelButtons.map(byId), index = buttons.indexOf(document.activeElement);
+            event.preventDefault();
+            buttons[index < 0 ? (event.shiftKey ? buttons.length - 1 : 0) :
+                (index + (event.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); return;
+        }
+        if (event.repeat || S.loading) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            if (S.logOpen) openLog(false);
+            else if (S.skipOpen) dismissSkip();
+            else if (S.paused) resumePlayback();
+            else pausePlayback();
+            return;
+        }
+        if (event.target.closest?.('input, select, textarea, [contenteditable="true"]')) return;
+        if (event.key === 'Control' && !frozen()) { event.preventDefault(); enableFastForward(true); return; }
+        if (frozen() || event.target.closest?.('button') || !['Enter', ' '].includes(event.key)) return;
+        event.preventDefault(); advance();
+    }
     function scheduleAuto() {
-        clearTimeout(autoTimer);
-        if (!saved.auto || !S.active || S.typing || S.busy || S.logOpen ||
+        cancelTimer(autoTimer);
+        if ((!saved.auto && !fast()) || !S.active || S.typing || S.busy || frozen() ||
             document.visibilityState === 'hidden' || !byId('adv-ending').hidden) return;
-        autoTimer = setTimeout(advance, autoDelay(S.text));
+        autoTimer = playbackTimer(advance, fast() ? 300 : autoDelay(S.text), 'advance');
     }
     function setBackground(key) {
         const element = byId('adv-background');
         element.style.backgroundImage = '';
         const file = assets.backgrounds[key];
         if (!file) return;
-        const img = new Image(), token = S.token;
-        img.onload = () => { if (token === S.token && S.active) element.style.backgroundImage = `url("${assets.url(file)}")`; };
-        img.onerror = () => {}; // keep the CSS gradient
-        img.src = assets.url(file);
+        const entry = loadImage(file), token = S.token;
+        const show = () => {
+            if (entry.status === 'ready' && token === S.token && S.active) element.style.backgroundImage = `url("${assets.url(file)}")`;
+        };
+        if (entry.status === 'pending') entry.ready.then(show);
+        else show(); // failed images keep the CSS gradient
     }
     function stageLine(item) {
+        if (item.offscreen) { S.actors.clear(); return; }
         if (item.hide === 'all') S.actors.clear();
         else if (Array.isArray(item.hide)) item.hide.forEach(id => S.actors.delete(id));
         const speaking = !['narration', 'announce'].includes(item.speaker);
@@ -154,14 +372,16 @@
         for (const element of container.children) {
             if (S.actors.has(element.dataset.actor)) continue;
             element.classList.add('leaving');
-            setTimeout(() => element.remove(), 200);
+            const remove = () => element.remove();
+            playbackTimer(remove, effectDelay(200), 'portrait', remove);
         }
         S.actors.forEach(actor => {
             let element = [...container.children].find(el => el.dataset.actor === actor.id && !el.classList.contains('leaving'));
             if (!element) {
                 element = document.createElement('div'); element.dataset.actor = actor.id;
                 element.className = 'adv-portrait entering'; container.appendChild(element);
-                setTimeout(() => element.classList.remove('entering'), 240);
+                const entered = () => element.classList.remove('entering');
+                playbackTimer(entered, effectDelay(240), 'portrait', entered);
             }
             element.dataset.position = actor.position || 'center';
             const framing = assets.characters[actor.id];
@@ -175,31 +395,32 @@
             element.dataset.request = request; element.replaceChildren();
             if (!candidates.length) return; // unknown / artwork not registered: name only
             const img = document.createElement('img'); img.alt = ''; element.appendChild(img);
-            let index = 0;
+            let index = candidates.findIndex(file => imageCache.get(file)?.status !== 'failed');
+            if (index < 0) { img.remove(); return; }
             img.onerror = () => {
                 if (element.dataset.request !== request) return;
                 index++;
                 if (index < candidates.length) img.src = assets.url(candidates[index]);
                 else img.remove();
             };
-            img.src = assets.url(candidates[0]);
+            img.src = assets.url(candidates[index]);
         });
     }
     function nameFor(item) {
         return item.name || assets.characters[item.speaker]?.name || (item.speaker === 'announce' ? '校内放送' : item.speaker === 'narration' ? '' : String(item.speaker || ''));
     }
     function completeText() {
-        clearTimeout(typeTimer); S.typing = false; S.typed = S.chars.length;
+        cancelTimer(typeTimer); S.typing = false; S.typed = S.chars.length;
         byId('adv-text').textContent = S.text; byId('adv-next').hidden = false; scheduleAuto();
     }
     function typeText() {
         byId('adv-text').textContent = S.chars.slice(0, ++S.typed).join('');
         if (S.typed >= S.chars.length) return completeText();
-        typeTimer = setTimeout(typeText, 30);
+        typeTimer = playbackTimer(typeText, 30, 'type');
     }
     async function effect(name, token) {
         const element = byId('adv-effect');
-        if (name === 'chime' || name === 'crowd') { root.playStoryCue?.(name); await wait(name === 'chime' ? 850 : 650); return; }
+        if (['chime', 'crowd', 'notify'].includes(name)) { root.playStoryCue?.(name, fast() ? .12 : 1); await wait(name === 'chime' ? 850 : name === 'notify' ? 350 : 650); return; }
         if (name === 'battleTease') {
             element.replaceChildren();
             const img = document.createElement('img'); img.src = assets.url('assets/battle-images/card-back.webp'); img.alt = '';
@@ -212,7 +433,8 @@
             if (token !== S.token) return;
             element.className = 'adv-effect fade-out'; await wait(700);
         } else if (name === 'shake') {
-            layer.classList.add('adv-shake'); await wait(250); layer.classList.remove('adv-shake');
+            layer.classList.add('adv-shake'); await wait(250);
+            if (token === S.token) layer.classList.remove('adv-shake');
         }
     }
     async function renderCurrent() {
@@ -221,12 +443,15 @@
         if (S.stage === 'battle') return chooseBattle();
         if (!item) return endScene();
         savePosition(); S.busy = true; S.typing = false; byId('adv-next').hidden = true;
+        layer.classList.toggle('adv-battle-intro', scene()?.battleIntro === true);
         stageLine(item); renderActors(item.speaker);
         setBackground(item.background !== undefined ? item.background : currentBackground());
         if (item.battle) { S.busy = false; return chooseBattle(); }
-        if (item.se === 'chime' || item.se === 'crowd') root.playStoryCue?.(item.se);
+        if (['chime', 'crowd', 'notify'].includes(item.se)) root.playStoryCue?.(item.se, fast() ? .12 : 1);
         else if (item.se) root.playSfx?.(item.se);
         if (item.effect) await effect(item.effect, token);
+        else if (!item.wait && ['chime', 'crowd', 'notify'].includes(item.se)) await wait(item.se === 'chime' ? 850 : item.se === 'notify' ? 350 : 650);
+        if (token !== S.token || !S.active) return;
         if (item.wait) await wait(Math.max(0, Number(item.wait) || 0));
         if (token !== S.token || !S.active) return;
         S.busy = false;
@@ -235,18 +460,23 @@
         byId('adv-name').textContent = nameFor(item);
         byId('adv-text').textContent = '';
         S.backlog.push({ name: nameFor(item), text: item.text });
-        if (root.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) completeText();
+        if (fast() || root.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) completeText();
         else { S.typing = true; typeText(); }
     }
     function currentBackground() {
-        const current = scene(); let key = current?.background;
-        current?.lines.slice(0, S.lineIndex + 1).forEach(item => { if (item.background !== undefined) key = item.background; });
+        let key;
+        for (const current of playbackRoute()) {
+            if (current.background !== undefined) key = current.background;
+            const count = current.id === S.sceneId ? S.lineIndex + 1 : current.lines.length;
+            current.lines.slice(0, count).forEach(item => { if (item.background !== undefined) key = item.background; });
+            if (current.id === S.sceneId) break;
+        }
         return key;
     }
     function advance() {
-        if (!S.active || S.busy || S.logOpen || !byId('adv-ending').hidden) return;
+        if (!S.active || S.busy || frozen() || !byId('adv-ending').hidden) return;
         if (S.typing) return completeText();
-        clearTimeout(autoTimer);
+        cancelTimer(autoTimer);
         if (S.stage === 'pre' && line()?.id && line().id === S.episode.battle?.after) return chooseBattle();
         S.lineIndex++; renderCurrent();
     }
@@ -257,6 +487,7 @@
     }
     function endScene() {
         if (S.stage === 'lose') return showLoseChoices();
+        if (scene()?.next) return enterScene(scene().next, S.stage);
         if (S.stage === 'post') return clearEpisode();
         if (S.stage === 'pre' && S.sceneId === S.episode.battle?.after) return chooseBattle();
         const index = S.episode.scenes.findIndex(item => item.id === S.sceneId);
@@ -299,11 +530,14 @@
     }
     function finishBattleReturn() {
         if (!S.pending) return false;
-        clearTimeout(effectTimer); const pending = S.pending; S.pending = null;
+        const pending = S.pending; S.pending = null;
         root.__storyResultPending = false;
         setResultExitLabels(false);
         root.resetStoryBattleContext?.();
-        activate(); enterScene(pending.sceneId, pending.stage); return true;
+        S.sceneId = pending.sceneId; S.lineIndex = 0; S.stage = pending.stage;
+        activate();
+        if (scene()?.bgm !== false) root.playStoryBGM?.();
+        beginPlayback(); return true;
     }
     function abandonBattle() {
         if (!S.battleActive && !S.pending) return;
@@ -311,23 +545,32 @@
         root.__storyResultPending = false; setResultExitLabels(false); root.resetStoryBattleContext?.(); stop();
     }
     function activate() {
-        ensureLayer(); S.active = true; S.busy = false; S.logOpen = false;
+        ensureLayer(); S.active = true; S.busy = false; S.logOpen = false; S.paused = false; S.skipOpen = false;
         layer.hidden = false; byId('adv-log').hidden = true; byId('adv-ending').hidden = true;
-        layer.classList.remove('adv-cleared');
+        byId('adv-pause-panel').hidden = true; byId('adv-skip-panel').hidden = true;
+        layer.classList.remove('adv-cleared', 'adv-frozen', 'adv-shake', 'adv-panel-open');
+        byId('adv-portraits').replaceChildren(); byId('adv-background').style.backgroundImage = '';
+        byId('adv-text').textContent = ''; byId('adv-name').textContent = ''; byId('adv-next').hidden = true;
         byId('adv-effect').className = 'adv-effect'; byId('adv-effect').replaceChildren();
         byId('adv-episode-label').textContent = `第${S.episode.number}話「${S.episode.title}」`;
-        updateAutoButton();
+        updateAutoButton(); updateFastButton();
+        ['adv-fast', 'adv-skip', 'adv-pause'].forEach(id => { byId(id).disabled = false; });
         const toolbarHeight = layer.querySelector('.adv-toolbar').getBoundingClientRect().height;
         layer.style.setProperty('--adv-toolbar-height', `${toolbarHeight}px`);
         root.stopMenuFloatingBackground?.();
-        byId('adv-dialogue').focus();
+    }
+    function playbackRoute() {
+        const post = outcomeScenes(S.episode.afterBattle.win);
+        const lose = outcomeScenes(S.episode.afterBattle.lose);
+        const initial = S.episode.scenes.filter(item => ![...post, ...lose].includes(item));
+        return ['post', 'clear'].includes(S.stage) ? [...initial, ...(S.continuedAsWin ? lose : []), ...post] :
+            S.stage === 'lose' ? [...initial, ...lose] : initial;
     }
     function rebuildBeforePosition() {
         S.actors.clear(); S.backlog = [];
-        const initial = S.episode.scenes.filter(item => ![S.episode.afterBattle.win, S.episode.afterBattle.lose].includes(item.id));
-        const route = S.stage === 'post' || S.stage === 'lose' ? [...initial, scene()] : initial;
-        for (const current of route) {
-            const count = current.id === S.sceneId ? S.lineIndex : current.lines.length;
+        for (const current of playbackRoute()) {
+            let count = current.id === S.sceneId ? S.lineIndex : current.lines.length;
+            if (current.id === S.sceneId && S.stage === 'battle' && !line()?.battle && line()?.id === S.episode.battle?.after) count++;
             for (const item of current.lines.slice(0, count)) {
                 stageLine(item);
                 if (item.text) S.backlog.push({ name: nameFor(item), text: item.text });
@@ -335,45 +578,105 @@
             if (current.id === S.sceneId) break;
         }
     }
+    async function skipToStop() {
+        if (!S.skipOpen) return;
+        const route = playbackRoute();
+        let position;
+        if (S.stage === 'pre') position = battlePosition(S.episode);
+        else {
+            const last = route[route.length - 1];
+            if (last) {
+                const fadeIndex = last.lines.findLastIndex(item => item.effect === 'fadeOut');
+                position = { sceneId: last.id, lineIndex: S.stage === 'post' && fadeIndex >= 0 ? fadeIndex : last.lines.length };
+            }
+        }
+        if (!position) { dismissSkip(); return; }
+        ++S.token; cancelTimers(); stopFastForward();
+        S.paused = false; S.skipOpen = false; S.busy = false; S.typing = false;
+        byId('adv-pause-panel').hidden = true; byId('adv-skip-panel').hidden = true;
+        layer.classList.remove('adv-frozen', 'adv-shake', 'adv-panel-open');
+        byId('adv-effect').className = 'adv-effect'; byId('adv-effect').replaceChildren();
+        Object.assign(S, position); rebuildBeforePosition(); savePosition();
+        layer.classList.toggle('adv-battle-intro', scene()?.battleIntro === true);
+        // Rebuild also includes the current line once, even if its typewriter was incomplete.
+        const previous = S.backlog[S.backlog.length - 1];
+        S.text = previous?.text || ''; byId('adv-text').textContent = S.text;
+        byId('adv-name').textContent = previous?.name || '';
+        renderActors(); setBackground(currentBackground());
+        if (S.stage === 'pre') {
+            const marker = line();
+            if (marker) {
+                stageLine(marker);
+                if (marker.text && !marker.battle) S.backlog.push({ name: nameFor(marker), text: marker.text });
+                renderActors(marker.speaker);
+            }
+            return chooseBattle();
+        }
+        if (S.stage === 'lose') return showLoseChoices();
+        if (!line()) {
+            // Future episodes without an explicit final fade still end through a blackout.
+            const token = S.token; S.busy = true;
+            await effect('fadeOut', token);
+            if (token === S.token && S.active) clearEpisode();
+        } else renderCurrent();
+    }
+    function outcomeScenes(firstId) {
+        const route = [], seen = new Set();
+        let current = S.episode.scenes.find(item => item.id === firstId);
+        while (current && !seen.has(current.id)) {
+            route.push(current); seen.add(current.id);
+            current = S.episode.scenes.find(item => item.id === current.next);
+        }
+        return route;
+    }
     function start(id, resume = false) {
         const episode = root.BattleStoryData.get(id); if (!episode) return;
         stop(); S.episode = episode; S.pending = null;
         const position = resume && saved.resume?.episodeId === id ? saved.resume : null;
+        S.continuedAsWin = position?.continuedAsWin === true;
         S.sceneId = position?.sceneId || episode.scenes[0].id;
         S.stage = ['pre', 'battle', 'post', 'lose'].includes(position?.stage) ? position.stage : 'pre';
         if (!scene()) { S.sceneId = episode.scenes[0].id; S.stage = 'pre'; }
-        S.lineIndex = Math.max(0, Math.min(Math.floor(Number(position?.lineIndex) || 0), scene().lines.length - 1));
+        S.lineIndex = Math.max(0, Math.min(Math.floor(Number(position?.lineIndex) || 0), scene().lines.length));
         if (S.stage === 'battle') Object.assign(S, battlePosition(episode));
         // A saved post/lose position is the receipt of a completed battle.
-        if (S.stage === 'post' && S.sceneId !== episode.afterBattle.win) { S.sceneId = episode.afterBattle.win; S.lineIndex = 0; }
+        if (S.stage === 'post' && !outcomeScenes(episode.afterBattle.win).some(item => item.id === S.sceneId)) { S.sceneId = episode.afterBattle.win; S.lineIndex = 0; }
         if (S.stage === 'lose' && S.sceneId !== episode.afterBattle.lose) { S.sceneId = episode.afterBattle.lose; S.lineIndex = 0; }
         rebuildBeforePosition(); activate();
         const previous = S.backlog[S.backlog.length - 1];
         S.text = previous?.text || '';
         byId('adv-text').textContent = S.text;
         byId('adv-name').textContent = previous?.name || '';
-        root.playStoryBGM?.(); renderCurrent();
+        root.playStoryBGM?.(); return beginPlayback();
     }
     function endingButton(text, action) {
         const button = document.createElement('button'); button.type = 'button'; button.textContent = text; button.onclick = action;
         byId('adv-ending').appendChild(button);
     }
     function showLoseChoices() {
-        S.busy = false; clearTimeout(autoTimer);
+        S.busy = false; stopFastForward(); cancelTimer(autoTimer); savePosition();
+        ['adv-fast', 'adv-skip', 'adv-pause'].forEach(id => { byId(id).disabled = true; });
         const ending = byId('adv-ending'); ending.replaceChildren(); ending.hidden = false;
-        if (scene()?.provisional) {
-            const note = document.createElement('p'); note.textContent = '敗北時の会話は仮セリフです。'; ending.appendChild(note);
-        }
         endingButton('もう一度挑戦', () => {
+            S.continuedAsWin = false;
             Object.assign(S, battlePosition(S.episode)); S.stage = 'battle'; chooseBattle();
         });
+        endingButton('勝ったことにして進める', () => {
+            S.continuedAsWin = true; S.sceneId = S.episode.afterBattle.win; S.lineIndex = 0; S.stage = 'post';
+            savePosition(); rebuildBeforePosition(); activate();
+            if (scene()?.bgm !== false) root.playStoryBGM?.();
+            renderCurrent(); byId('adv-dialogue').focus();
+        });
         endingButton('ストーリー選択へ戻る', returnToSelection);
+        ending.children[0]?.focus();
     }
     function clearEpisode() {
         if (S.stage !== 'post') return;
-        clearTimeout(autoTimer); saved.resume = null; writeSave();
+        stopFastForward(); cancelTimer(autoTimer); saved.resume = null; writeSave();
         root.BattleStoryProgress?.complete(S.episode.id);
         S.stage = 'clear';
+        S.busy = false;
+        ['adv-fast', 'adv-skip', 'adv-pause'].forEach(id => { byId(id).disabled = true; });
         layer.classList.add('adv-cleared');
         byId('adv-effect').className = 'adv-effect';
         byId('adv-effect').replaceChildren();
@@ -388,6 +691,7 @@
             ending.appendChild(next);
         }
         endingButton('ストーリー選択へ戻る', () => { stop(); root.openStoryStage?.(); });
+        ending.children[ending.children.length - 1]?.focus();
     }
     root.addEventListener?.('pagehide', () => { if (S.battleActive || S.pending) abandonBattle();
         if (S.active && S.stage !== 'clear') savePosition(); stop(); });

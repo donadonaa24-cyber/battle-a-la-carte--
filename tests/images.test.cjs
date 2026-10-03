@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 test('battle WebP assets are small and all original PNGs are retained', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'assets/battle-images/manifest.json')));
@@ -16,17 +17,18 @@ test('battle WebP assets are small and all original PNGs are retained', () => {
     for (const file of legacy) {
         assert.ok(fs.statSync(path.join(root, 'assets/images', file)).size > 0, `Retain legacy PNG: ${file}`);
     }
+    // Only scan the battle folders represented by this manifest. Publish-only
+    // homepage artwork and other unrelated folders are outside its scope.
+    const coveredFolders = new Set(manifest.map(x => path.posix.dirname(x.original)).filter(dir => dir !== 'assets/images'));
     function checkOriginals(dir) {
         for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
             const file = `${dir}/${entry.name}`;
-            if (entry.isDirectory()) {
-                checkOriginals(file);
-            } else if (entry.name.endsWith('.png') && !legacy.includes(file.slice('assets/images/'.length))) {
+            if (entry.isFile() && entry.name.endsWith('.png') && !legacy.includes(file.slice('assets/images/'.length))) {
                 assert.ok(byOriginal.has(file), `Missing PNG from manifest: ${file}`);
             }
         }
     }
-    checkOriginals('assets/images');
+    coveredFolders.forEach(checkOriginals);
     for (const x of manifest) {
         assert.equal(fs.statSync(path.join(root, x.original)).size, x.originalBytes);
         assert.equal(fs.statSync(path.join(root, x.battle)).size, x.bytes);
@@ -69,4 +71,31 @@ test('Battle a la carte Mode BGM exists at the path used by both game pages', ()
             assert.ok(fs.existsSync(path.join(root, relative)), `${file} references missing ${relative}`);
         }
     }
+});
+
+test('publish-only images are ignored while unlisted PNGs in battle folders still fail', () => {
+    function check(extraBattlePng) {
+        const visited = [], checks = new Map();
+        const portableFs = Object.create(fs);
+        const extra = (name, directory = false) => ({ name, isDirectory: () => directory, isFile: () => !directory });
+        portableFs.readdirSync = (dir, options) => {
+            visited.push(path.relative(root, dir).replaceAll('\\', '/'));
+            if (dir === path.join(root, 'assets/images/home')) return [extra('menu-ornament.png')];
+            const files = fs.readdirSync(dir, options);
+            if (dir === path.join(root, 'assets/images')) files.push(extra('home', true), extra('unused-homepage.png'));
+            if (extraBattlePng && dir === path.join(root, 'assets/images/cards')) files.push(extra('unlisted-game.png'));
+            return files;
+        };
+        vm.runInNewContext(fs.readFileSync(__filename, 'utf8'), { __dirname, require(name) {
+            if (name === 'node:test') return (name, callback) => checks.set(name, callback);
+            if (name === 'node:fs') return portableFs;
+            return require(name);
+        } });
+        checks.get('battle WebP assets are small and all original PNGs are retained')();
+        assert.ok(!visited.includes('assets/images'));
+        assert.ok(!visited.includes('assets/images/home'));
+        assert.ok(visited.includes('assets/images/story/portraits'));
+    }
+    assert.doesNotThrow(() => check(false));
+    assert.throws(() => check(true), /Missing PNG from manifest: assets\/images\/cards\/unlisted-game\.png/);
 });

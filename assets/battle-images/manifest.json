@@ -726,5 +726,181 @@
     "bytes": 23714,
     "width": 512,
     "height": 768
+  },
+  {
+    "original": "assets/images/story/portraits/mai-normal.png",
+    "battle": "assets/battle-images/story/portraits/mai-normal.webp",
+    "originalBytes": 787104,
+    "bytes": 216412,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-smile.png",
+    "battle": "assets/battle-images/story/portraits/mai-smile.webp",
+    "originalBytes": 789191,
+    "bytes": 216970,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-surprised.png",
+    "battle": "assets/battle-images/story/portraits/mai-surprised.webp",
+    "originalBytes": 785627,
+    "bytes": 216460,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-troubled.png",
+    "battle": "assets/battle-images/story/portraits/mai-troubled.webp",
+    "originalBytes": 786114,
+    "bytes": 216860,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-angry.png",
+    "battle": "assets/battle-images/story/portraits/mai-angry.webp",
+    "originalBytes": 785470,
+    "bytes": 216056,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-embarrassed.png",
+    "battle": "assets/battle-images/story/portraits/mai-embarrassed.webp",
+    "originalBytes": 785886,
+    "bytes": 216310,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/takumi-normal.png",
+    "battle": "assets/battle-images/story/portraits/takumi-normal.webp",
+    "originalBytes": 783379,
+    "bytes": 232198,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/takumi-smile.png",
+    "battle": "assets/battle-images/story/portraits/takumi-smile.webp",
+    "originalBytes": 786109,
+    "bytes": 232796,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/takumi-troubled.png",
+    "battle": "assets/battle-images/story/portraits/takumi-troubled.webp",
+    "originalBytes": 780931,
+    "bytes": 231564,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/takumi-surprised.png",
+    "battle": "assets/battle-images/story/portraits/takumi-surprised.webp",
+    "originalBytes": 781109,
+    "bytes": 231432,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/takumi-embarrassed.png",
+    "battle": "assets/battle-images/story/portraits/takumi-embarrassed.webp",
+    "originalBytes": 784174,
+    "bytes": 232548,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/akatsuki-normal.png",
+    "battle": "assets/battle-images/story/portraits/akatsuki-normal.webp",
+    "originalBytes": 717692,
+    "bytes": 198806,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/akatsuki-smile.png",
+    "battle": "assets/battle-images/story/portraits/akatsuki-smile.webp",
+    "originalBytes": 716540,
+    "bytes": 199184,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/akatsuki-smug.png",
+    "battle": "assets/battle-images/story/portraits/akatsuki-smug.webp",
+    "originalBytes": 715939,
+    "bytes": 198376,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/akatsuki-troubled.png",
+    "battle": "assets/battle-images/story/portraits/akatsuki-troubled.webp",
+    "originalBytes": 715990,
+    "bytes": 198344,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/akatsuki-surprised.png",
+    "battle": "assets/battle-images/story/portraits/akatsuki-surprised.webp",
+    "originalBytes": 716265,
+    "bytes": 198458,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/tsuyoshi-normal.png",
+    "battle": "assets/battle-images/story/portraits/tsuyoshi-normal.webp",
+    "originalBytes": 799052,
+    "bytes": 225758,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/tsuyoshi-smile.png",
+    "battle": "assets/battle-images/story/portraits/tsuyoshi-smile.webp",
+    "originalBytes": 796720,
+    "bytes": 225330,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/tsuyoshi-troubled.png",
+    "battle": "assets/battle-images/story/portraits/tsuyoshi-troubled.webp",
+    "originalBytes": 800224,
+    "bytes": 226000,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/tsuyoshi-surprised.png",
+    "battle": "assets/battle-images/story/portraits/tsuyoshi-surprised.webp",
+    "originalBytes": 796460,
+    "bytes": 225716,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-angry.png",
+    "battle": "assets/battle-images/story/portraits/kanna-angry.webp",
+    "originalBytes": 802774,
+    "bytes": 234350,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/backgrounds/festival-kitchen.png",
+    "battle": "assets/battle-images/story/backgrounds/festival-kitchen.webp",
+    "originalBytes": 4611920,
+    "bytes": 173920,
+    "width": 1920,
+    "height": 1080
   }
 ]

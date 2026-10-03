@@ -367,7 +367,9 @@ window.getBgmTrackOptions = getBgmTrackOptions;
         nodes.forEach(node => { try { node.stop(); } catch (_) {} });
         nodes.clear();
     }
-    function playStoryCue(kind) {
+    function pauseStoryCues() { context?.suspend?.()?.catch(() => {}); }
+    function resumeStoryCues() { if (nodes.size) context?.resume?.()?.catch(() => {}); }
+    function playStoryCue(kind, durationScale = 1) {
         if (!getBgmEnabled() || getBgmVolume() <= 0) return;
         const AudioContextClass = root.AudioContext || root.webkitAudioContext;
         if (!AudioContextClass) return;
@@ -376,9 +378,10 @@ window.getBgmTrackOptions = getBgmTrackOptions;
             context.resume().catch(() => {});
             const time = context.currentTime, volume = getBgmVolume();
             const voice = (node, offset, duration, level) => {
+                offset *= durationScale; duration *= durationScale;
                 const gain = context.createGain();
                 gain.gain.setValueAtTime(0, time + offset);
-                gain.gain.linearRampToValueAtTime(level * volume, time + offset + .025);
+                gain.gain.linearRampToValueAtTime(level * volume, time + offset + .025 * durationScale);
                 gain.gain.exponentialRampToValueAtTime(.0001, time + offset + duration);
                 node.connect(gain); gain.connect(context.destination); nodes.add(node);
                 node.onended = () => { nodes.delete(node); node.disconnect(); gain.disconnect(); };
@@ -388,6 +391,11 @@ window.getBgmTrackOptions = getBgmTrackOptions;
                 [659.25, 523.25].forEach((frequency, index) => {
                     const node = context.createOscillator(); node.type = 'sine'; node.frequency.value = frequency;
                     voice(node, index * .34, .48, .13);
+                });
+            } else if (kind === 'notify') {
+                [783.99, 1046.5].forEach((frequency, index) => {
+                    const node = context.createOscillator(); node.type = 'sine'; node.frequency.value = frequency;
+                    voice(node, index * .12, .2, .1);
                 });
             } else if (kind === 'crowd') {
                 const buffer = context.createBuffer(1, Math.floor(context.sampleRate * .65), context.sampleRate);
@@ -404,4 +412,6 @@ window.getBgmTrackOptions = getBgmTrackOptions;
     }
     root.playStoryCue = playStoryCue;
     root.stopStoryCues = stopStoryCues;
+    root.pauseStoryCues = pauseStoryCues;
+    root.resumeStoryCues = resumeStoryCues;
 })(window);

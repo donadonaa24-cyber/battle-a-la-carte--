@@ -334,7 +334,7 @@ test('points scale aura and winning timings; both pages load the common effect a
         const html = read(file);
         assert.ok(html.includes(`${prefix}dish-effects.js?v=20261002-fx1`));
         assert.ok(html.includes(`${prefix}dish-effects.css?v=20261002-fx1`));
-        for (const name of ['main', 'render', 'cpu', 'audio']) assert.ok(html.includes(`${name}${suffix}.js?v=${name === 'cpu' ? '20261002-fx1' : name === 'render' ? '20261003-adv1' : '20261003-adv2'}`));
+        for (const name of ['main', 'render', 'cpu', 'audio']) assert.ok(html.includes(`${name}${suffix}.js?v=${name === 'audio' ? '20261003-playback1' : name === 'cpu' ? '20261002-fx1' : name === 'render' ? '20261003-adv1' : '20261003-ep5-7'}`));
         assert.ok(html.includes('id="menu-settings-button"')); assert.ok(html.includes('id="start-settings-stage"'));
         assert.ok(read(`main${suffix ? '-sp' : ''}.js`.replace('main-sp.js', 'mobile/main-sp.js')).includes("settingsHtml('start-settings')"));
         const render = read(suffix ? 'mobile/render-sp.js' : 'render.js');

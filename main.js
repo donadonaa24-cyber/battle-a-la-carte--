@@ -1478,7 +1478,7 @@ function setupStartOverlay() {
             if (startCpuSetupStep === 1) {
                 startCpuSetupSubtitle.textContent = choosingMissionOpponent ? '1/3 対戦相手を選択' : '1/3 キャラを選択';
             } else if (startCpuSetupStep === 2) {
-                startCpuSetupSubtitle.textContent = storySkillChoice ? '千鶴のスキルを選択' : '2/3 スキルを選択';
+                startCpuSetupSubtitle.textContent = storySkillChoice ? `${window.BattleStoryAssets.characters[storySkillChoice.episode.battle.player].name}のスキルを選択` : '2/3 スキルを選択';
             } else {
                 startCpuSetupSubtitle.textContent = '3/3 先攻・後攻を決定';
             }

@@ -352,8 +352,8 @@ test('cook sound modules and lifecycle mirrors match and updated assets are load
     assert.equal(read('audio.js'), read('mobile/audio-sp.js').replaceAll('../assets/', 'assets/'));
     for (const name of ['player', 'cpu', 'main']) assert.equal(read(`${name}.js`), read(`mobile/${name}-sp.js`).replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
     for (const [html, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
-        assert.ok(read(html).includes(`audio${suffix}.js?v=20261003-adv2`));
-        assert.ok(read(html).includes(`main${suffix}.js?v=20261003-adv2`));
+        assert.ok(read(html).includes(`audio${suffix}.js?v=20261003-playback1`));
+        assert.ok(read(html).includes(`main${suffix}.js?v=20261003-ep5-7`));
         assert.ok(read(html).includes(`player${suffix}.js?v=20261002-ach1`));
         assert.ok(read(html).includes('network.js?v=20261002-menucard1'));
     }
