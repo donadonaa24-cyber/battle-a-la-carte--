@@ -355,8 +355,6 @@
         if (pending && revision > pending.revision) {
             pending = null; clearTimeout(deadline); sessionStorage.removeItem(pendingKey);
         }
-        window.updateUI(true);
-        if (row.payload.trace?.id) metrics?.mark(row.payload.trace.id, 'dom');
         for (const text of row.payload.logs || []) window.addLog(String(text).replace(/CPU/g, '相手'));
         for (const effect of row.payload.effects || []) {
             if (['playSfx', 'playCookBgm', 'showSpotlightRecipeCard', 'showSpotlightEventCard',
@@ -365,6 +363,9 @@
                 else window[effect.name]?.(...effect.args);
             }
         }
+        // Start received presentations before rendering target/cost selection panels.
+        window.updateUI(true);
+        if (row.payload.trace?.id) metrics?.mark(row.payload.trace.id, 'dom');
         if (GameState.gameEnded && GameState.surrenderedBy === 'player') {
             const resultKey = 'battle-a-la-carte:surrender:' + room.id + ':' + GameState.matchEndedAt;
             if (!recordedSurrenders.has(resultKey)) {
@@ -805,6 +806,7 @@
         controls();
     }
     function mount() {
+        if (window.StoryViewer?.active) return;
         const lobby = $('start-friend-stage');
         const selection = document.createElement('div');
         selection.className = 'online-account-box';

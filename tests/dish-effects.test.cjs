@@ -59,7 +59,7 @@ function runtime(mobile = false, reduced = false, storage = new Map()) {
     let seen = { player: 0, cpu: 0 };
     Object.assign(c, { getIngredientImagePath: name => `/ingredient/${name}.webp`, getRecipeImagePath: name => `/recipe/${name}.webp`,
         addLog: text => logs.push(text), setCPUStatus: text => statuses.push(text), hideDiscardBanner() {}, updateBattleMenu() {}, clearSavedMatch() {},
-        enablePlayerControls() {}, getOpponentLabelText: () => 'CPU', startMenuFloatingBackground() {}, stopMenuFloatingBackground() {}, playTitleBGM() {},
+        enablePlayerControls() {}, getOpponentLabelText: () => 'CPU', playTitleBGM() {},
         updateUI() { for (const side of ['player', 'cpu']) {
             const entries = c.GameState.players[side].cookedRecipes;
             if (entries.length > seen[side]) c.animateCookingFusion({ dish: entries[0], side, transfers: entries[0].required.map(name => ({ card: { name } })) });
@@ -335,9 +335,9 @@ test('points scale aura and winning timings; both pages load the common effect a
     assert.equal(fx.timing({ points: 10 }, false, 'short', false).total, 1300);
     for (const [file, prefix, suffix] of [['web.html', '', ''], ['mobile/mobile.html', '../', '-sp']]) {
         const html = read(file);
-        assert.ok(html.includes(`${prefix}dish-effects.js?v=20261002-fx1`));
+        assert.ok(html.includes(`${prefix}dish-effects.js?v=20261006-icons99c`));
         assert.ok(html.includes(`${prefix}dish-effects.css?v=20261002-fx1`));
-        for (const name of ['main', 'render', 'cpu', 'audio']) assert.ok(html.includes(`${name}${suffix}.js?v=${name === 'cpu' ? '20261002-fx1' : name === 'audio' ? '20261004-adv-menu1' : name === 'main' ? '20261004-character-notice1' : '20261003-rewards-bgm1'}`));
+        for (const name of ['main', 'render', 'cpu', 'audio']) assert.ok(html.includes(`${name}${suffix}.js?v=${name === 'cpu' ? '20261002-fx1' : name === 'audio' ? '20261004-adv-menu1' : '20261006-icons99c'}`));
         assert.ok(html.includes('id="menu-settings-button"')); assert.ok(html.includes('id="start-settings-stage"'));
         assert.ok(read(`main${suffix ? '-sp' : ''}.js`.replace('main-sp.js', 'mobile/main-sp.js')).includes("settingsHtml('start-settings')"));
         const render = read(suffix ? 'mobile/render-sp.js' : 'render.js');

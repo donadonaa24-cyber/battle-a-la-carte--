@@ -602,88 +602,88 @@
   {
     "original": "assets/images/story/portraits/chizuru-normal.png",
     "battle": "assets/battle-images/story/portraits/chizuru-normal.webp",
-    "originalBytes": 769036,
-    "bytes": 215016,
+    "originalBytes": 733469,
+    "bytes": 218136,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-smile.png",
     "battle": "assets/battle-images/story/portraits/chizuru-smile.webp",
-    "originalBytes": 771811,
-    "bytes": 215476,
+    "originalBytes": 736343,
+    "bytes": 221840,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-troubled.png",
     "battle": "assets/battle-images/story/portraits/chizuru-troubled.webp",
-    "originalBytes": 769257,
-    "bytes": 214956,
+    "originalBytes": 735274,
+    "bytes": 221488,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-surprised.png",
     "battle": "assets/battle-images/story/portraits/chizuru-surprised.webp",
-    "originalBytes": 768212,
-    "bytes": 214654,
+    "originalBytes": 733591,
+    "bytes": 220858,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-angry.png",
     "battle": "assets/battle-images/story/portraits/chizuru-angry.webp",
-    "originalBytes": 767217,
-    "bytes": 215024,
+    "originalBytes": 733321,
+    "bytes": 221076,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-embarrassed.png",
     "battle": "assets/battle-images/story/portraits/chizuru-embarrassed.webp",
-    "originalBytes": 769564,
-    "bytes": 214996,
+    "originalBytes": 734975,
+    "bytes": 221910,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-normal.png",
     "battle": "assets/battle-images/story/portraits/kanna-normal.webp",
-    "originalBytes": 803629,
-    "bytes": 234444,
+    "originalBytes": 781087,
+    "bytes": 239140,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-smile.png",
     "battle": "assets/battle-images/story/portraits/kanna-smile.webp",
-    "originalBytes": 803000,
-    "bytes": 234104,
+    "originalBytes": 781078,
+    "bytes": 239608,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-smug.png",
     "battle": "assets/battle-images/story/portraits/kanna-smug.webp",
-    "originalBytes": 802780,
-    "bytes": 234108,
+    "originalBytes": 780687,
+    "bytes": 240100,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-troubled.png",
     "battle": "assets/battle-images/story/portraits/kanna-troubled.webp",
-    "originalBytes": 804396,
-    "bytes": 234888,
+    "originalBytes": 781682,
+    "bytes": 239666,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-surprised.png",
     "battle": "assets/battle-images/story/portraits/kanna-surprised.webp",
-    "originalBytes": 803881,
-    "bytes": 234626,
+    "originalBytes": 780555,
+    "bytes": 238930,
     "width": 768,
     "height": 1152
   },
@@ -730,168 +730,168 @@
   {
     "original": "assets/images/story/portraits/mai-normal.png",
     "battle": "assets/battle-images/story/portraits/mai-normal.webp",
-    "originalBytes": 787104,
-    "bytes": 216412,
+    "originalBytes": 759894,
+    "bytes": 221296,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-smile.png",
     "battle": "assets/battle-images/story/portraits/mai-smile.webp",
-    "originalBytes": 789191,
-    "bytes": 216970,
+    "originalBytes": 761931,
+    "bytes": 223526,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-surprised.png",
     "battle": "assets/battle-images/story/portraits/mai-surprised.webp",
-    "originalBytes": 785627,
-    "bytes": 216460,
+    "originalBytes": 758971,
+    "bytes": 223928,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-troubled.png",
     "battle": "assets/battle-images/story/portraits/mai-troubled.webp",
-    "originalBytes": 786114,
-    "bytes": 216860,
+    "originalBytes": 759372,
+    "bytes": 223962,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-angry.png",
     "battle": "assets/battle-images/story/portraits/mai-angry.webp",
-    "originalBytes": 785470,
-    "bytes": 216056,
+    "originalBytes": 758382,
+    "bytes": 223548,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-embarrassed.png",
     "battle": "assets/battle-images/story/portraits/mai-embarrassed.webp",
-    "originalBytes": 785886,
-    "bytes": 216310,
+    "originalBytes": 759275,
+    "bytes": 222880,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-normal.png",
     "battle": "assets/battle-images/story/portraits/takumi-normal.webp",
-    "originalBytes": 783379,
-    "bytes": 232198,
+    "originalBytes": 758079,
+    "bytes": 235692,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-smile.png",
     "battle": "assets/battle-images/story/portraits/takumi-smile.webp",
-    "originalBytes": 786109,
-    "bytes": 232796,
+    "originalBytes": 761383,
+    "bytes": 238736,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-troubled.png",
     "battle": "assets/battle-images/story/portraits/takumi-troubled.webp",
-    "originalBytes": 780931,
-    "bytes": 231564,
+    "originalBytes": 759930,
+    "bytes": 238688,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-surprised.png",
     "battle": "assets/battle-images/story/portraits/takumi-surprised.webp",
-    "originalBytes": 781109,
-    "bytes": 231432,
+    "originalBytes": 758135,
+    "bytes": 236648,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-embarrassed.png",
     "battle": "assets/battle-images/story/portraits/takumi-embarrassed.webp",
-    "originalBytes": 784174,
-    "bytes": 232548,
+    "originalBytes": 758955,
+    "bytes": 237760,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-normal.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-normal.webp",
-    "originalBytes": 717692,
-    "bytes": 198806,
+    "originalBytes": 693319,
+    "bytes": 200614,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-smile.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-smile.webp",
-    "originalBytes": 716540,
-    "bytes": 199184,
+    "originalBytes": 692827,
+    "bytes": 202024,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-smug.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-smug.webp",
-    "originalBytes": 715939,
-    "bytes": 198376,
+    "originalBytes": 690880,
+    "bytes": 201186,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-troubled.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-troubled.webp",
-    "originalBytes": 715990,
-    "bytes": 198344,
+    "originalBytes": 690767,
+    "bytes": 201116,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-surprised.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-surprised.webp",
-    "originalBytes": 716265,
-    "bytes": 198458,
+    "originalBytes": 691661,
+    "bytes": 201518,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/tsuyoshi-normal.png",
     "battle": "assets/battle-images/story/portraits/tsuyoshi-normal.webp",
-    "originalBytes": 799052,
-    "bytes": 225758,
+    "originalBytes": 778009,
+    "bytes": 228620,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/tsuyoshi-smile.png",
     "battle": "assets/battle-images/story/portraits/tsuyoshi-smile.webp",
-    "originalBytes": 796720,
-    "bytes": 225330,
+    "originalBytes": 775643,
+    "bytes": 231914,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/tsuyoshi-troubled.png",
     "battle": "assets/battle-images/story/portraits/tsuyoshi-troubled.webp",
-    "originalBytes": 800224,
-    "bytes": 226000,
+    "originalBytes": 779718,
+    "bytes": 232554,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/tsuyoshi-surprised.png",
     "battle": "assets/battle-images/story/portraits/tsuyoshi-surprised.webp",
-    "originalBytes": 796460,
-    "bytes": 225716,
+    "originalBytes": 775263,
+    "bytes": 229792,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-angry.png",
     "battle": "assets/battle-images/story/portraits/kanna-angry.webp",
-    "originalBytes": 802774,
-    "bytes": 234350,
+    "originalBytes": 780447,
+    "bytes": 239582,
     "width": 768,
     "height": 1152
   },
@@ -906,400 +906,400 @@
   {
     "original": "assets/images/story/portraits/chizuru-laugh.png",
     "battle": "assets/battle-images/story/portraits/chizuru-laugh.webp",
-    "originalBytes": 765773,
-    "bytes": 214574,
+    "originalBytes": 733038,
+    "bytes": 221312,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-happy.png",
     "battle": "assets/battle-images/story/portraits/chizuru-happy.webp",
-    "originalBytes": 768416,
-    "bytes": 214746,
+    "originalBytes": 734680,
+    "bytes": 221846,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-smug.png",
     "battle": "assets/battle-images/story/portraits/chizuru-smug.webp",
-    "originalBytes": 766486,
-    "bytes": 214604,
+    "originalBytes": 733286,
+    "bytes": 220646,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-frozen.png",
     "battle": "assets/battle-images/story/portraits/chizuru-frozen.webp",
-    "originalBytes": 766399,
-    "bytes": 214234,
+    "originalBytes": 733242,
+    "bytes": 221646,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-pout.png",
     "battle": "assets/battle-images/story/portraits/chizuru-pout.webp",
-    "originalBytes": 766741,
-    "bytes": 215136,
+    "originalBytes": 733299,
+    "bytes": 221016,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-flustered.png",
     "battle": "assets/battle-images/story/portraits/chizuru-flustered.webp",
-    "originalBytes": 769155,
-    "bytes": 215154,
+    "originalBytes": 734647,
+    "bytes": 221750,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-sad.png",
     "battle": "assets/battle-images/story/portraits/chizuru-sad.webp",
-    "originalBytes": 767518,
-    "bytes": 214780,
+    "originalBytes": 733485,
+    "bytes": 220858,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-thinking.png",
     "battle": "assets/battle-images/story/portraits/chizuru-thinking.webp",
-    "originalBytes": 766225,
-    "bytes": 215084,
+    "originalBytes": 733224,
+    "bytes": 220180,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/chizuru-worried.png",
     "battle": "assets/battle-images/story/portraits/chizuru-worried.webp",
-    "originalBytes": 767168,
-    "bytes": 215254,
+    "originalBytes": 733698,
+    "bytes": 221080,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-laugh.png",
     "battle": "assets/battle-images/story/portraits/kanna-laugh.webp",
-    "originalBytes": 803295,
-    "bytes": 234146,
+    "originalBytes": 780922,
+    "bytes": 240682,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-gentle.png",
     "battle": "assets/battle-images/story/portraits/kanna-gentle.webp",
-    "originalBytes": 803271,
-    "bytes": 233996,
+    "originalBytes": 781001,
+    "bytes": 239626,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-happy.png",
     "battle": "assets/battle-images/story/portraits/kanna-happy.webp",
-    "originalBytes": 804110,
-    "bytes": 234698,
+    "originalBytes": 781513,
+    "bytes": 240112,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-exasperated.png",
     "battle": "assets/battle-images/story/portraits/kanna-exasperated.webp",
-    "originalBytes": 803111,
-    "bytes": 234166,
+    "originalBytes": 780804,
+    "bytes": 240078,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-frozen.png",
     "battle": "assets/battle-images/story/portraits/kanna-frozen.webp",
-    "originalBytes": 802733,
-    "bytes": 234250,
+    "originalBytes": 780362,
+    "bytes": 239192,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-pout.png",
     "battle": "assets/battle-images/story/portraits/kanna-pout.webp",
-    "originalBytes": 803283,
-    "bytes": 234210,
+    "originalBytes": 780917,
+    "bytes": 239826,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-sad.png",
     "battle": "assets/battle-images/story/portraits/kanna-sad.webp",
-    "originalBytes": 802924,
-    "bytes": 234626,
+    "originalBytes": 780653,
+    "bytes": 239620,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-serious.png",
     "battle": "assets/battle-images/story/portraits/kanna-serious.webp",
-    "originalBytes": 803233,
-    "bytes": 234372,
+    "originalBytes": 780806,
+    "bytes": 239374,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/kanna-thinking.png",
     "battle": "assets/battle-images/story/portraits/kanna-thinking.webp",
-    "originalBytes": 802695,
-    "bytes": 234230,
+    "originalBytes": 781104,
+    "bytes": 238898,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-laugh.png",
     "battle": "assets/battle-images/story/portraits/mai-laugh.webp",
-    "originalBytes": 785614,
-    "bytes": 216238,
+    "originalBytes": 758499,
+    "bytes": 223304,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-gentle.png",
     "battle": "assets/battle-images/story/portraits/mai-gentle.webp",
-    "originalBytes": 785649,
-    "bytes": 216218,
+    "originalBytes": 758726,
+    "bytes": 222408,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-happy.png",
     "battle": "assets/battle-images/story/portraits/mai-happy.webp",
-    "originalBytes": 786434,
-    "bytes": 216826,
+    "originalBytes": 759622,
+    "bytes": 222756,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-pout.png",
     "battle": "assets/battle-images/story/portraits/mai-pout.webp",
-    "originalBytes": 784964,
-    "bytes": 216386,
+    "originalBytes": 757954,
+    "bytes": 224138,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-sad.png",
     "battle": "assets/battle-images/story/portraits/mai-sad.webp",
-    "originalBytes": 785394,
-    "bytes": 216476,
+    "originalBytes": 758378,
+    "bytes": 224156,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-serious.png",
     "battle": "assets/battle-images/story/portraits/mai-serious.webp",
-    "originalBytes": 785169,
-    "bytes": 216380,
+    "originalBytes": 758170,
+    "bytes": 222766,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-thinking.png",
     "battle": "assets/battle-images/story/portraits/mai-thinking.webp",
-    "originalBytes": 785210,
-    "bytes": 216842,
+    "originalBytes": 758230,
+    "bytes": 223072,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/mai-cold.png",
     "battle": "assets/battle-images/story/portraits/mai-cold.webp",
-    "originalBytes": 785179,
-    "bytes": 216424,
+    "originalBytes": 758103,
+    "bytes": 223742,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-laugh.png",
     "battle": "assets/battle-images/story/portraits/takumi-laugh.webp",
-    "originalBytes": 779976,
-    "bytes": 231368,
+    "originalBytes": 758337,
+    "bytes": 237752,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-gentle.png",
     "battle": "assets/battle-images/story/portraits/takumi-gentle.webp",
-    "originalBytes": 780855,
-    "bytes": 231576,
+    "originalBytes": 758133,
+    "bytes": 237476,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-exasperated.png",
     "battle": "assets/battle-images/story/portraits/takumi-exasperated.webp",
-    "originalBytes": 780739,
-    "bytes": 231234,
+    "originalBytes": 757840,
+    "bytes": 236618,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-frozen.png",
     "battle": "assets/battle-images/story/portraits/takumi-frozen.webp",
-    "originalBytes": 780655,
-    "bytes": 231734,
+    "originalBytes": 758042,
+    "bytes": 237232,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-flustered.png",
     "battle": "assets/battle-images/story/portraits/takumi-flustered.webp",
-    "originalBytes": 782327,
-    "bytes": 231870,
+    "originalBytes": 759019,
+    "bytes": 237806,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-laugh.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-laugh.webp",
-    "originalBytes": 715780,
-    "bytes": 198468,
+    "originalBytes": 690884,
+    "bytes": 201378,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-gentle.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-gentle.webp",
-    "originalBytes": 715937,
-    "bytes": 198132,
+    "originalBytes": 690951,
+    "bytes": 201120,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-happy.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-happy.webp",
-    "originalBytes": 716719,
-    "bytes": 198482,
+    "originalBytes": 692785,
+    "bytes": 201662,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-exasperated.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-exasperated.webp",
-    "originalBytes": 715978,
-    "bytes": 198204,
+    "originalBytes": 690887,
+    "bytes": 201172,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-frozen.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-frozen.webp",
-    "originalBytes": 716179,
-    "bytes": 198036,
+    "originalBytes": 690804,
+    "bytes": 201214,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-embarrassed.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-embarrassed.webp",
-    "originalBytes": 717678,
-    "bytes": 198566,
+    "originalBytes": 692648,
+    "bytes": 202010,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-sad.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-sad.webp",
-    "originalBytes": 716097,
-    "bytes": 198150,
+    "originalBytes": 690852,
+    "bytes": 201366,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-serious.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-serious.webp",
-    "originalBytes": 715621,
-    "bytes": 198108,
+    "originalBytes": 690414,
+    "bytes": 201052,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-thinking.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-thinking.webp",
-    "originalBytes": 716225,
-    "bytes": 198242,
+    "originalBytes": 690908,
+    "bytes": 201390,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/akatsuki-cold.png",
     "battle": "assets/battle-images/story/portraits/akatsuki-cold.webp",
-    "originalBytes": 715671,
-    "bytes": 198034,
+    "originalBytes": 690330,
+    "bytes": 201196,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/tsuyoshi-laugh.png",
     "battle": "assets/battle-images/story/portraits/tsuyoshi-laugh.webp",
-    "originalBytes": 797379,
-    "bytes": 225850,
+    "originalBytes": 776691,
+    "bytes": 232122,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/tsuyoshi-happy.png",
     "battle": "assets/battle-images/story/portraits/tsuyoshi-happy.webp",
-    "originalBytes": 798055,
-    "bytes": 226146,
+    "originalBytes": 777427,
+    "bytes": 229886,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/tsuyoshi-tired.png",
     "battle": "assets/battle-images/story/portraits/tsuyoshi-tired.webp",
-    "originalBytes": 797139,
-    "bytes": 225382,
+    "originalBytes": 776170,
+    "bytes": 231860,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/classmate1-normal.png",
     "battle": "assets/battle-images/story/portraits/classmate1-normal.webp",
-    "originalBytes": 741964,
-    "bytes": 210754,
+    "originalBytes": 708579,
+    "bytes": 213942,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/classmate1-smile.png",
     "battle": "assets/battle-images/story/portraits/classmate1-smile.webp",
-    "originalBytes": 738324,
-    "bytes": 209738,
+    "originalBytes": 706797,
+    "bytes": 216224,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/classmate1-sick.png",
     "battle": "assets/battle-images/story/portraits/classmate1-sick.webp",
-    "originalBytes": 738024,
-    "bytes": 208674,
+    "originalBytes": 707588,
+    "bytes": 215952,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/classmate2-normal.png",
     "battle": "assets/battle-images/story/portraits/classmate2-normal.webp",
-    "originalBytes": 716816,
-    "bytes": 209886,
+    "originalBytes": 675502,
+    "bytes": 213646,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/classmate2-smile.png",
     "battle": "assets/battle-images/story/portraits/classmate2-smile.webp",
-    "originalBytes": 714921,
-    "bytes": 209684,
+    "originalBytes": 674283,
+    "bytes": 215252,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/classmate2-worried.png",
     "battle": "assets/battle-images/story/portraits/classmate2-worried.webp",
-    "originalBytes": 714410,
-    "bytes": 209532,
+    "originalBytes": 674027,
+    "bytes": 215172,
     "width": 768,
     "height": 1152
   },
@@ -1410,25 +1410,1353 @@
   {
     "original": "assets/images/story/portraits/mai-smug.png",
     "battle": "assets/battle-images/story/portraits/mai-smug.webp",
-    "originalBytes": 785200,
-    "bytes": 216546,
+    "originalBytes": 759433,
+    "bytes": 221566,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-happy.png",
     "battle": "assets/battle-images/story/portraits/takumi-happy.webp",
-    "originalBytes": 782162,
-    "bytes": 231762,
+    "originalBytes": 759632,
+    "bytes": 238324,
     "width": 768,
     "height": 1152
   },
   {
     "original": "assets/images/story/portraits/takumi-thinking.png",
     "battle": "assets/battle-images/story/portraits/takumi-thinking.webp",
-    "originalBytes": 780006,
-    "bytes": 231236,
+    "originalBytes": 757780,
+    "bytes": 236918,
     "width": 768,
     "height": 1152
+  },
+  {
+    "original": "assets/images/character-icons/chizuru-icons-v2.png",
+    "battle": "assets/battle-images/character-icons/chizuru-icons-v2.webp",
+    "originalBytes": 363761,
+    "bytes": 43354,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/battle-mode-icons/chizuru-battle-mode-icon-v2.png",
+    "battle": "assets/battle-images/battle-mode-icons/chizuru-battle-mode-icon-v2.webp",
+    "originalBytes": 433796,
+    "bytes": 26056,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/character-icons/mai-icons-v2.png",
+    "battle": "assets/battle-images/character-icons/mai-icons-v2.webp",
+    "originalBytes": 441509,
+    "bytes": 54652,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/battle-mode-icons/mai-battle-mode-icon-v2.png",
+    "battle": "assets/battle-images/battle-mode-icons/mai-battle-mode-icon-v2.webp",
+    "originalBytes": 386398,
+    "bytes": 24726,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/character-icons/takumi-icons-v2.png",
+    "battle": "assets/battle-images/character-icons/takumi-icons-v2.webp",
+    "originalBytes": 465452,
+    "bytes": 57950,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/battle-mode-icons/takumi-battle-mode-icon-v2.png",
+    "battle": "assets/battle-images/battle-mode-icons/takumi-battle-mode-icon-v2.webp",
+    "originalBytes": 408755,
+    "bytes": 27406,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/character-icons/akatsuki-icons-v2.png",
+    "battle": "assets/battle-images/character-icons/akatsuki-icons-v2.webp",
+    "originalBytes": 465067,
+    "bytes": 48584,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/battle-mode-icons/akatsuki-battle-mode-icon-v2.png",
+    "battle": "assets/battle-images/battle-mode-icons/akatsuki-battle-mode-icon-v2.webp",
+    "originalBytes": 523884,
+    "bytes": 30274,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/character-icons/chizuru-icons-v3.png",
+    "battle": "assets/battle-images/character-icons/chizuru-icons-v3.webp",
+    "originalBytes": 943549,
+    "bytes": 53910,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/character-icons/mai-icons-v3.png",
+    "battle": "assets/battle-images/character-icons/mai-icons-v3.webp",
+    "originalBytes": 978371,
+    "bytes": 57796,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/character-icons/takumi-icons-v3.png",
+    "battle": "assets/battle-images/character-icons/takumi-icons-v3.webp",
+    "originalBytes": 982904,
+    "bytes": 68252,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/character-icons/akatsuki-icons-v3.png",
+    "battle": "assets/battle-images/character-icons/akatsuki-icons-v3.webp",
+    "originalBytes": 831863,
+    "bytes": 52886,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-angry.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-angry.webp",
+    "originalBytes": 642712,
+    "bytes": 189208,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-embarrassed.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-embarrassed.webp",
+    "originalBytes": 644322,
+    "bytes": 190332,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-flustered.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-flustered.webp",
+    "originalBytes": 643976,
+    "bytes": 190170,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-frozen.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-frozen.webp",
+    "originalBytes": 642631,
+    "bytes": 190084,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-happy.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-happy.webp",
+    "originalBytes": 643968,
+    "bytes": 190410,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-laugh.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-laugh.webp",
+    "originalBytes": 642422,
+    "bytes": 190032,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-normal.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-normal.webp",
+    "originalBytes": 642835,
+    "bytes": 186730,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-pout.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-pout.webp",
+    "originalBytes": 642692,
+    "bytes": 189172,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-sad.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-sad.webp",
+    "originalBytes": 642885,
+    "bytes": 189484,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-smile.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-smile.webp",
+    "originalBytes": 645629,
+    "bytes": 190524,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-smug.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-smug.webp",
+    "originalBytes": 642680,
+    "bytes": 189882,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-surprised.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-surprised.webp",
+    "originalBytes": 642976,
+    "bytes": 189814,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-thinking.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-thinking.webp",
+    "originalBytes": 642580,
+    "bytes": 189152,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-troubled.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-troubled.webp",
+    "originalBytes": 644581,
+    "bytes": 190306,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-behind-worried.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-behind-worried.webp",
+    "originalBytes": 643057,
+    "bytes": 189796,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-angry.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-angry.webp",
+    "originalBytes": 699745,
+    "bytes": 210298,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-embarrassed.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-embarrassed.webp",
+    "originalBytes": 701267,
+    "bytes": 211692,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-flustered.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-flustered.webp",
+    "originalBytes": 700992,
+    "bytes": 211408,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-frozen.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-frozen.webp",
+    "originalBytes": 699653,
+    "bytes": 210700,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-happy.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-happy.webp",
+    "originalBytes": 700980,
+    "bytes": 211484,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-laugh.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-laugh.webp",
+    "originalBytes": 699468,
+    "bytes": 211460,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-normal.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-normal.webp",
+    "originalBytes": 699859,
+    "bytes": 208136,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-pout.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-pout.webp",
+    "originalBytes": 699717,
+    "bytes": 209922,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-sad.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-sad.webp",
+    "originalBytes": 699865,
+    "bytes": 210142,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-smile.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-smile.webp",
+    "originalBytes": 702279,
+    "bytes": 211658,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-smug.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-smug.webp",
+    "originalBytes": 699670,
+    "bytes": 210434,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-surprised.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-surprised.webp",
+    "originalBytes": 699963,
+    "bytes": 210632,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-thinking.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-thinking.webp",
+    "originalBytes": 699636,
+    "bytes": 209932,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-troubled.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-troubled.webp",
+    "originalBytes": 701365,
+    "bytes": 211242,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/chizuru-cheer-worried.png",
+    "battle": "assets/battle-images/story/portraits/chizuru-cheer-worried.webp",
+    "originalBytes": 700062,
+    "bytes": 211416,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-angry.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-angry.webp",
+    "originalBytes": 823045,
+    "bytes": 230582,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-exasperated.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-exasperated.webp",
+    "originalBytes": 823367,
+    "bytes": 230638,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-frozen.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-frozen.webp",
+    "originalBytes": 822966,
+    "bytes": 230450,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-gentle.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-gentle.webp",
+    "originalBytes": 823511,
+    "bytes": 231336,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-happy.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-happy.webp",
+    "originalBytes": 824007,
+    "bytes": 231654,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-laugh.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-laugh.webp",
+    "originalBytes": 823506,
+    "bytes": 230072,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-normal.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-normal.webp",
+    "originalBytes": 823541,
+    "bytes": 228926,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-pout.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-pout.webp",
+    "originalBytes": 823466,
+    "bytes": 230872,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-sad.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-sad.webp",
+    "originalBytes": 823245,
+    "bytes": 231194,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-serious.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-serious.webp",
+    "originalBytes": 823362,
+    "bytes": 231038,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-smile.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-smile.webp",
+    "originalBytes": 823639,
+    "bytes": 230942,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-smug.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-smug.webp",
+    "originalBytes": 823270,
+    "bytes": 231048,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-surprised.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-surprised.webp",
+    "originalBytes": 823090,
+    "bytes": 229302,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-thinking.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-thinking.webp",
+    "originalBytes": 823559,
+    "bytes": 228782,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/kanna-pocket-troubled.png",
+    "battle": "assets/battle-images/story/portraits/kanna-pocket-troubled.webp",
+    "originalBytes": 824136,
+    "bytes": 231608,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-angry.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-angry.webp",
+    "originalBytes": 676519,
+    "bytes": 196214,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-cold.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-cold.webp",
+    "originalBytes": 676264,
+    "bytes": 195820,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-embarrassed.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-embarrassed.webp",
+    "originalBytes": 677432,
+    "bytes": 195990,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-gentle.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-gentle.webp",
+    "originalBytes": 676872,
+    "bytes": 196124,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-happy.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-happy.webp",
+    "originalBytes": 677831,
+    "bytes": 196914,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-laugh.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-laugh.webp",
+    "originalBytes": 676648,
+    "bytes": 195510,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-normal.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-normal.webp",
+    "originalBytes": 678097,
+    "bytes": 193656,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-pout.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-pout.webp",
+    "originalBytes": 676101,
+    "bytes": 195958,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-sad.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-sad.webp",
+    "originalBytes": 676514,
+    "bytes": 196180,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-serious.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-serious.webp",
+    "originalBytes": 676341,
+    "bytes": 196102,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-smile.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-smile.webp",
+    "originalBytes": 680220,
+    "bytes": 196912,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-smug.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-smug.webp",
+    "originalBytes": 677621,
+    "bytes": 194194,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-surprised.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-surprised.webp",
+    "originalBytes": 677134,
+    "bytes": 196136,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-thinking.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-thinking.webp",
+    "originalBytes": 676352,
+    "bytes": 195814,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-cheer-troubled.png",
+    "battle": "assets/battle-images/story/portraits/mai-cheer-troubled.webp",
+    "originalBytes": 677557,
+    "bytes": 196714,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-angry.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-angry.webp",
+    "originalBytes": 641485,
+    "bytes": 184528,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-cold.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-cold.webp",
+    "originalBytes": 641213,
+    "bytes": 184328,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-embarrassed.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-embarrassed.webp",
+    "originalBytes": 642421,
+    "bytes": 184726,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-gentle.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-gentle.webp",
+    "originalBytes": 641836,
+    "bytes": 183772,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-happy.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-happy.webp",
+    "originalBytes": 642780,
+    "bytes": 184862,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-laugh.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-laugh.webp",
+    "originalBytes": 641613,
+    "bytes": 184380,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-normal.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-normal.webp",
+    "originalBytes": 643049,
+    "bytes": 182276,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-pout.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-pout.webp",
+    "originalBytes": 641063,
+    "bytes": 184604,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-sad.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-sad.webp",
+    "originalBytes": 641486,
+    "bytes": 184684,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-serious.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-serious.webp",
+    "originalBytes": 641279,
+    "bytes": 183714,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-smile.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-smile.webp",
+    "originalBytes": 645197,
+    "bytes": 185248,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-smug.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-smug.webp",
+    "originalBytes": 642581,
+    "bytes": 182970,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-surprised.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-surprised.webp",
+    "originalBytes": 642120,
+    "bytes": 184770,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-thinking.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-thinking.webp",
+    "originalBytes": 641333,
+    "bytes": 184384,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/portraits/mai-behind-troubled.png",
+    "battle": "assets/battle-images/story/portraits/mai-behind-troubled.webp",
+    "originalBytes": 642513,
+    "bytes": 185208,
+    "width": 768,
+    "height": 1152
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-normal.png",
+    "battle": "assets/battle-images/story/icons/chizuru-normal.webp",
+    "originalBytes": 417666,
+    "bytes": 15970,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-smile.png",
+    "battle": "assets/battle-images/story/icons/chizuru-smile.webp",
+    "originalBytes": 422066,
+    "bytes": 16446,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-troubled.png",
+    "battle": "assets/battle-images/story/icons/chizuru-troubled.webp",
+    "originalBytes": 419835,
+    "bytes": 16256,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-surprised.png",
+    "battle": "assets/battle-images/story/icons/chizuru-surprised.webp",
+    "originalBytes": 415183,
+    "bytes": 16170,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-gentle.png",
+    "battle": "assets/battle-images/story/icons/chizuru-gentle.webp",
+    "originalBytes": 408824,
+    "bytes": 15368,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-laugh.png",
+    "battle": "assets/battle-images/story/icons/chizuru-laugh.webp",
+    "originalBytes": 411162,
+    "bytes": 15930,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-normal.png",
+    "battle": "assets/battle-images/story/icons/mai-normal.webp",
+    "originalBytes": 464505,
+    "bytes": 18588,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-smile.png",
+    "battle": "assets/battle-images/story/icons/mai-smile.webp",
+    "originalBytes": 464180,
+    "bytes": 18980,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-troubled.png",
+    "battle": "assets/battle-images/story/icons/mai-troubled.webp",
+    "originalBytes": 467361,
+    "bytes": 18866,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-surprised.png",
+    "battle": "assets/battle-images/story/icons/mai-surprised.webp",
+    "originalBytes": 480236,
+    "bytes": 18808,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-gentle.png",
+    "battle": "assets/battle-images/story/icons/mai-gentle.webp",
+    "originalBytes": 459331,
+    "bytes": 18038,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-laugh.png",
+    "battle": "assets/battle-images/story/icons/mai-laugh.webp",
+    "originalBytes": 475154,
+    "bytes": 18436,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-normal.png",
+    "battle": "assets/battle-images/story/icons/takumi-normal.webp",
+    "originalBytes": 483874,
+    "bytes": 20312,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-smile.png",
+    "battle": "assets/battle-images/story/icons/takumi-smile.webp",
+    "originalBytes": 483482,
+    "bytes": 20558,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-troubled.png",
+    "battle": "assets/battle-images/story/icons/takumi-troubled.webp",
+    "originalBytes": 486047,
+    "bytes": 20472,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-surprised.png",
+    "battle": "assets/battle-images/story/icons/takumi-surprised.webp",
+    "originalBytes": 486366,
+    "bytes": 20354,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-gentle.png",
+    "battle": "assets/battle-images/story/icons/takumi-gentle.webp",
+    "originalBytes": 468834,
+    "bytes": 19600,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-laugh.png",
+    "battle": "assets/battle-images/story/icons/takumi-laugh.webp",
+    "originalBytes": 483324,
+    "bytes": 20318,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-normal.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-normal.webp",
+    "originalBytes": 410904,
+    "bytes": 16448,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-smile.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-smile.webp",
+    "originalBytes": 413383,
+    "bytes": 16662,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-troubled.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-troubled.webp",
+    "originalBytes": 415663,
+    "bytes": 16578,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-surprised.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-surprised.webp",
+    "originalBytes": 433094,
+    "bytes": 17202,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-gentle.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-gentle.webp",
+    "originalBytes": 421838,
+    "bytes": 16852,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-laugh.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-laugh.webp",
+    "originalBytes": 433266,
+    "bytes": 16982,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-normal.png",
+    "battle": "assets/battle-images/story/icons/kanna-normal.webp",
+    "originalBytes": 367874,
+    "bytes": 18988,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-smile.png",
+    "battle": "assets/battle-images/story/icons/kanna-smile.webp",
+    "originalBytes": 369744,
+    "bytes": 19082,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-troubled.png",
+    "battle": "assets/battle-images/story/icons/kanna-troubled.webp",
+    "originalBytes": 375074,
+    "bytes": 19432,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-surprised.png",
+    "battle": "assets/battle-images/story/icons/kanna-surprised.webp",
+    "originalBytes": 394050,
+    "bytes": 20402,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-gentle.png",
+    "battle": "assets/battle-images/story/icons/kanna-gentle.webp",
+    "originalBytes": 389393,
+    "bytes": 19788,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-laugh.png",
+    "battle": "assets/battle-images/story/icons/kanna-laugh.webp",
+    "originalBytes": 396724,
+    "bytes": 20112,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-normal.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-normal.webp",
+    "originalBytes": 330383,
+    "bytes": 13852,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-smile.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-smile.webp",
+    "originalBytes": 332377,
+    "bytes": 13992,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-troubled.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-troubled.webp",
+    "originalBytes": 335568,
+    "bytes": 14204,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-surprised.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-surprised.webp",
+    "originalBytes": 304483,
+    "bytes": 13864,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-gentle.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-gentle.webp",
+    "originalBytes": 298530,
+    "bytes": 13438,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-laugh.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-laugh.webp",
+    "originalBytes": 303471,
+    "bytes": 13842,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/characters/standing/tsuyoshi-standing.png",
+    "battle": "assets/battle-images/characters/standing/tsuyoshi-standing.webp",
+    "originalBytes": 1840993,
+    "bytes": 21888,
+    "width": 512,
+    "height": 768
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-normal-alpha.webp",
+    "originalBytes": 443798,
+    "bytes": 159738,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-smile-alpha.webp",
+    "originalBytes": 447877,
+    "bytes": 161188,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-troubled-alpha.webp",
+    "originalBytes": 445962,
+    "bytes": 161200,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-surprised-alpha.webp",
+    "originalBytes": 441319,
+    "bytes": 160668,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-gentle-alpha.webp",
+    "originalBytes": 433246,
+    "bytes": 157444,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-laugh-alpha.webp",
+    "originalBytes": 435927,
+    "bytes": 157728,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/chizuru-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/chizuru-standing-alpha.webp",
+    "originalBytes": 2409999,
+    "bytes": 369132,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/icons/mai-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-normal-alpha.webp",
+    "originalBytes": 496735,
+    "bytes": 193652,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-smile-alpha.webp",
+    "originalBytes": 496939,
+    "bytes": 197124,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-troubled-alpha.webp",
+    "originalBytes": 500813,
+    "bytes": 194584,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-surprised-alpha.webp",
+    "originalBytes": 511517,
+    "bytes": 192230,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-gentle-alpha.webp",
+    "originalBytes": 488373,
+    "bytes": 187982,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-laugh-alpha.webp",
+    "originalBytes": 504995,
+    "bytes": 189022,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/mai-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/mai-standing-alpha.webp",
+    "originalBytes": 2819690,
+    "bytes": 407458,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/icons/takumi-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-normal-alpha.webp",
+    "originalBytes": 519153,
+    "bytes": 191880,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-smile-alpha.webp",
+    "originalBytes": 519483,
+    "bytes": 194846,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-troubled-alpha.webp",
+    "originalBytes": 522123,
+    "bytes": 195326,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-surprised-alpha.webp",
+    "originalBytes": 521188,
+    "bytes": 191112,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-gentle-alpha.webp",
+    "originalBytes": 502267,
+    "bytes": 186012,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-laugh-alpha.webp",
+    "originalBytes": 516805,
+    "bytes": 189338,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/takumi-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/takumi-standing-alpha.webp",
+    "originalBytes": 2595227,
+    "bytes": 399098,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-normal-alpha.webp",
+    "originalBytes": 436928,
+    "bytes": 162028,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-smile-alpha.webp",
+    "originalBytes": 439891,
+    "bytes": 165592,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-troubled-alpha.webp",
+    "originalBytes": 442185,
+    "bytes": 163328,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-surprised-alpha.webp",
+    "originalBytes": 459610,
+    "bytes": 163988,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-gentle-alpha.webp",
+    "originalBytes": 447410,
+    "bytes": 161902,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-laugh-alpha.webp",
+    "originalBytes": 458769,
+    "bytes": 161862,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/akatsuki-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/akatsuki-standing-alpha.webp",
+    "originalBytes": 2517278,
+    "bytes": 360684,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/icons/kanna-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-normal-alpha.webp",
+    "originalBytes": 391134,
+    "bytes": 188436,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-smile-alpha.webp",
+    "originalBytes": 392979,
+    "bytes": 188846,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-troubled-alpha.webp",
+    "originalBytes": 398542,
+    "bytes": 191542,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-surprised-alpha.webp",
+    "originalBytes": 422546,
+    "bytes": 204254,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-gentle-alpha.webp",
+    "originalBytes": 416935,
+    "bytes": 199698,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-laugh-alpha.webp",
+    "originalBytes": 424113,
+    "bytes": 204736,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/kanna-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/kanna-standing-alpha.webp",
+    "originalBytes": 2532242,
+    "bytes": 390324,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-normal-alpha.webp",
+    "originalBytes": 349285,
+    "bytes": 152930,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-smile-alpha.webp",
+    "originalBytes": 351567,
+    "bytes": 152596,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-troubled-alpha.webp",
+    "originalBytes": 354434,
+    "bytes": 155476,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-surprised-alpha.webp",
+    "originalBytes": 324636,
+    "bytes": 147310,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-gentle-alpha.webp",
+    "originalBytes": 317834,
+    "bytes": 143768,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-laugh-alpha.webp",
+    "originalBytes": 323300,
+    "bytes": 145386,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/tsuyoshi-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/tsuyoshi-standing-alpha.webp",
+    "originalBytes": 2732697,
+    "bytes": 410402,
+    "width": 1024,
+    "height": 1536
   }
 ]

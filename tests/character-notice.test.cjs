@@ -142,9 +142,9 @@ for (const mobile of [false, true]) {
     test(`${label}: changed asset keys are bumped while 81a audio and 82a data keys are preserved`, () => {
         const html = read(file);
         for (const asset of ['story-adv.css', 'missions.js', mobile ? 'main-sp.js' : 'main.js', 'story-adv.js', 'story-mode.js']) {
-            assert.ok(html.includes(asset + '?v=20261004-character-notice1'), asset);
+            assert.ok(html.includes(asset + '?v=' + (asset === 'story-adv.js' ? '20261006-icons99e' : asset.startsWith('story-') ? '20261006-icons99e' : asset.startsWith('main') ? '20261006-icons99c' : '20261004-story-viewer1')), asset);
         }
         assert.ok(html.includes('audio-pack.js?v=20261004-audio-pack1'));
-        assert.ok(html.includes('episode10.js?v=20261004-adv-menu1'));
+        assert.ok(html.includes('episode10.js?v=20261005-story-poses92b'));
     });
 }

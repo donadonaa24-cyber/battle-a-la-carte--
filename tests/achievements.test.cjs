@@ -434,10 +434,10 @@ test('shared mirrors, UI containment, cache versions and account hooks remain wi
     for (const name of ['state', 'rules', 'player', 'main']) assert.equal(read(name + '.js').replaceAll('../assets/', 'assets/'), read('mobile/' + name + '-sp.js').replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
     for (const [file, prefix, suffix] of [['web.html', '', ''], ['mobile/mobile.html', '../', '-sp']]) {
         const html = read(file);
-        for (const module of ['achievements.js', 'network.js']) assert.ok(html.includes(`${prefix}${module}?v=20261003-rewards-bgm1`), file + ': ' + module);
-        for (const module of ['missions.js', 'battle-protocol.js', 'story-mode.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'battle-protocol.js' ? '20261002-ach1' : '20261004-character-notice1'}`), file + ': ' + module);
+        for (const module of ['achievements.js', 'network.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'network.js' ? '20261004-selection-ui1' : '20261004-story-viewer1'}`), file + ': ' + module);
+        for (const module of ['missions.js', 'battle-protocol.js', 'story-mode.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'battle-protocol.js' ? '20261002-ach1' : module === 'story-mode.js' ? '20261006-icons99e' : '20261004-story-viewer1'}`), file + ': ' + module);
         for (const module of ['state', 'rules', 'player', 'main', 'render']) {
-            const version = module === 'main' ? '20261004-character-notice1' : ['render', 'state'].includes(module) ? '20261003-rewards-bgm1' : '20261002-ach1';
+            const version = ['main', 'render'].includes(module) ? '20261006-icons99c' : module === 'state' ? '20261003-rewards-bgm1' : '20261002-ach1';
             assert.ok(html.includes(`${module}${suffix}.js?v=${version}`));
         }
         const panel = html.slice(html.indexOf('<div id="start-achievements-stage"'), html.indexOf('<div id="start-user-stage"'));

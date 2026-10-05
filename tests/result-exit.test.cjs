@@ -19,10 +19,10 @@ function runtime(mobile, { online = false, story = false } = {}) {
     c.window = c;
     c.document = { addEventListener() {}, getElementById: id => elements[id] || null };
     c.addEventListener = () => {};
-    c.GameState = { gameEnded: true };
+    c.GameState = { gameEnded: true, storyEpisodeId: story ? 'episode4' : null };
     c.FriendBattle = {
         isActive: () => online,
-        async leaveRoom() { calls.push('leave-room'); }
+        async leaveRoom() { calls.push('leave-room'); online = false; }
     };
     const file = mobile ? 'mobile/main-sp.js' : 'main.js';
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), c, { filename: file });
@@ -45,7 +45,7 @@ for (const mobile of [false, true]) {
         const { c, calls, buttons } = runtime(mobile, { online: true });
         await c.finishCompletedMatch();
         assert.ok(calls.indexOf('leave-room') < calls.indexOf('reset-game'));
-        assert.ok(calls.includes('clear-autosave'));
+        assert.ok(!calls.includes('clear-autosave'), 'online exit preserves the independent CPU resume slot');
         assert.ok(calls.includes('stage:start-menu-stage'));
         assert.deepEqual(buttons.map(button => button.disabled), [true, true]);
     });
@@ -55,5 +55,13 @@ for (const mobile of [false, true]) {
         await c.finishCompletedMatch();
         assert.ok(calls.includes('story-menu'));
         assert.ok(!calls.includes('stage:start-menu-stage'));
+        assert.ok(!calls.includes('clear-autosave'), 'story exit preserves the independent CPU resume slot');
+    });
+
+    test(`finished ${mobile ? 'mobile' : 'PC'} CPU match still clears its own completed autosave`, async () => {
+        const { c, calls } = runtime(mobile);
+        await c.finishCompletedMatch();
+        assert.ok(calls.includes('clear-autosave'));
+        assert.ok(calls.includes('stage:start-menu-stage'));
     });
 }

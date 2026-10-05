@@ -114,6 +114,7 @@
     function reveal(item) {
         item.revealed = true;
         setPhase(item, 'reveal');
+        if (!item.cancelled) root.setBattleCookingFace?.(item.side, item.winning || theme(item.dish).special ? 'laugh' : 'smile', item.id);
         sound(item);
     }
     function finish(item, skipped = false) {
@@ -127,6 +128,7 @@
         item.stack = null;
         item.score = null;
         if (active === item) active = null;
+        root.clearBattleCookingFace?.(item.id);
         item.resolve({ cancelled: item.cancelled === true });
     }
     function materials(item, transfers) {

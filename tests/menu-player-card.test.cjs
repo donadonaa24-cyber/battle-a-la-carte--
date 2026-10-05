@@ -57,7 +57,7 @@ function runtime(mobile, dishes = 100) {
         mobile ? 'mobile/main-sp.js' : 'main.js']) vm.runInContext(read(file), c, { filename: file });
     const achievementInit = listeners[0];
     for (const name of ['setupMatchAutosaveOnce', 'setupMatchExitGuardOnce', 'renderCoinStageProfile',
-        'renderStartGallery', 'updateResumeMatchButtonVisibility', 'startMenuFloatingBackground', 'stopMenuFloatingBackground']) c[name] = () => {};
+        'renderStartGallery', 'updateResumeMatchButtonVisibility']) c[name] = () => {};
     c.Achievements.initialize();
     return { c, nodes, storage, achievementInit, text: id => nodes.get(id).textContent };
 }
@@ -202,7 +202,7 @@ for (const [file, cssFile, stageHeight] of [['web.html', 'style.css', 810], ['mo
         const html = read(file), css = read(cssFile);
         const menu = html.slice(html.indexOf('<div id="start-menu-stage"'), html.indexOf('<div id="start-cpu-setup-stage"'));
         assert.match(menu, /start-stage-body[\s\S]*start-menu-message[\s\S]*start-menu-player-card[\s\S]*<\/section>\s*<\/div>\s*<div class="start-menu-buttons start-stage-footer">/);
-        assert.match(menu, /start-menu-floating-bg/);
+        assert.doesNotMatch(menu, /start-menu-floating-bg/);
         const card = declarations(css, '#start-panel .menu-player-card');
         assert.equal(card.position, 'static');
         assert.equal(card.flex, '0 0 auto');
@@ -217,7 +217,7 @@ for (const [file, cssFile, stageHeight] of [['web.html', 'style.css', 810], ['mo
         assert.equal(footer.position, 'static');
         assert.equal(footer.flex, '0 0 auto');
         assert.equal(declarations(css, '#start-panel .start-menu-buttons')['grid-template-columns'], 'repeat(2, minmax(0, 1fr))');
-        assert.equal(declarations(css, '.start-menu-floating-bg')['pointer-events'], 'none');
+        assert.equal(declarations(css, '#start-menu-stage::before')['pointer-events'], 'none');
         assert.equal(declarations(css, '.start-menu-content')['z-index'], '1');
         // Conservative logical-stage budget, including the optional resume button.
         // This checks the design constraints, not browser font/layout measurements.
@@ -239,7 +239,7 @@ test('PC/mobile share menu card logic, markup, styles and cache versions', () =>
     assert.equal(cardCss(read('style.css')), cardCss(read('mobile/style-sp.css')));
     for (const [file, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
         for (const asset of [`style${suffix}.css`, `main${suffix}.js`, 'profile.js', 'achievements.js', 'network.js']) {
-            const version = asset.startsWith('style') ? '20261003-adv1' : asset === 'profile.js' ? '20261002-menucard1' : asset.startsWith('main') ? '20261004-character-notice1' : '20261003-rewards-bgm1';
+            const version = asset.startsWith('main') ? '20261006-icons99c' : asset.startsWith('style') ? '20261004-menu-back1' : asset === 'profile.js' ? '20261004-data-safety1' : asset === 'achievements.js' ? '20261004-story-viewer1' : '20261004-selection-ui1';
             assert.ok(read(file).includes(`${asset}?v=${version}`), `${file}: ${asset}`);
         }
     }

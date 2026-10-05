@@ -250,6 +250,41 @@ function resetUserProfile() {
     return saveUserProfileToStorage(createDefaultUserProfile());
 }
 
+function confirmUserProfileReset() {
+    // This list covers createDefaultUserProfile(), not the separate reward/story stores.
+    return window.StageLayout?.confirmDestructive?.({
+        title: 'ユーザー情報を初期化しますか？',
+        erased: [
+            'ユーザー名（Playerに戻ります）',
+            '推しキャラ・推しスキル（千鶴・ラストオーダーに戻ります）',
+            'この端末のローカルコイン（0になります）',
+            '対戦回数・勝利数・料理作成回数（0になります）',
+            '最近作った料理の履歴・「よく作る料理」の表示',
+            'コインで交換した背景の所持記録・背景デザインの選択（デフォルトに戻ります）',
+            'この端末のプロフィールID・更新日時（作り直します）'
+        ],
+        kept: [
+            'ストーリーのクリア進捗・ADVの途中から再開する位置',
+            '実績・称号・枠、ミッションのクリア記録',
+            '獲得済みスリーブ・盤面背景と、その選択',
+            '保存した対戦の再開データ',
+            '音量・BGM選択・料理演出・CPUの速さ・操作確認など、プロフィール以外の設定',
+            'アカウントに保存済みのデータ（サーバー上のミッション・実績など）・ログイン状態'
+        ]
+    }) ?? Promise.resolve(false);
+}
+
+function confirmBackgroundDesignPurchase(designKey) {
+    const design = getBackgroundDesignByKey(designKey);
+    if (!design || design.unlockedByDefault) return Promise.resolve(false);
+    return window.StageLayout?.confirmDestructive?.({
+        title: `背景「${design.label}」を交換しますか？`,
+        erasedLabel: '消費するもの',
+        erased: [`この端末のローカルコイン ${design.cost}枚（返還できません）`, '交換した背景を使用中にします'],
+        confirmText: 'コインを使って交換する'
+    }) ?? Promise.resolve(false);
+}
+
 function recordDishCooked(count = 1, dishName = '') {
     const addCount = sanitizeNumber(count, 0);
     if (addCount <= 0) return { coinsGained: 0, profile: getUserProfile() };
@@ -376,6 +411,8 @@ function purchaseBackgroundDesign(designKey) {
 window.getUserProfile = getUserProfile;
 window.updateUserBasicSettings = updateUserBasicSettings;
 window.resetUserProfile = resetUserProfile;
+window.confirmUserProfileReset = confirmUserProfileReset;
+window.confirmBackgroundDesignPurchase = confirmBackgroundDesignPurchase;
 window.recordDishCooked = recordDishCooked;
 window.recordMatchResult = recordMatchResult;
 window.getUserCoinRules = getUserCoinRules;

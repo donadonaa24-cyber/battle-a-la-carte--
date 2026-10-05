@@ -528,13 +528,14 @@ function bindSettingsOverlayControls() {
     }
 
     document.querySelectorAll('.settings-bg-buy-button[data-design-key]').forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async () => {
             const designKey = button.getAttribute('data-design-key') || '';
             if (typeof purchaseBackgroundDesign !== 'function') {
                 addLog('設定: コイン交換機能が利用できません。');
                 return;
             }
 
+            if (!await window.confirmBackgroundDesignPurchase?.(designKey)) return;
             const result = purchaseBackgroundDesign(designKey);
             if (!result || !result.ok) {
                 if (result?.reason === 'not-enough-coins') {
@@ -1005,16 +1006,29 @@ function renderInfoOverlay() {
     content.innerHTML = realtimeLogHistory.map(l => `<div class="info-log-entry">${escapeHtml(l)}</div>`).join('') || '<div class="info-log-entry">ログはまだありません。</div>';
 }
 
+let battleCookingFace = null;
+function setBattleCookingFace(side, expression, id) {
+    battleCookingFace = { side, expression, id, match: GameState.matchStartedAt };
+    updateCharacterFaces();
+}
+function clearBattleCookingFace(id) {
+    if (battleCookingFace?.id !== id) return;
+    battleCookingFace = null;
+    updateCharacterFaces();
+}
+
 function updateCharacterFaces() {
     const p = document.querySelector('.player-icon');
     const c = document.querySelector('.cpu-icon');
     if (!p || !c) return;
 
-    p.classList.remove('face-normal', 'face-happy', 'face-worried');
-    c.classList.remove('face-normal', 'face-happy', 'face-worried');
+    const faces = ['face-normal', 'face-happy', 'face-worried', 'face-smile', 'face-laugh', 'face-surprised', 'face-gentle'];
+    p.classList.remove(...faces);
+    c.classList.remove(...faces);
 
-    const ps = getBattleViewModel().me.score;
-    const cs = getBattleViewModel().opponent.score;
+    const model = getBattleViewModel();
+    const ps = model.me.score;
+    const cs = model.opponent.score;
     const diff = ps - cs;
 
     let pf = 'face-normal';
@@ -1031,8 +1045,22 @@ function updateCharacterFaces() {
         }
     }
 
+    if (battleCookingFace?.match !== GameState.matchStartedAt) battleCookingFace = null;
+    // Only public, already displayed trap markers are inspected, including online opponents.
+    const reacting = (side, participant, fallback) => {
+        if (GameState.gameEnded && ['me', 'opponent'].includes(model.winner)) {
+            return model.winner === (side === 'player' ? 'me' : 'opponent') ? 'face-laugh' : 'face-worried';
+        }
+        if (battleCookingFace?.side === side) return `face-${battleCookingFace.expression}`;
+        if (participant.set?.some(card => card.trapLocked === true || card.blockedByTrap === true)) return 'face-surprised';
+        return fallback;
+    };
+    pf = reacting('player', model.me, pf);
+    cf = reacting('cpu', model.opponent, cf);
     p.classList.add(pf);
     c.classList.add(cf);
+    window.BattleImages?.applyExpression?.(p, model.me.characterId, pf.slice(5), 'assets/');
+    window.BattleImages?.applyExpression?.(c, model.opponent.characterId || 'mai', cf.slice(5), 'assets/');
 }
 
 function applyCharacterSkins() {
@@ -1744,6 +1772,16 @@ function restoreSelectionFromFieldView() {
     byId('selection-field-view-button')?.focus?.();
 }
 
+function suspendSelectionPanelsForPresentation() {
+    if (!window.isSelectionPresentationPending?.()) return;
+    for (const id of ['selection-panel', 'selection-return-button', 'set-confirm-panel',
+        'event-confirm-panel', 'skill-confirm-panel', 'pack-confirm-panel', 'set-view-panel',
+        'ingredient-action-panel', 'end-turn-confirm-panel', 'board-cycle-overlay']) {
+        byId(id)?.classList.add('hidden');
+    }
+    byId('game-container')?.classList.remove('selection-field-view');
+}
+
 function renderSelectionPanel() {
     const panel = byId('selection-panel');
     const title = byId('selection-title');
@@ -1757,6 +1795,15 @@ function renderSelectionPanel() {
             panel?.classList.add('hidden');
             GameState.selectionMode = 'board-details';
         }
+        return;
+    }
+
+    const scale = Math.max(0.01, window.StageLayout?.getScale?.() || 1);
+    panel.style?.setProperty?.('--selection-touch-height', Math.max(56, 48 / scale) + 'px');
+    panel.style?.setProperty?.('--selection-header-touch-height', Math.max(40, 40 / scale) + 'px');
+    window.prepareSelectionPresentation?.();
+    if (window.isSelectionPresentationPending?.()) {
+        suspendSelectionPanelsForPresentation();
         return;
     }
 
@@ -2664,6 +2711,7 @@ function performUIRender() {
         renderSkillConfirmPanel();
         renderPileViewPanel();
         renderEndTurnConfirmPanel();
+        suspendSelectionPanelsForPresentation();
         renderReferenceBooks();
         renderInfoOverlay();
         finishCardMotionFrame();

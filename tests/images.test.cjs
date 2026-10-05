@@ -40,12 +40,16 @@ test('battle WebP assets are small and all original PNGs are retained', () => {
         if (x.original === 'assets/images/recipes/onigiri.png') assert.deepEqual([...png.subarray(0, 3)], [255,216,255]);
         else assert.deepEqual([...png.subarray(0, 8)], [137,80,78,71,13,10,26,10], x.original);
         assert.ok(x.width > 0 && x.height > 0 && x.bytes > 0);
-        const budget = x.battle.includes('/story/backgrounds/') ? 450 * 1024
+        const alphaIcon = /\/story\/icons\/[a-z]+-[a-z]+-alpha\.webp$/.test(x.battle);
+        const alphaStanding = /\/characters\/standing\/[a-z]+-standing-alpha\.webp$/.test(x.battle);
+        const budget = alphaIcon ? 256 * 1024 : alphaStanding ? 768 * 1024 : x.battle.includes('/story/icons/') ? 40 * 1024 : x.battle.includes('/story/backgrounds/') ? 450 * 1024
             : x.battle.includes('/story/portraits/') ? 250 * 1024
             : /\/(?:battle-mode-cutins|skill-cutins)\//.test(x.battle) ? 350 * 1024 : 150 * 1024;
         assert.ok(x.bytes <= budget, `${x.battle}: ${x.bytes} bytes exceeds ${budget}`);
         if (x.battle.includes('/story/backgrounds/')) { assert.equal(x.width, 1920); assert.equal(x.height, 1080); }
         if (x.battle.includes('/story/portraits/')) { assert.equal(x.width, 768); assert.equal(x.height, 1152); }
+        if (x.battle.includes('/story/icons/')) { assert.equal(x.width, alphaIcon ? 512 : 256); assert.equal(x.height, alphaIcon ? 512 : 256); }
+        if (alphaStanding) { assert.equal(x.width, 1024); assert.equal(x.height, 1536); }
         if (/\/(cards|events|recipes|packs)\//.test(x.battle) || x.battle.endsWith('card-back.webp')) {
             assert.equal(x.width, 256); assert.equal(x.height, 384); assert.ok(x.bytes < 102400);
         }

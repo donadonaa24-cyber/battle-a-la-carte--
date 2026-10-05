@@ -373,6 +373,7 @@
         if (typeof document !== 'undefined') document.getElementById('achievement-toast')?.classList.add('hidden');
     }
     function init() {
+        if (root.StoryViewer?.active) return;
         initialize(); renderScreen(); renderPicker();
         let returnStage = 'start-menu-stage';
         for (const [id, stage] of [['menu-achievements-button', 'start-menu-stage'], ['menu-player-achievements-button', 'start-menu-stage'], ['user-achievements-button', 'start-user-stage']]) {

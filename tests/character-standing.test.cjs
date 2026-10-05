@@ -84,8 +84,7 @@ function setup(mobile) {
     c.window = c;
     for (const file of ['state.js', 'profile.js', 'battle-images.js', mobile ? 'mobile/main-sp.js' : 'main.js']) vm.runInContext(read(file), c);
     for (const name of ['setupMatchAutosaveOnce', 'setupMatchExitGuardOnce', 'renderUserStageProfile',
-        'renderCoinStageProfile', 'renderStartGallery', 'updateResumeMatchButtonVisibility',
-        'startMenuFloatingBackground', 'stopMenuFloatingBackground']) c[name] = () => {};
+        'renderCoinStageProfile', 'renderStartGallery', 'updateResumeMatchButtonVisibility']) c[name] = () => {};
     c.Missions = { isUnlocked: () => true, getDefinition: id => id === 'noItems' ? { id } : null };
     c.updateUserBasicSettings({ favoriteCharacterId: 'mai', favoriteSkillKey: 'aceProcurement' });
     c.setupStartOverlay();
@@ -180,10 +179,11 @@ for (const [htmlFile, cssFile] of [['web.html', 'style.css'], ['mobile/mobile.ht
 
 test('standing art stays in setup, field/profile icons and both entry-page cache versions are retained', () => {
     for (const file of ['render.js', 'mobile/render-sp.js', 'profile.js']) assert.doesNotMatch(read(file), /standingPath|characters\/standing/);
-    for (const file of ['style.css', 'mobile/style-sp.css']) assert.ok(read(file).includes('assets/battle-images/character-icons/mai-icons.webp'));
+    const icon = 'mai-icons-v3.webp';
+    for (const file of ['style.css', 'mobile/style-sp.css']) assert.ok(read(file).includes('assets/battle-images/character-icons/' + icon));
     for (const [file, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
         for (const asset of [`style${suffix}.css`, `render${suffix}.js`, `main${suffix}.js`, 'battle-images.js']) {
-            const version = asset === 'battle-images.js' ? '20261001-discard1' : asset.startsWith('style') ? '20261003-adv1' : asset.startsWith('main') ? '20261004-character-notice1' : '20261003-rewards-bgm1';
+            const version = asset.startsWith('style') ? '20261004-menu-back1' : '20261006-icons99c';
             assert.ok(read(file).includes(`${asset}?v=${version}`), `${file}: ${asset}`);
         }
         assert.doesNotMatch(read(file), /standing-src|standing\.png/);

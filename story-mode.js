@@ -14,6 +14,7 @@
     const EPISODES = [
         {
             id: 'episode1',
+            portraitStyle: 'icon',
             arc: 'reunion',
             background: 'classroom',
             protagonist: 'takumi',
@@ -29,12 +30,12 @@
                 { key: 'adjustHand', text: 'エンドフェイズの手札調整を完了する' }
             ],
             pre: [
-                { speaker: 'mai', expression: 'normal', text: '拓海先輩、ちょっといいですか' },
+                { speaker: 'mai', expression: 'normal', pose: 'behind', text: '拓海先輩、ちょっといいですか' },
                 { speaker: 'takumi', expression: 'smile', text: 'どうしたの？' },
                 { speaker: 'mai', expression: 'normal', text: '今度みんなで集まるとき、Battle à la carte をやると思うんです' },
                 { speaker: 'mai', expression: 'normal', text: '拓海先輩、ルール覚えてますか？' },
                 { speaker: 'takumi', expression: 'exasperated', text: '……久しぶりだから、ちょっと怪しいかも', motion: 'tremble', mark: 'sweat' },
-                { speaker: 'mai', expression: 'cold', text: 'やっぱり' },
+                { speaker: 'mai', expression: 'cold', pose: 'default', text: 'やっぱり' },
                 { speaker: 'mai', expression: 'serious', text: 'このままだと、千鶴ちゃんに一日中付き合わされますよ' },
                 { speaker: 'takumi', expression: 'exasperated', text: 'それはそれで楽しそうだけどね' },
                 { speaker: 'mai', expression: 'cold', text: '私が困るんです' },
@@ -43,16 +44,17 @@
                 { speaker: 'mai', expression: 'smug', text: '先攻は私です。よく見ててください' }
             ],
             postWin: [
-                { speaker: 'mai', expression: 'smile', text: '完璧です。1ターンの流れはこれで大丈夫です' },
+                { speaker: 'mai', expression: 'smile', pose: 'behind', text: '完璧です。1ターンの流れはこれで大丈夫です' },
                 { speaker: 'takumi', expression: 'happy', text: 'やってみたら思い出してきた', mark: 'sparkle', se: 'idea' },
                 { speaker: 'takumi', expression: 'smile', text: '部活のときと立場が逆だね' },
-                { speaker: 'mai', expression: 'smug', text: '今は私が先輩です' },
+                { speaker: 'mai', expression: 'smug', pose: 'default', text: '今は私が先輩です' },
                 { speaker: 'mai', expression: 'normal', text: '次はスキルの使い方です' },
                 { speaker: 'mai', expression: 'gentle', text: '慣れてきたら、設定で『クイック』にするとターン終了などの確認を省けます。いつでも戻せますよ' }
             ]
         },
         {
             id: 'episode2',
+            portraitStyle: 'icon',
             arc: 'reunion',
             background: 'classroom',
             protagonist: 'takumi',
@@ -76,18 +78,19 @@
             ],
             postWin: [
                 { speaker: 'takumi', expression: 'happy', text: '勝てた！ スキルを使うと一気に楽になるね', motion: 'hop', mark: 'sparkle', se: 'sparkle' },
-                { speaker: 'mai', expression: 'smile', text: 'ナイスです。これでスキルの流れもばっちりです' },
+                { speaker: 'mai', expression: 'smile', pose: 'behind', text: 'ナイスです。これでスキルの流れもばっちりです' },
                 { speaker: 'mai', expression: 'gentle', text: '次に集まる日、千鶴ちゃんと暁さんの勝負があるらしいです' },
                 { speaker: 'takumi', expression: 'smile', text: '約束してたもんね。見に行こうか' },
-                { speaker: 'mai', expression: 'happy', text: 'Battle à la carte Mode が見られるかもしれません', mark: 'sparkle' }
+                { speaker: 'mai', expression: 'happy', pose: 'cheer', text: 'Battle à la carte Mode が見られるかもしれません', mark: 'sparkle' }
             ],
             postLose: [
-                { speaker: 'mai', expression: 'gentle', text: '大丈夫です。練習なので何度でも挑戦できます' },
+                { speaker: 'mai', expression: 'gentle', pose: 'behind', text: '大丈夫です。練習なので何度でも挑戦できます' },
                 { speaker: 'takumi', expression: 'smile', text: 'ありがとう。もう一回、『切り札調達』から丁寧にやってみる', mark: 'note' }
             ]
         },
         {
             id: 'episode3',
+            portraitStyle: 'icon',
             arc: 'reunion',
             background: 'small-restaurant',
             protagonist: 'chizuru',
@@ -109,12 +112,12 @@
                 { speaker: 'akatsuki', expression: 'smug', text: '今は俺が1点リードや。このまま押し切るで' },
                 { speaker: 'chizuru', expression: 'pout', text: 'まだ。あと1品で私のModeが始まるから' },
                 { speaker: 'kanna', expression: 'gentle', text: '千鶴、通常料理を5品作ると Battle à la carte Mode に入れるよ' },
-                { speaker: 'kanna', expression: 'smug', text: '緊急料理と創作料理は数に入らないから、つまみ食いみたいにカウントしないでね' },
+                { speaker: 'kanna', expression: 'smug', pose: 'pocket', text: '緊急料理と創作料理は数に入らないから、つまみ食いみたいにカウントしないでね' },
                 { speaker: 'chizuru', expression: 'pout', text: 'つまみ食いは関係ないでしょ！', motion: 'shake', mark: 'anger', se: 'thud' },
                 { speaker: 'narration', text: '中盤から再開。千鶴を操作して、5品目を完成させよう', name: 'ナレーション' }
             ],
             postWin: [
-                { speaker: 'chizuru', expression: 'happy', text: '見た？ Mode に入ると流れをつかみやすいの' },
+                { speaker: 'chizuru', expression: 'happy', pose: 'cheer', text: '見た？ Mode に入ると流れをつかみやすいの' },
                 { speaker: 'akatsuki', expression: 'sad', text: '……くっそ、ええとこまでいってたのに', motion: 'tremble', mark: '…', se: 'shock' },
                 { speaker: 'tsuyoshi', expression: 'laugh', text: 'また負けとるやん！', motion: 'hop', mark: 'note', se: 'laugh' },
                 { speaker: 'akatsuki', expression: 'cold', text: 'うるさい' },
@@ -162,6 +165,7 @@
 
     function noticeAcknowledged() {
         if (noticeShownThisPage) return true;
+        if (window.StoryViewer?.active) return false;
         try { return localStorage.getItem(CHARACTER_NOTICE_KEY) === '1'; }
         catch (e) { return false; }
     }
@@ -191,7 +195,9 @@
         // Native dialog keeps focus and pointer input inside the single-button notice.
         dialog.addEventListener('cancel', event => event.preventDefault());
         byId('character-notice-confirm')?.addEventListener('click', () => {
-            try { localStorage.setItem(CHARACTER_NOTICE_KEY, '1'); } catch (e) { /* once per page */ }
+            if (!window.StoryViewer?.active) {
+                try { localStorage.setItem(CHARACTER_NOTICE_KEY, '1'); } catch (e) { /* once per page */ }
+            }
             const action = noticePendingAction;
             noticePendingAction = null;
             dialog.close();
@@ -209,6 +215,7 @@
 
     function loadProgress() {
         const fallback = { episode1: false, episode2: false, episode3: false, episode4: false };
+        if (window.StoryViewer?.active) return fallback;
         try {
             const raw = localStorage.getItem(STORY_PROGRESS_KEY);
             if (!raw) return fallback;
@@ -227,6 +234,7 @@
     }
 
     function saveProgress() {
+        if (window.StoryViewer?.active) return;
         try {
             S.progress = { ...loadProgress(), ...S.progress };
             localStorage.setItem(STORY_PROGRESS_KEY, JSON.stringify(S.progress));
@@ -376,6 +384,7 @@
         if (!ep) return;
         window.StoryAdv.playConversation(ep, S.lines, {
             phase: S.phase,
+            introScene: S.phase === 'post' ? (S.pendingWinner !== 'player' && ep.postLose?.length ? 'lose' : 'win') : S.phase,
             getActions() {
                 // The tutorial still owns battle setup, results, retries and progress.
                 S.lineIndex = Math.max(0, S.lines.length - 1);
@@ -992,6 +1001,7 @@
     }
 
     function openStoryStage() {
+        if (window.StoryViewer?.active) return window.StoryViewer.open();
         if (!S.inited) init();
         openSelection('第1話から進めると、操作を順番に覚えやすいです。');
         window.CharacterNotice.showOnce();
@@ -1054,6 +1064,11 @@
     function init() {
         if (S.inited) return;
         bindCharacterNotice();
+        if (window.StoryViewer?.active) {
+            S.inited = true;
+            window.StoryViewer.init(EPISODES);
+            return;
+        }
         S.progress = loadProgress();
         bindUi();
         installObserver();
@@ -1064,7 +1079,10 @@
 
     window.BattleStoryProgress = Object.freeze({
         load: loadProgress,
-        complete(id) { S.progress = { ...loadProgress(), [id]: true }; saveProgress(); }
+        complete(id) {
+            if (window.StoryViewer?.active) return;
+            S.progress = { ...loadProgress(), [id]: true }; saveProgress();
+        }
     });
     window.openStoryStage = openStoryStage;
     window.handleStoryBattleEnded = handleStoryBattleEnded;

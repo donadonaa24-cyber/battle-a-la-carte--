@@ -180,8 +180,7 @@ test('setup retains favourite preselection, registration, back/next navigation a
     c.window = c;
     for (const file of ['state.js', 'profile.js', 'main.js']) vm.runInContext(read(file), c);
     for (const name of ['setupMatchAutosaveOnce', 'setupMatchExitGuardOnce', 'renderUserStageProfile',
-        'renderCoinStageProfile', 'renderStartGallery', 'updateResumeMatchButtonVisibility',
-        'startMenuFloatingBackground', 'stopMenuFloatingBackground']) c[name] = () => {};
+        'renderCoinStageProfile', 'renderStartGallery', 'updateResumeMatchButtonVisibility']) c[name] = () => {};
     c.updateUserBasicSettings({ favoriteCharacterId: 'mai', favoriteSkillKey: 'aceProcurement' });
     c.setupStartOverlay();
     nodes['menu-cpu-button'].listeners.click();
@@ -227,8 +226,8 @@ test('PC/mobile share setup logic, overlay markup and CSS and load the updated f
     const overlay = html => html.slice(html.indexOf('    <div id="start-overlay"'), html.indexOf('\n</div>\n\n<script', html.indexOf('    <div id="start-overlay"')));
     assert.equal(overlay(read('web.html')), overlay(read('mobile/mobile.html')));
     for (const [html, style, main] of [['web.html', 'style.css', 'main.js'], ['mobile/mobile.html', 'style-sp.css', 'main-sp.js']]) {
-        const version = '20261003-adv1';
+        const version = '20261004-menu-back1';
         assert.ok(read(html).includes(`${style}?v=${version}`));
-        assert.ok(read(html).includes(`${main}?v=20261004-character-notice1`));
+        assert.ok(read(html).includes(`${main}?v=20261006-icons99c`));
     }
 });

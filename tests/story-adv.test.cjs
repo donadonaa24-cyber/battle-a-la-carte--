@@ -5,14 +5,46 @@ const path = require('node:path');
 const vm = require('node:vm');
 const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
+const optionalSource = (t, sourceRoot, files) => require('./helpers/optional-source.cjs')(t, sourceRoot, files, fs);
+const REVIEW_FILE = 'docs/story/emphasis-changes-20261004.md';
+const FIXES_FILE = 'docs/story/story-fixes.md';
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const clone = value => JSON.parse(JSON.stringify(value));
 const ADV_KEY = 'battleAlaCarteStoryAdvV1', PROGRESS_KEY = 'battleAlaCarteStoryProgressV1';
+const { storyEpisodes, firstAppearances, declaredIntros } = require('../tools/measure-story-intros.cjs');
+
+test('99e declared story-wide introductions match the first on-screen appearances in episode order', () => {
+    const data = declaredIntros(), episodes = storyEpisodes();
+    const expected = firstAppearances(episodes, Object.keys(data));
+    assert.equal(episodes.length, 10);
+    assert.deepEqual(Object.fromEntries(Object.entries(data).map(([id, intro]) => [id, intro.introAt])), expected);
+    assert.deepEqual(expected, {
+        mai: { episode: 1, scene: 'pre', line: 1 }, takumi: { episode: 1, scene: 'pre', line: 2 },
+        akatsuki: { episode: 3, scene: 'pre', line: 1 }, chizuru: { episode: 3, scene: 'pre', line: 2 },
+        tsuyoshi: { episode: 3, scene: 'pre', line: 5 }, kanna: { episode: 3, scene: 'pre', line: 8 }
+    });
+});
+test('99e intro computation sorts episodes and ignores offscreen, monologue, inactive onlyIfShown and classmates', () => {
+    const episodes = [
+        { number: 2, scenes: [{ id: 'later', lines: [{ speaker: 'mai' }, { speaker: 'takumi' }] }] },
+        { number: 1, scenes: [{ id: 'pre', lines: [
+            { speaker: 'mai', offscreen: true, show: [{ id: 'takumi' }] },
+            { speaker: 'takumi', monologue: true },
+            { speaker: 'narration', show: [{ id: 'mai', onlyIfShown: true }] },
+            { speaker: 'narration', show: [{ id: 'takumi' }] },
+            { speaker: 'mai', intro: false }, { speaker: 'classmate1' }
+        ] }] }
+    ];
+    assert.deepEqual(firstAppearances(episodes, ['mai', 'takumi']), {
+        takumi: { episode: 1, scene: 'pre', line: 4 }, mai: { episode: 1, scene: 'pre', line: 5 }
+    });
+});
 
 
 // Only the owner's coordinate-specific review table may relax source equality.
 function storyReview() {
     const changes = new Map(), effects = new Map();
+    if (!fs.existsSync(path.join(root, REVIEW_FILE))) return { changes, effects };
     for (const row of read('docs/story/emphasis-changes-20261004.md').split(/\r?\n/)) {
         const c = row.split('|').map(x => x.trim());
         if (!/^[EV]\d+$/.test(c[1] || '')) continue;
@@ -28,6 +60,11 @@ function reviewedLines(number, scene, lines) {
     const review = storyReview();
     return clone(lines).map((line, i) => {
         const key = number + '/' + scene + ':' + (i + 1), edit = review.changes.get(key), fx = review.effects.get(key);
+        if (line.pose !== undefined) {
+            const file = 'docs/story/poses-assignments-90b.md';
+            if (fs.existsSync(path.join(root, file))) assert.ok(read(file).includes(`| 第${number}話 | ${scene}:${i + 1} | ${{ chizuru: '千鶴', kanna: '栞那', mai: '舞依' }[line.speaker]} | ${line.pose} |`), key);
+            delete line.pose; // The coordinate-specific owner table authorizes only this new field.
+        }
         if (edit) { assert.equal(line.text, edit.after, key); line.text = edit.before; }
         if (fx) for (const [field, value] of Object.entries(fx)) { assert.equal(line[field], value, key); delete line[field]; }
         return line;
@@ -35,14 +72,15 @@ function reviewedLines(number, scene, lines) {
 }
 
 // Small offline DOM/timer harness, matching the VM tests used by the existing game.
-function runtime({ mobile = false, reduced = true, save = {}, main = false, storageBlocked = false, imageBehavior = {} } = {}) {
-    const elements = new Map(), jobs = new Map(), requests = [], warnings = [], calls = [], store = new Map(Object.entries(save));
+function runtime({ mobile = false, reduced = true, save = {}, main = false, storageBlocked = false, imageBehavior = {}, viewer = false, intros = false } = {}) {
+    const elements = new Map(), jobs = new Map(), requests = [], warnings = [], calls = [], persistentWrites = [], store = new Map(Object.entries(save));
     let now = 0, sequence = 0, dateSequence = 0;
+    const motionListeners = [], motionQuery = { matches: reduced, addEventListener: (_name, fn) => motionListeners.push(fn) };
     class Element {
         constructor(tag = 'div') {
             this.tagName = tag; this.children = []; this.dataset = {};
             this.style = { setProperty(name, value) { this[name] = value; } }; this.hidden = false;
-            this.className = ''; this.attributes = {}; this.listeners = {}; this.textContent = ''; this.scrollTop = 0;
+            this.className = ''; this.attributes = {}; this.listeners = {}; this.listenerOptions = {}; this.textContent = ''; this.scrollTop = 0;
             this.classList = {
                 contains: cls => this.className.split(/\s+/).includes(cls),
                 add: (...cls) => { this.className = [...new Set([...this.className.split(/\s+/).filter(Boolean), ...cls])].join(' '); },
@@ -64,6 +102,12 @@ function runtime({ mobile = false, reduced = true, save = {}, main = false, stor
                 node.className = attrs.match(/\bclass="([^"]+)"/)?.[1] || '';
                 node.hidden = /\bhidden(?:\s|$)/.test(attrs); this.appendChild(node);
             }
+            // This lightweight fixture normally flattens markup; retain the nested icon crop.
+            if (this.id === 'story-adv') {
+                const icon = elements.get('adv-face-icon'), crop = elements.get('adv-icon-crop');
+                crop.remove(); icon.appendChild(crop);
+                icon.remove(); elements.get('adv-dialogue').appendChild(icon);
+            }
         }
         appendChild(node) { node.parent = this; this.children.push(node); return node; }
         append(...nodes) { nodes.forEach(node => this.appendChild(node)); }
@@ -71,8 +115,10 @@ function runtime({ mobile = false, reduced = true, save = {}, main = false, stor
         remove() { if (this.parent) this.parent.children = this.parent.children.filter(node => node !== this); }
         setAttribute(name, value) { this.attributes[name] = value; }
         getAttribute(name) { return this.attributes[name] || ''; }
-        addEventListener(name, fn) { this.listeners[name] = fn; }
+        addEventListener(name, fn, options) { this.listeners[name] = fn; this.listenerOptions[name] = options; }
         focus() { document.activeElement = this; }
+        showModal() { this.open = true; }
+        close() { this.open = false; }
         closest() { return null; }
         querySelector(selector) {
             const className = selector.slice(1);
@@ -80,10 +126,14 @@ function runtime({ mobile = false, reduced = true, save = {}, main = false, stor
         }
         getBoundingClientRect() { return { height: 62 }; }
     }
-    const document = { currentScript: null, readyState: 'loading', visibilityState: 'visible', listeners: {},
+    const document = { currentScript: null, readyState: 'loading', visibilityState: 'visible', listeners: {}, eventHandlers: new Map(),
         getElementById: id => elements.get(id) || null, querySelectorAll: () => [], querySelector: () => null,
         createElement: tag => new Element(tag), createTextNode: text => ({ textContent: text }), body: new Element('body'),
-        addEventListener(name, fn) { this.listeners[name] = fn; }
+        addEventListener(name, fn) {
+            this.listeners[name] = fn;
+            if (!this.eventHandlers.has(name)) this.eventHandlers.set(name, []);
+            this.eventHandlers.get(name).push(fn);
+        }
     };
     const overlay = new Element(); overlay.id = 'start-overlay'; overlay.classList.add('hidden');
     const preloaded = [];
@@ -100,24 +150,35 @@ function runtime({ mobile = false, reduced = true, save = {}, main = false, stor
         get src() { return this._src; }
     }
     const c = vm.createContext({ console: { log() {}, warn: text => warnings.push(text), error: text => warnings.push(text) },
-        document, Image: FakeImage, URL, Math, performance: { now: () => now }, Date: class extends Date { static now() { return 100000 + now + dateSequence++; } },
+        document, Image: FakeImage, URL, URLSearchParams, Math, location: { search: viewer ? '?viewer' : '', pathname: mobile ? '/mobile/mobile.html' : '/web.html' },
+        performance: { now: () => now }, Date: class extends Date { static now() { return 100000 + now + dateSequence++; } },
         setTimeout(callback, delay = 0) { const id = ++sequence; jobs.set(id, { callback, at: now + delay }); return id; },
         clearTimeout: id => jobs.delete(id), setInterval: () => 0, clearInterval() {},
         localStorage: {
             getItem(key) { if (storageBlocked) throw Error('blocked'); return store.get(key) || null; },
-            setItem(key, value) { if (storageBlocked) throw Error('blocked'); store.set(key, value); }
-        }, listeners: {}, addEventListener(name, fn) { this.listeners[name] = fn; }, matchMedia: () => ({ matches: reduced })
+            setItem(key, value) { persistentWrites.push(['set', key]); if (storageBlocked) throw Error('blocked'); store.set(key, value); },
+            removeItem(key) { persistentWrites.push(['remove', key]); store.delete(key); },
+            clear() { persistentWrites.push(['clear']); store.clear(); }
+        }, listeners: {}, addEventListener(name, fn) { this.listeners[name] = fn; }, matchMedia: () => motionQuery
     });
     c.window = c;
+    // Playback/regression cases deliberately accept the new replacement prompt.
+    // Cancellation and real modal input are exercised separately by the safety tests.
+    c.StageLayout = { confirmDestructive: async () => { calls.push('data-loss-confirm'); return true; } };
     const load = file => vm.runInContext(read(file), c, { filename: file });
-    for (const file of ['story-data/characters.js', 'story-data/registry.js', ...[4, 5, 6, 7, 8, 9, 10].map(n => `story-data/episode${n}.js`)]) load(file);
-    vm.runInContext(read('story-adv.js').replace(/\}\)\(window\);\s*$/, 'root.__advTest = { S, saved, advance, renderCurrent, renderActors, enterScene, stageLine, savePosition, chooseBattle, clearEpisode, openLog, toggleAuto, episodeImages, imageCache, pausePlayback, resumePlayback, askSkip, skipToStop, toggleFastForward };\n})(window);'), c);
+    if (viewer) load('story-viewer.js');
+    for (const file of ['story-data/portrait-metrics.js', 'story-data/icon-metrics.js', 'story-data/characters.js', 'story-data/registry.js', ...[4, 5, 6, 7, 8, 9, 10].map(n => `story-data/episode${n}.js`)]) load(file);
+    if (intros) load('story-data/character-intros.js');
+    vm.runInContext(read('story-adv.js').replace(/\}\)\(window\);\s*$/, 'root.__advTest = { S, saved, advance, renderCurrent, renderActors, enterScene, stageLine, savePosition, chooseBattle, clearEpisode, openLog, toggleAuto, episodeImages, imageCache, pausePlayback, resumePlayback, askSkip, skipToStop, toggleFastForward, showIntro, closeIntro, discardIntro };\n})(window);'), c);
     vm.runInContext(read('story-mode.js').replace(/\}\)\(\);\s*$/, 'window.__legacyTest = { S, EPISODES, init, startIntro, beginPost, openSelection, onBattleStateUpdated, installGuards, renderEpisodeList, loadProgress, saveProgress, startBattle, handleStoryBattleEnded };\n})();'), c);
     Object.assign(c, {
         playStoryBGM: character => { c.lastStoryThemeCharacter = character; calls.push('story-bgm'); }, playStoryCue: kind => calls.push(kind),
         playStoryDialogueSound: () => calls.push('dialogue'), stopStoryCues() {},
         openStorySkillChoice: (episode, onStart, onBack) => { c.choice = { episode, onStart, onBack }; calls.push('skill-choice'); },
-        openStoryStage: () => { c.StoryAdv.abandonBattle(); c.StoryAdv.stop(); calls.push('story-select'); }
+        openStoryStage: () => {
+            if (viewer) { c.StoryViewer.open(); calls.push('viewer-list'); }
+            else { c.StoryAdv.abandonBattle(); c.StoryAdv.stop(); calls.push('story-select'); }
+        }
     });
     if (main) {
         for (const name of ['cards', 'state', 'rules', 'player', 'cpu', 'main']) load(mobile ? `mobile/${name}-sp.js` : `${name}.js`);
@@ -126,7 +187,7 @@ function runtime({ mobile = false, reduced = true, save = {}, main = false, stor
         load('battle-view-model.js'); load('battle-images.js');
         Object.assign(c, { safeStartGame: () => { calls.push('init-normal'); c.initGame(); vm.runInContext('gameStartedOnce = true', c); },
             startBgmOnce() {}, unlockAudio() {}, stopBGM() {}, addLog: text => calls.push(text), updateUI() {},
-            stopMenuFloatingBackground() {}, hideResultOverlay() {}, hideSpotlightCard() {}, closePackShop() {},
+            hideResultOverlay() {}, hideSpotlightCard() {}, closePackShop() {},
             enablePlayerControls() {}, disablePlayerControls() {}, pushMatchExitGuardHistory() {}, saveMatchSnapshot() {},
             clearSavedMatch() {}, setCPUStatus() {}, hideDiscardBanner() {}, prepareMatchFinale() {}, cpuTurn() {},
             recordMatchResult() {}, setBattleModeBgmLocked() {}, applyRuntimeSettings() {} });
@@ -142,9 +203,297 @@ function runtime({ mobile = false, reduced = true, save = {}, main = false, stor
         now = until;
         for (let i = 0; i < 8; i++) await Promise.resolve();
     }
-    return { c, elements, jobs, requests, warnings, calls, store, tick, load, Element, preloaded };
+    return { c, elements, jobs, requests, warnings, calls, store, tick, load, Element, preloaded, persistentWrites,
+        setReduced(value) { motionQuery.matches = value; motionListeners.forEach(fn => fn({ matches: value })); } };
 }
 
+for (const mobile of [false, true]) test(`${mobile ? 'phone' : 'PC'}: ADV replacement cancels without a write and only starts after deliberate acceptance`, async () => {
+    const r = runtime({ mobile });
+    await r.c.StoryAdv.start('episode4'); r.c.StoryAdv.stop();
+    const before = r.store.get(ADV_KEY), writes = r.persistentWrites.length;
+    let decide, prompts = 0;
+    r.c.StageLayout.confirmDestructive = options => {
+        prompts++; assert.equal(options.title, 'ストーリーの再開位置を上書きしますか？');
+        return new Promise(resolve => { decide = resolve; });
+    };
+    const canceled = r.c.StoryAdv.start('episode5');
+    assert.equal(r.c.__advTest.S.episode.id, 'episode4');
+    assert.equal(r.c.__advTest.S.active, false); assert.equal(r.store.get(ADV_KEY), before);
+    decide(false); await canceled;
+    assert.equal(r.store.get(ADV_KEY), before); assert.equal(r.persistentWrites.length, writes);
+    const accepted = r.c.StoryAdv.start('episode5'); decide(true); await accepted;
+    assert.equal(r.c.__advTest.S.episode.id, 'episode5');
+    assert.equal(JSON.parse(r.store.get(ADV_KEY)).resume.episodeId, 'episode5');
+    assert.equal(prompts, 2);
+    r.c.StoryAdv.stop(); await r.c.StoryAdv.start('episode5', true);
+    assert.equal(prompts, 2, 'resuming the same saved position keeps its data');
+});
+
+function fullRuntime(options = {}) {
+    const r = runtime(options);
+    for (const ep of [...r.c.BattleStoryData.all(), ...r.c.__legacyTest.EPISODES]) ep.portraitStyle = 'full';
+    return r;
+}
+
+// Dispatch through the mounted element tree, including capture and bubbling.
+// Calling advance() alone would miss swallowed input and touch click-through.
+function introInput(target, type, properties = {}) {
+    const route = [];
+    for (let node = target; node; node = node.parent) route.push(node);
+    const event = { target, type, defaultPrevented: false, stopped: false,
+        preventDefault() { this.defaultPrevented = true; },
+        stopPropagation() { this.stopped = true; }, ...properties };
+    const capture = node => node.listenerOptions?.[type] === true || node.listenerOptions?.[type]?.capture === true;
+    for (const node of route.slice().reverse()) {
+        if (capture(node)) node.listeners[type]?.(event);
+        if (event.stopped) return event;
+    }
+    for (const node of route) {
+        if (!capture(node)) node.listeners[type]?.(event);
+        if (event.stopped) break;
+    }
+    return event;
+}
+async function openIntroEpisode(r, episode, viewer) {
+    // 99d input regression: ep6 is no longer a default introduction in 99e.
+    // Force only its original first speaker so the same input paths stay covered.
+    if (episode === 6) {
+        const data = viewer ? r.c.StoryViewer.get('episode6') : r.c.BattleStoryData.get('episode6');
+        data.scenes[0].lines.find(line => line.speaker === 'mai' && !line.offscreen).intro = true;
+    }
+    if (episode === 1 && !viewer) {
+        const data = r.c.__legacyTest.EPISODES[0];
+        await r.c.StoryAdv.playConversation(data, data.pre, { phase: 'pre', getActions: () => [] });
+    } else await r.c.StoryAdv.start(`episode${episode}`);
+    await r.tick(0);
+    assert.equal(r.elements.get('adv-character-intro').hidden, false);
+}
+for (const mobile of [false, true]) for (const viewer of [false, true]) for (const episode of [1, 6]) {
+    for (const moment of ['immediate', 'entrance', '5s', 'auto', 'pause', 'log']) {
+        for (const input of ['click', 'touch', 'delayed-touch-click']) {
+            test(`99d ${mobile ? 'phone' : 'PC'} ${viewer ? 'viewer' : 'normal'} ep${episode} ${moment} ${input}: one gesture closes only the intro`, async () => {
+                const r = viewer ? viewerRuntime({ mobile, intros: true, reduced: false }) : runtime({ mobile, intros: true, reduced: false });
+                await openIntroEpisode(r, episode, viewer);
+                const { c, tick, elements } = r, t = c.__advTest;
+                const intro = elements.get('adv-character-intro'), dialogue = elements.get('adv-dialogue');
+                const index = t.S.lineIndex, item = t.S.episode.scenes.find(s => s.id === t.S.sceneId).lines[index];
+                const target = moment === 'immediate' ? intro : intro.querySelector('.adv-intro-art');
+                if (moment === 'entrance') await tick(160);
+                if (moment === '5s') await tick(5000);
+                if (moment === 'auto') { t.toggleAuto(); await tick(1000); }
+                if (moment === 'pause' || moment === 'log') {
+                    t.toggleAuto(); await tick(500);
+                    if (moment === 'pause') t.pausePlayback(); else t.openLog(true);
+                    introInput(target, 'click');
+                    introInput(target, 'pointerup', { pointerType: 'touch' });
+                    await tick(5000);
+                    assert.equal(intro.hidden, false, 'frozen playback keeps the intro');
+                    assert.equal(t.S.intro.closing, false);
+                    if (moment === 'pause') { t.openLog(true); t.openLog(false); t.resumePlayback(); }
+                    else t.openLog(false);
+                }
+                assert.equal(t.S.busy, true); assert.equal(t.S.backlog.length, 0);
+                introInput(target, 'pointerdown');
+                if (input === 'click') introInput(target, 'click');
+                else {
+                    const up = introInput(target, 'pointerup', { pointerType: 'touch', isPrimary: true });
+                    assert.equal(up.defaultPrevented, true);
+                    if (input === 'touch') introInput(target, 'click');
+                }
+                assert.equal(t.S.intro.closing, true);
+                await tick(180);
+                assert.equal(intro.hidden, true); assert.equal(t.S.intro, null);
+                if (input === 'delayed-touch-click') {
+                    await tick(320);
+                    // On phones the compatibility click may hit the revealed layer.
+                    const beforeTyping = t.S.typing, beforeText = elements.get('adv-text').textContent;
+                    introInput(dialogue, 'click');
+                    assert.equal(t.S.typing, beforeTyping, 'late click must not complete or skip the text');
+                    assert.equal(elements.get('adv-text').textContent, beforeText);
+                }
+                assert.equal(t.S.lineIndex, index);
+                assert.equal(t.S.backlog.length, 1); assert.equal(t.S.backlog[0].text, item.text);
+                if (t.saved.auto) t.toggleAuto();
+                await tick(6500);
+                assert.equal(elements.get('adv-text').textContent, item.text);
+                introInput(dialogue, 'pointerdown'); introInput(dialogue, 'click'); await tick(0);
+                assert.equal(t.S.lineIndex, index + 1, 'the next independent click advances normally');
+                if (viewer) assert.equal(r.persistentWrites.length, 0);
+            });
+        }
+    }
+    for (const key of ['Enter', ' ']) test(`99d ${mobile ? 'phone' : 'PC'} ${viewer ? 'viewer' : 'normal'} ep${episode} ${key}: keyboard closes only the intro`, async () => {
+        const r = viewer ? viewerRuntime({ mobile, intros: true, reduced: false }) : runtime({ mobile, intros: true, reduced: false });
+        await openIntroEpisode(r, episode, viewer); await r.tick(5000);
+        const t = r.c.__advTest, intro = r.elements.get('adv-character-intro'), index = t.S.lineIndex;
+        r.c.document.listeners.keydown({ key, target: intro, preventDefault() {} });
+        await r.tick(180);
+        assert.equal(intro.hidden, true); assert.equal(t.S.intro, null);
+        assert.equal(t.S.lineIndex, index); assert.equal(t.S.backlog.length, 1);
+    });
+}
+test('99d intro disables native image/text drag that can cancel the mouse click', async () => {
+    const r = runtime({ intros: true }); await openIntroEpisode(r, 6, false);
+    const intro = r.elements.get('adv-character-intro'), art = intro.querySelector('.adv-intro-art');
+    assert.equal(art.draggable, false);
+    for (const target of [art, intro.querySelector('.adv-intro-copy')]) {
+        assert.equal(introInput(target, 'dragstart').defaultPrevented, true);
+    }
+    introInput(art, 'click'); await r.tick(100);
+    assert.equal(intro.hidden, true); assert.equal(r.c.__advTest.S.lineIndex, 2);
+});
+test('99d intro state exists before visibility/focus and is cleared only after hiding, including reentrant focus input', async () => {
+    const r = runtime({ intros: true, reduced: false }); await openIntroEpisode(r, 6, false);
+    const t = r.c.__advTest, intro = r.elements.get('adv-character-intro');
+    t.discardIntro(); await r.tick(0);
+    let hidden = intro.hidden, state = t.S.intro;
+    Object.defineProperty(intro, 'hidden', { get: () => hidden, set(value) {
+        if (!value) assert.ok(t.S.intro, 'a visible intro must already have its state');
+        hidden = value;
+    } });
+    Object.defineProperty(t.S, 'intro', { get: () => state, set(value) {
+        if (value === null) assert.equal(intro.hidden, true, 'hide before clearing state');
+        state = value;
+    } });
+    intro.focus = () => introInput(intro, 'click');
+    const done = t.showIntro({ id: 'mai' });
+    assert.equal(t.S.intro.closing, true);
+    await r.tick(180); await done;
+    assert.equal(intro.hidden, true); assert.equal(t.S.intro, null);
+});
+test('99d duplicate intro resolves its old waiter and cancels stale exit callbacks', async () => {
+    const r = runtime({ intros: true, reduced: false }); await openIntroEpisode(r, 6, false);
+    const t = r.c.__advTest, intro = r.elements.get('adv-character-intro');
+    t.discardIntro(); await r.tick(0);
+    let resolved = 0;
+    const old = t.showIntro({ id: 'mai' }).then(() => { resolved++; });
+    t.closeIntro(); const staleExit = t.S.intro.exitTimer.callback;
+    const current = t.showIntro({ id: 'takumi' }); await r.tick(0); await old;
+    assert.equal(resolved, 1); assert.equal(intro.hidden, false); assert.equal(intro.dataset.actor, 'takumi');
+    staleExit(); await r.tick(180);
+    assert.equal(intro.hidden, false); assert.equal(t.S.intro.closing, false);
+    t.discardIntro(); await current;
+    assert.equal(intro.hidden, true); assert.equal(t.S.intro, null);
+});
+test('99d delayed compatibility click cannot dismiss the next character on the same line', async () => {
+    const r = runtime({ intros: true, reduced: false }), t = r.c.__advTest;
+    r.c.BattleStoryData.register({ id: 'two-intros', scenes: [{ id: 's', lines: [
+        { speaker: 'narration', show: [{ id: 'mai', intro: true }, { id: 'takumi', intro: true }], text: '二人が登場する同じ台詞' }
+    ] }] });
+    await r.c.StoryAdv.start('two-intros'); await r.tick(0);
+    const intro = r.elements.get('adv-character-intro'); assert.equal(intro.dataset.actor, 'mai');
+    introInput(intro, 'pointerdown'); introInput(intro, 'pointerup', { pointerType: 'touch' });
+    await r.tick(500);
+    assert.equal(intro.hidden, false); assert.equal(intro.dataset.actor, 'takumi');
+    introInput(intro, 'click');
+    assert.equal(t.S.intro.closing, false); assert.equal(t.S.backlog.length, 0);
+    introInput(intro, 'pointerdown'); introInput(intro, 'click'); introInput(intro, 'click');
+    await r.tick(180);
+    assert.equal(intro.hidden, true); assert.equal(t.S.intro, null);
+    assert.equal(t.S.lineIndex, 0); assert.equal(t.S.backlog.length, 1);
+});
+for (const input of ['click', 'touch']) test(`99d visible intro closes through its own ${input} handler even if active is false`, async () => {
+    const r = runtime({ intros: true }); await openIntroEpisode(r, 6, false);
+    const t = r.c.__advTest, intro = r.elements.get('adv-character-intro'); t.S.active = false;
+    introInput(intro, input === 'touch' ? 'pointerup' : 'click', { pointerType: 'touch' });
+    await r.tick(100);
+    assert.equal(intro.hidden, true); assert.equal(t.S.intro, null);
+    assert.equal(t.S.lineIndex, 2); assert.equal(t.S.backlog.length, 0);
+});
+for (const input of ['click', 'touch', 'advance', 'stop']) test(`99d orphan intro / inactive state recovers through ${input}`, async () => {
+    const r = runtime({ intros: true }); await openIntroEpisode(r, 6, false);
+    const t = r.c.__advTest, intro = r.elements.get('adv-character-intro'), index = t.S.lineIndex;
+    t.discardIntro(); await r.tick(0);
+    intro.hidden = false; r.elements.get('story-adv').classList.add('adv-introducing');
+    t.S.active = false;
+    if (input === 'advance') t.advance();
+    else if (input === 'stop') r.c.StoryAdv.stop();
+    else introInput(intro, input === 'touch' ? 'pointerup' : 'click', { pointerType: 'touch' });
+    assert.equal(intro.hidden, true); assert.equal(t.S.intro, null);
+    assert.equal(r.elements.get('story-adv').classList.contains('adv-introducing'), false);
+    assert.equal(t.S.lineIndex, index);
+});
+
+// Intro cases use real data and the real SHORT constant; legacy dialogue
+// regression cases above may omit the new optional presentation data.
+for (const mobile of [false, true]) for (const viewer of [false, true]) {
+    test(`99c ${mobile ? 'phone' : 'PC'} ${viewer ? 'viewer' : 'normal'}: explicit introductions block before the same line, tap/key resume, no log entries`, async () => {
+        const r = viewer ? viewerRuntime({ mobile, intros: true, reduced: false }) : runtime({ mobile, intros: true, reduced: false }), { c, elements, tick } = r, t = c.__advTest;
+        c.BattleStoryData.register({ id: 'intro-test', scenes: [
+            { id: 'first', next: 'second', lines: [{ speaker: 'takumi', text: 'この台詞から', intro: { text: '確認用紹介文' } }, { speaker: 'takumi', text: '二行目' }] },
+            { id: 'second', lines: [{ speaker: 'takumi', text: '場面が変わっても一度' }, { speaker: 'mai', text: '次の人物', intro: true }] }
+        ] });
+        if (viewer) c.StoryViewer.init(c.__legacyTest.EPISODES);
+        await c.StoryAdv.start('intro-test'); await tick(0);
+        const intro = elements.get('adv-character-intro'), copy = intro.querySelector('.adv-intro-copy');
+        assert.equal(intro.hidden, false); assert.equal(intro.dataset.actor,'takumi');
+        assert.equal(t.S.busy,true); assert.equal(t.S.lineIndex,0); assert.equal(t.S.backlog.length,0);
+        assert.ok(intro.querySelector('.adv-intro-art').src.includes('takumi-standing-alpha.webp?v=20261006-icons99e'));
+        assert.equal(copy.querySelector('.adv-intro-name').textContent,'拓海');
+        assert.equal(copy.querySelector('.adv-intro-text').textContent,'確認用紹介文');
+        assert.equal(copy.querySelector('.adv-intro-title'),null); assert.equal(copy.querySelector('.adv-intro-subtitle'),null);
+        assert.equal(intro.querySelector('.adv-intro-notice').textContent,c.CharacterNotice.shortText);
+        assert.equal(intro.querySelector('.adv-intro-hint').textContent,'タップで続ける');
+        elements.get('story-adv').listeners.click({ target: intro }); await tick(180);
+        assert.equal(intro.hidden,true); assert.equal(t.S.lineIndex,0); assert.equal(t.S.backlog.length,1);
+        t.advance(); assert.equal(elements.get('adv-text').textContent,'この台詞から');
+        t.advance(); await tick(0); assert.equal(t.S.lineIndex,1); assert.equal(intro.hidden,true);
+        t.advance(); t.advance(); await tick(0); assert.equal(t.S.sceneId,'second'); assert.equal(intro.hidden,true);
+        t.advance(); t.advance(); await tick(0); assert.equal(intro.hidden,false); assert.equal(intro.dataset.actor,'mai');
+        assert.equal(intro.querySelector('.adv-intro-copy').children.length,1,'empty fields do not create nodes');
+        c.document.listeners.keydown({ key:'Enter', target:intro, preventDefault() {} }); await tick(180);
+        assert.equal(intro.hidden,true); assert.equal(t.S.lineIndex,1); assert.equal(t.S.backlog.length,4);
+        if (viewer) assert.equal(r.persistentWrites.length,0);
+    });
+}
+for (const mode of ['auto','fast','ctrl','skip','pause','log','stop','reduced']) test(`99c intro respects ${mode}`, async () => {
+    const r = runtime({ intros:true, reduced:mode==='reduced' }), { c,tick,elements } = r, t = c.__advTest;
+    c.BattleStoryData.register({ id:'intro-controls', scenes:[{id:'s',lines:[{speaker:'kanna',text:'続き',intro:true},{speaker:'mai',text:'飛ばす',intro:true}]}] });
+    await c.StoryAdv.start('intro-controls'); await tick(0);
+    const intro = elements.get('adv-character-intro'); assert.equal(intro.hidden,false);
+    if (mode === 'auto') {
+        t.toggleAuto(); await tick(2499); assert.equal(intro.hidden,false); await tick(181); assert.equal(intro.hidden,true);
+        assert.equal(t.S.lineIndex,0); assert.equal(t.S.backlog.length,1);
+    } else if (mode === 'fast' || mode === 'ctrl') {
+        if (mode==='fast') t.toggleFastForward();
+        else c.document.listeners.keydown({key:'Control',target:intro,preventDefault(){}});
+        await tick(0); assert.equal(intro.hidden,true); assert.equal(t.S.backlog.length,1);
+        await tick(300); assert.equal(t.S.entranceSeen.has('intro-controls/s/2/mai'),true);
+        assert.equal(intro.hidden,true,'future first appearances are also skipped');
+    } else if (mode === 'skip') {
+        t.askSkip(); assert.equal(intro.hidden,true); await t.skipToStop(); await tick(0); assert.equal(t.S.intro,null);
+    } else if (mode === 'pause' || mode === 'log') {
+        t.toggleAuto(); await tick(1000);
+        if (mode==='pause') t.pausePlayback(); else t.openLog(true);
+        await tick(5000); assert.equal(intro.hidden,false); assert.equal(t.S.backlog.length,0);
+        if (mode==='pause') t.resumePlayback(); else t.openLog(false);
+        await tick(1680); assert.equal(intro.hidden,true); assert.equal(t.S.backlog.length,1);
+    } else if (mode==='stop') {
+        c.StoryAdv.stop(); await tick(3000); assert.equal(intro.hidden,true); assert.equal(t.S.active,false); assert.equal(t.S.backlog.length,0);
+    } else {
+        t.advance(); await tick(99); assert.equal(intro.hidden,false); await tick(1); assert.equal(intro.hidden,true);
+        assert.equal(elements.get('adv-text').textContent,'続き');
+    }
+});
+test('99c suppressed/offscreen/classmate introductions, show actors, resume and tutorial phase continuity', async () => {
+    const r=runtime({intros:true}), {c,tick,elements}=r,t=c.__advTest;
+    const ep=c.__legacyTest.EPISODES[0];
+    await c.StoryAdv.playConversation(ep,[{speaker:'takumi',text:'前半',intro:false},{speaker:'classmate1',text:'同級生'},{speaker:'mai',offscreen:true,text:'声だけ'}],{phase:'pre',getActions:()=>[]});
+    await tick(0); assert.equal(elements.get('adv-character-intro').hidden,true);
+    await c.StoryAdv.playConversation(ep,[{speaker:'takumi',text:'後半'},{speaker:'narration',text:'登場',show:[{id:'mai',intro:true}]}],{phase:'post',getActions:()=>[]});
+    await tick(0); assert.equal(elements.get('adv-character-intro').hidden,true,'suppressed first appearance is consumed across phases');
+    t.advance(); await tick(0); assert.equal(elements.get('adv-character-intro').dataset.actor,'mai');
+    t.advance(); await tick(100); assert.equal(t.S.backlog.at(-1).text,'登場');
+    c.BattleStoryData.register({id:'intro-resume',scenes:[{id:'s',lines:[{speaker:'chizuru',text:'一',intro:true},{speaker:'chizuru',text:'二'}]}]});
+    await c.StoryAdv.start('intro-resume'); await tick(0); t.advance(); await tick(100); t.advance(); await tick(0);
+    c.StoryAdv.stop(); await c.StoryAdv.start('intro-resume',true); await tick(0);
+    assert.equal(t.S.lineIndex,1); assert.equal(elements.get('adv-character-intro').hidden,true,'earlier first appearance reconstructed from saved position');
+});
+function fullViewerRuntime(options = {}) {
+    const r = viewerRuntime(options);
+    for (const ep of r.c.StoryViewer.all()) ep.portraitStyle = 'full';
+    return r;
+}
 function tutorialRuntime(options = {}) {
     const r = runtime({ main: true, ...options });
     for (const id of ['story-dialogue-panel', 'story-primary-button', 'story-secondary-button',
@@ -156,6 +505,500 @@ function tutorialRuntime(options = {}) {
     r.c.__legacyTest.init();
     return r;
 }
+
+for (const mobile of [false, true]) for (const viewer of [false, true]) test(`99e ${mobile ? 'phone' : 'PC'} ${viewer ? 'viewer' : 'normal'}: every line in episodes1–10 uses icons and each character has one static intro, including replay`, async () => {
+    const r = viewer ? viewerRuntime({ mobile, intros: true }) : runtime({ mobile, intros: true });
+    const { c, elements, tick } = r, t = c.__advTest;
+    await c.StoryAdv.start('episode4'); await tick(0); c.StoryAdv.stop();
+    const introCounts = Object.fromEntries(Object.keys(c.BattleStoryCharacterIntros).map(id => [id, 0]));
+    const all = storyEpisodes().sort((a,b) => a.number-b.number);
+    for (let replay = 0; replay < 2; replay++) {
+        const counts = { ...introCounts };
+        for (const source of all) {
+            const ep = viewer ? c.StoryViewer.get(source.id) : source.number > 3 ? c.BattleStoryData.get(source.id) : null;
+            for (const sceneData of source.scenes) {
+                c.StoryAdv.stop();
+                if (!viewer && source.number <= 3) {
+                    const tutorial = c.__legacyTest.EPISODES[source.number - 1];
+                    await c.StoryAdv.playConversation(tutorial, sceneData.lines, {
+                        phase: sceneData.id === 'pre' ? 'pre' : 'post', introScene: sceneData.id, getActions: () => []
+                    });
+                    await tick(0); t.discardIntro(); await tick(0);
+                } else {
+                    // Inspect every branch, including scenes reached after/between battles.
+                    t.S.episode = ep; t.S.sceneId = sceneData.id;
+                }
+                assert.equal(t.S.episode.portraitStyle, 'icon', source.id);
+                t.S.active = true; t.S.actors.clear(); t.S.poses.clear(); t.S.poseSceneId = null;
+                t.S.entranceSeen.clear();
+                const sceneId = t.S.sceneId;
+                for (const [index, item] of sceneData.lines.entries()) {
+                    t.S.lineIndex = index; t.stageLine(item, sceneId, index); t.renderActors(item.speaker, false);
+                    const where = `${source.id}/${sceneData.id}:${index+1}`;
+                    assert.equal(elements.get('adv-portraits').children.length, 0, where + ' no stage portraits');
+                    const icon = elements.get('adv-face-icon'), image = elements.get('adv-icon-crop').children[0];
+                    const actor = c.BattleStoryAssets.characters[item.speaker] && t.S.actors.has(item.speaker);
+                    assert.equal(icon.hidden, !actor, where + ' speaker visibility');
+                    if (actor) {
+                        const file = c.BattleStoryAssets.iconPath(item.speaker, item.expression);
+                        assert.equal(image.src, c.BattleStoryAssets.url(file), where + ' registered icon');
+                        if (c.BattleStoryAssets.characters[item.speaker].icons) {
+                            assert.match(file, /\/story\/icons\/.*-alpha\.webp$/);
+                            const expected = { style: {} }, cell = file.match(/-([a-z]+)-alpha\.webp$/)[1];
+                            c.BattleStoryIconMetrics.apply(expected, item.speaker, cell);
+                            assert.deepEqual(clone(image.style), clone(expected.style), where + ' existing per-character metrics');
+                        } else assert.equal(elements.get('adv-icon-crop').classList.contains('adv-icon-sheet'), false, where + ' classmate crop');
+                    }
+                    for (const actor of t.S.entrances) {
+                        counts[actor.id]++;
+                        assert.deepEqual(clone(c.BattleStoryCharacterIntros[actor.id].introAt), {
+                            episode: source.number, scene: sceneData.id, line: index+1
+                        }, where + ' static location');
+                    }
+                    assert.ok(t.S.entrances.every(actor => !actor.id.startsWith('classmate')), where);
+                    t.stageLine(item, sceneId, index);
+                    assert.equal(t.S.entrances.length, 0, where + ' no duplicate on re-render');
+                }
+            }
+        }
+        assert.deepEqual(counts, Object.fromEntries(Object.keys(counts).map(id => [id, 1])), 'one per character in each replay');
+    }
+    if (viewer) assert.equal(r.persistentWrites.length, 0);
+    c.StoryAdv.stop();
+});
+
+for (const mobile of [false, true]) for (const viewer of [false, true]) test(`99e ${mobile ? 'phone' : 'PC'} ${viewer ? 'viewer' : 'normal'}: scheduled intro, later episodes, editable location and line overrides`, async () => {
+    const r = viewer ? viewerRuntime({ mobile, intros: true }) : runtime({ mobile, intros: true });
+    const { c, tick, elements } = r, t = c.__advTest;
+    await openIntroEpisode(r, 1, viewer);
+    assert.equal(elements.get('adv-character-intro').dataset.actor, 'mai');
+    t.advance(); await tick(100); t.advance(); await tick(0);
+    assert.equal(elements.get('adv-character-intro').dataset.actor, 'takumi');
+    t.advance(); await tick(100); t.advance(); await tick(0);
+    assert.equal(elements.get('adv-character-intro').hidden, true, 'repeat speaker does not introduce again');
+    c.StoryAdv.stop(); await c.StoryAdv.start('episode6'); await tick(0);
+    assert.equal(elements.get('adv-character-intro').hidden, true, 'later episode does not introduce again even if opened first');
+    const data = c.BattleStoryCharacterIntros.mai;
+    data.introAt = { episode: 6, scene: t.S.sceneId, line: 4 };
+    for (const line of t.S.episode.scenes[0].lines.slice(0,4)) {
+        const index = t.S.episode.scenes[0].lines.indexOf(line);
+        t.stageLine(line, t.S.sceneId, index);
+        if (index === 3) assert.equal(t.S.entrances[0]?.id, 'mai', 'owner may move intro past earlier appearances');
+    }
+    t.S.entranceSeen.clear();
+    t.stageLine({ speaker: 'mai', intro: false }, t.S.sceneId, 3);
+    assert.equal(t.S.entrances.length, 0, 'false suppresses scheduled location');
+    t.stageLine({ speaker: 'mai', intro: true }, t.S.sceneId, 4);
+    assert.equal(t.S.entrances[0]?.id, 'mai', 'true explicitly introduces on another line');
+    t.stageLine({ speaker: 'mai', offscreen: true, intro: true }, t.S.sceneId, 5);
+    assert.equal(t.S.entrances.length, 0, 'offscreen override does not introduce');
+    t.stageLine({ speaker: 'narration', show: [{ id: 'classmate1', intro: true }] }, t.S.sceneId, 6);
+    assert.equal(t.S.entrances.length, 0, 'classmates never introduce');
+    t.stageLine({ speaker: 'narration', show: [{ id: 'mai', intro: { text: '承認済み本文' } }] }, t.S.sceneId, 7);
+    assert.equal(t.S.entrances[0]?.intro.text, '承認済み本文');
+    t.stageLine({ speaker: 'narration', text: '次の行' }, t.S.sceneId, 8);
+    assert.equal(t.S.entrances.length, 0, 'show override is not inherited by later lines');
+    t.stageLine({ speaker: 'narration', intro: true, show: [{ id: 'mai' }, { id: 'takumi', intro: false }] }, t.S.sceneId, 9);
+    assert.deepEqual(clone(t.S.entrances.map(actor => actor.id)), ['mai'], 'line override applies to show actors, actor false still suppresses');
+    c.StoryAdv.stop();
+});
+
+for (const mobile of [false, true]) test(`99a ${mobile ? 'phone' : 'PC'}: all episodes use icons in normal pre/post/tutorial ADV and the viewer`, async () => {
+    const r = runtime({ mobile }), { c, elements } = r;
+    assert.deepEqual(clone(c.__legacyTest.EPISODES.filter(e => e.portraitStyle === 'icon').map(e => e.id)), ['episode1', 'episode2', 'episode3']);
+    assert.equal(c.__legacyTest.EPISODES.some(e => e.portraitStyle === 'bust'), false);
+    for (const ep of c.__legacyTest.EPISODES) for (const [phase, lines] of [['pre', ep.pre], ['post', ep.postWin], ['tutorial', ep.pre.slice(0, 1)]]) {
+        await c.StoryAdv.playConversation(ep, lines, { phase, getActions: () => [] });
+        assert.equal(elements.get('story-adv').dataset.portraitStyle, 'icon', ep.id + '/' + phase);
+        assert.equal(elements.get('adv-name').dataset.speaker, lines[0].speaker);
+        assert.equal(elements.get('story-adv').hidden, false);
+    }
+    for (const ep of c.BattleStoryData.all()) {
+        assert.equal(ep.portraitStyle, 'icon', ep.id);
+        await c.StoryAdv.start(ep.id);
+        assert.equal(elements.get('story-adv').dataset.portraitStyle, 'icon', ep.id);
+    }
+    const v = viewerRuntime({ mobile });
+    for (const ep of v.c.StoryViewer.all()) {
+        assert.equal(ep.portraitStyle, 'icon');
+        await v.c.StoryAdv.start(ep.id);
+        assert.equal(v.elements.get('story-adv').dataset.portraitStyle, 'icon');
+        if (ep.id === 'episode1') {
+            v.c.__advTest.enterScene('win', 'post');
+            assert.equal(v.elements.get('story-adv').dataset.portraitStyle, 'icon');
+        }
+    }
+    assert.equal(v.persistentWrites.length, 0);
+});
+
+for (const mobile of [false, true]) for (const viewer of [false, true]) test(`99a ${mobile ? 'phone' : 'PC'} ${viewer ? 'viewer' : 'normal'}: ep1 icons show only the speaker, swap expressions instantly and ignore poses and preserve effects`, async () => {
+    const r = viewer ? viewerRuntime({ mobile, reduced: false }) : runtime({ mobile, reduced: false });
+    const { c, elements, tick } = r, t = c.__advTest;
+    if (viewer) await c.StoryAdv.start('episode1');
+    else await c.StoryAdv.playConversation(c.__legacyTest.EPISODES[0], c.__legacyTest.EPISODES[0].pre, { phase: 'pre', getActions: () => [] });
+    const icon = elements.get('adv-face-icon'), crop = elements.get('adv-icon-crop'), stage = elements.get('adv-portraits');
+    assert.equal(icon.parent, elements.get('adv-dialogue')); assert.equal(crop.parent, icon);
+    assert.equal(stage.children.length, 0, 'standing entrance is replaced by the separate intro overlay');
+    assert.equal(icon.dataset.actor, 'mai'); assert.equal(icon.dataset.pose, 'default');
+    const show = item => { t.stageLine(item); t.renderActors(item.speaker); assert.ok(stage.children.every(node => node.classList.contains('adv-entrance'))); };
+    show({ speaker: 'takumi', expression: 'smile' });
+    assert.equal(icon.dataset.actor, 'takumi'); assert.ok(crop.classList.contains('adv-icon-entering'));
+    await tick(99); assert.ok(crop.classList.contains('adv-icon-entering'));
+    await tick(1); assert.equal(crop.classList.contains('adv-icon-entering'), false);
+    show({ speaker: 'takumi', expression: 'exasperated' });
+    assert.equal(crop.classList.contains('adv-icon-entering'), false);
+    assert.equal(crop.children.length, 1); assert.ok(crop.children[0].src.includes('takumi-troubled-alpha.webp'));
+    show({ speaker: 'mai', expression: 'smile' }); assert.equal(icon.dataset.pose, 'default');
+    // Even a simultaneous pose/expression change cancels an unfinished speaker fade.
+    show({ speaker: 'mai', expression: 'cold', pose: 'default' });
+    assert.equal(icon.dataset.pose, 'default'); assert.equal(crop.classList.contains('adv-icon-entering'), false);
+    for (const item of [{ speaker: 'narration', show: [{ id: 'mai' }, { id: 'takumi' }] }, { speaker: 'announce' },
+        { speaker: 'mai', offscreen: true }, { speaker: 'mai', monologue: true }]) {
+        show(item); assert.equal(icon.hidden, true); assert.equal(elements.get('story-adv').dataset.iconSpeaker, 'none');
+        assert.equal(crop.children.length, 0);
+    }
+    t.S.lineIndex = 4; await t.renderCurrent();
+    assert.ok(icon.classList.contains('adv-motion-tremble'));
+    assert.equal(icon.querySelector('.adv-emotion-mark').dataset.mark, 'sweat');
+    await tick(850); assert.equal(icon.querySelector('.adv-emotion-mark'), null);
+    t.S.episode.scenes[0].lines[0] = { speaker: 'mai', expression: 'smug', pose: 'behind', text: '！', motion: 'shake', mark: '!', screen: 'screenShake' };
+    t.S.lineIndex = 0; await t.renderCurrent();
+    assert.ok(icon.classList.contains('adv-motion-shake')); assert.equal(icon.querySelector('.adv-emotion-mark').textContent, '!');
+    assert.ok(elements.get('story-adv').classList.contains('adv-screen-shake'));
+    if (viewer) assert.equal(r.persistentWrites.length, 0);
+});
+
+for (const mode of ['reduced', 'fast', 'ctrl', 'reduce-during-entry', 'fast-during-entry', 'pause', 'log', 'skip', 'stop']) test(`99a icon speaker fade respects ${mode}`, async () => {
+    const r = runtime({ reduced: mode === 'reduced' }), { c, tick, elements } = r, t = c.__advTest;
+    await c.StoryAdv.playConversation(c.__legacyTest.EPISODES[0], c.__legacyTest.EPISODES[0].pre, { phase: 'pre', getActions: () => [] });
+    if (mode === 'fast') t.toggleFastForward();
+    if (mode === 'ctrl') t.S.ctrlHeld = true;
+    t.stageLine({ speaker: 'takumi', expression: 'smile' }); t.renderActors('takumi');
+    const crop = elements.get('adv-icon-crop');
+    if (['reduced', 'fast', 'ctrl'].includes(mode)) { assert.equal(crop.classList.contains('adv-icon-entering'), false); return; }
+    assert.ok(crop.classList.contains('adv-icon-entering'));
+    if (mode === 'reduce-during-entry') r.setReduced(true);
+    if (mode === 'fast-during-entry') t.toggleFastForward();
+    if (mode === 'pause' || mode === 'log') {
+        await tick(30);
+        if (mode === 'pause') t.pausePlayback(); else t.openLog(true);
+        await tick(2000); assert.ok(crop.classList.contains('adv-icon-entering'));
+        if (mode === 'pause') t.resumePlayback(); else t.openLog(false);
+        await tick(69); assert.ok(crop.classList.contains('adv-icon-entering')); await tick(1);
+    }
+    if (mode === 'skip') { t.askSkip(); await t.skipToStop(); }
+    if (mode === 'stop') c.StoryAdv.stop();
+    assert.equal(crop.classList.contains('adv-icon-entering'), false);
+    assert.equal(elements.get('adv-portraits').children.length, 0);
+});
+
+for (const mobile of [false, true]) for (const viewer of [false, true]) test(`98b ${mobile ? 'phone' : 'PC'} ${viewer ? 'viewer' : 'normal'}: bust speaker swaps sides, retains the listener pose, dims narration and swaps expressions immediately`, async () => {
+    const r = viewer ? viewerRuntime({ mobile, reduced: false }) : runtime({ mobile, reduced: false });
+    const { c, elements, tick } = r, t = c.__advTest;
+    // Bust remains supported, but no shipped episode selects it now.
+    c.__legacyTest.EPISODES[0].portraitStyle = 'bust';
+    if (viewer) c.StoryViewer.get('episode1').portraitStyle = 'bust';
+    if (viewer) await c.StoryAdv.start('episode1');
+    else await c.StoryAdv.playConversation(c.__legacyTest.EPISODES[0], c.__legacyTest.EPISODES[0].pre, { phase: 'pre', getActions: () => [] });
+    const portrait = id => elements.get('adv-portraits').children.find(p => p.dataset.actor === id && !p.classList.contains('leaving'));
+    const show = item => { t.stageLine(item); t.renderActors(item.speaker); };
+    await tick(150);
+    assert.equal(portrait('mai').dataset.pose, 'behind');
+    assert.ok(portrait('takumi').classList.contains('dimmed'), 'scene partner is visible from the first line');
+    assert.equal(elements.get('story-adv').dataset.bustSpeaker, 'mai');
+    show({ speaker: 'takumi', expression: 'smile' });
+    assert.equal(t.S.actors.size, 2);
+    assert.equal(portrait('takumi').dataset.bustSide, 'left'); assert.ok(portrait('takumi').classList.contains('speaking'));
+    assert.equal(portrait('mai').dataset.bustSide, 'right'); assert.ok(portrait('mai').classList.contains('dimmed'));
+    assert.equal(elements.get('story-adv').dataset.bustSpeaker, 'takumi');
+    assert.ok(portrait('mai').classList.contains('entering'), 'former speaker also has a short listener fade');
+    assert.equal(portrait('mai').dataset.pose, 'behind');
+    assert.ok(portrait('takumi').classList.contains('entering'));
+    await tick(149); assert.ok(portrait('takumi').classList.contains('entering'));
+    await tick(1); assert.equal(portrait('takumi').classList.contains('entering'), false);
+    show({ speaker: 'takumi', expression: 'exasperated' });
+    assert.equal(portrait('takumi').classList.contains('entering'), false);
+    assert.equal(portrait('takumi').children.length, 1);
+    assert.ok(portrait('takumi').children[0].src.includes('takumi-exasperated.webp'));
+    show({ speaker: 'mai', expression: 'smile' });
+    assert.equal(portrait('mai').dataset.bustSide, 'left'); assert.ok(portrait('mai').classList.contains('entering'));
+    assert.equal(portrait('takumi').dataset.bustSide, 'right'); assert.ok(portrait('takumi').classList.contains('dimmed'));
+    show({ speaker: 'narration' });
+    assert.equal(elements.get('story-adv').dataset.bustSpeaker, 'none');
+    for (const id of ['mai', 'takumi']) { assert.equal(portrait(id).classList.contains('speaking'), false); assert.ok(portrait(id).classList.contains('dimmed')); }
+    show({ speaker: 'mai', pose: 'default', expression: 'cold' }); await tick(150);
+    assert.equal(portrait('mai').dataset.pose, 'default');
+    show({ speaker: 'narration', hide: ['takumi'] }); await tick(200);
+    assert.equal(t.S.actors.has('takumi'), false);
+    if (viewer) assert.equal(r.persistentWrites.length, 0);
+});
+
+for (const mode of ['reduced', 'fast', 'ctrl', 'reduce-during-entry', 'fast-during-entry', 'pause', 'log', 'skip', 'stop']) test(`98b bust speaker entry respects ${mode}`, async () => {
+    const r = runtime({ reduced: mode === 'reduced' }), { c, tick, elements } = r, t = c.__advTest;
+    c.__legacyTest.EPISODES[0].portraitStyle = 'bust';
+    await c.StoryAdv.playConversation(c.__legacyTest.EPISODES[0], c.__legacyTest.EPISODES[0].pre, { phase: 'pre', getActions: () => [] });
+    await tick(150);
+    if (mode === 'fast') t.toggleFastForward();
+    if (mode === 'ctrl') t.S.ctrlHeld = true;
+    t.stageLine({ speaker: 'takumi', expression: 'smile' }); t.renderActors('takumi');
+    const p = elements.get('adv-portraits').children.find(p => p.dataset.actor === 'takumi');
+    if (['reduced', 'fast', 'ctrl'].includes(mode)) { assert.equal(p.classList.contains('entering'), false); return; }
+    assert.ok(p.classList.contains('entering'));
+    if (mode === 'reduce-during-entry') r.setReduced(true);
+    if (mode === 'fast-during-entry') t.toggleFastForward();
+    if (mode === 'pause' || mode === 'log') {
+        await tick(50);
+        if (mode === 'pause') t.pausePlayback(); else t.openLog(true);
+        await tick(2000); assert.ok(p.classList.contains('entering'));
+        if (mode === 'pause') t.resumePlayback(); else t.openLog(false);
+        await tick(99); assert.ok(p.classList.contains('entering')); await tick(1);
+    }
+    if (mode === 'skip') { t.askSkip(); await t.skipToStop(); }
+    if (mode === 'stop') c.StoryAdv.stop();
+    assert.equal(p.classList.contains('entering'), false);
+    if (mode === 'skip') assert.ok(elements.get('adv-portraits').children.every(p => !p.classList.contains('entering')));
+});
+
+test('98b episode1 keeps tremble/sweat and emphasis beats on the bust', async () => {
+    const r = runtime({ reduced: false }), { c, elements, tick } = r;
+    c.__legacyTest.EPISODES[0].portraitStyle = 'bust';
+    await c.StoryAdv.playConversation(c.__legacyTest.EPISODES[0], c.__legacyTest.EPISODES[0].pre, { phase: 'pre', getActions: () => [] });
+    c.__advTest.S.lineIndex = 4; await c.__advTest.renderCurrent();
+    const portrait = elements.get('adv-portraits').children.find(p => p.dataset.actor === 'takumi');
+    assert.equal(elements.get('story-adv').dataset.portraitStyle, 'bust');
+    assert.ok(portrait.classList.contains('adv-motion-tremble'));
+    assert.equal(portrait.querySelector('.adv-emotion-mark').dataset.mark, 'sweat');
+    await tick(850); assert.equal(portrait.querySelector('.adv-emotion-mark'), null);
+    c.StoryAdv.stop();
+    const lines = [{ ...c.__legacyTest.EPISODES[0].pre[0], motion: 'zoom', mark: '!', screen: 'speedLines' }];
+    await c.StoryAdv.playConversation(c.__legacyTest.EPISODES[0], lines, { phase: 'pre', getActions: () => [] });
+    const emphasis = elements.get('adv-portraits').children.find(p => p.dataset.actor === 'mai');
+    assert.ok(emphasis.classList.contains('adv-motion-zoom'));
+    assert.equal(emphasis.querySelector('.adv-emotion-mark').textContent, '!');
+    assert.ok(elements.get('adv-line-effects').classList.contains('adv-screen-speedLines'));
+});
+
+test('90b/92b registry exposes immutable default and exactly the 75 delivered extra portraits', () => {
+    const { c } = runtime(), a = c.BattleStoryAssets;
+    let extra = 0;
+    for (const [id, character] of Object.entries(a.characters)) {
+        assert.equal(character.poses.default, character.portraits);
+        assert.ok(Object.isFrozen(character.poses));
+        assert.equal(Object.getPrototypeOf(character.poses), null);
+        for (const [pose, expressions] of Object.entries(character.poses)) {
+            assert.ok(Object.isFrozen(expressions));
+            assert.deepEqual(Object.keys(expressions), Object.keys(character.portraits));
+            if (pose !== 'default') extra += Object.keys(expressions).length;
+            for (const [expression, file] of Object.entries(expressions)) {
+                assert.equal(a.portraitPath(id, expression, pose), file);
+                assert.ok(fs.existsSync(path.join(root, file)), file);
+                assert.ok(a.paths().includes(file));
+            }
+        }
+    }
+    assert.equal(extra, 75);
+    assert.deepEqual(clone(a.portraitCandidates('chizuru', 'happy', 'cheer')), [
+        a.characters.chizuru.poses.cheer.happy, a.characters.chizuru.portraits.happy,
+        a.characters.chizuru.portraits.normal, a.characters.chizuru.standing]);
+    assert.equal(a.portraitPath('chizuru', 'missing-expression', 'cheer'), a.characters.chizuru.portraits.normal);
+    assert.equal(a.portraitPath('unknown', 'normal', 'cheer'), null);
+});
+
+test('90b validates unknown poses once per character/key on lines and show, while absence stays optional', () => {
+    const { c, warnings } = runtime(), a = c.BattleStoryAssets;
+    const ep = { id: 'pose-validation', scenes: [{id:'s', lines:[
+        {speaker:'chizuru', pose:'invalid', text:'A', show:[{id:'kanna',pose:'invalid'}]},
+        {speaker:'chizuru', pose:'invalid', text:'B'},
+        {speaker:'chizuru',text:'C',show:[{id:'kanna',pose:'invalid'}]}
+    ]}] };
+    const lines = c.BattleStoryData.validate(ep).scenes[0].lines;
+    c.BattleStoryData.validate(ep); a.portraitCandidates('chizuru','normal','invalid');
+    assert.equal(lines[0].pose, 'default'); assert.equal(lines[0].show[0].pose, 'default');
+    assert.equal(Object.hasOwn(lines[2], 'pose'), false);
+    assert.equal(warnings.filter(w=>w.includes('unknown pose:')).length, 2);
+    assert.equal(a.resolvePose('chizuru','toString'),'default');
+    assert.equal(a.resolvePose('mai','pocket'),'default');
+});
+
+for (const mobile of [false, true]) for (const viewer of [false, true]) test(`90b ${mobile ? 'phone' : 'PC'} ${viewer ? 'viewer' : 'normal'}: poses survive expression/hide/offscreen/announce and reset per scene`, async () => {
+    const r = runtime({mobile,viewer}), {c}=r, t=c.__advTest;
+    c.BattleStoryData.register({id:'pose-persistence',scenes:[
+        {id:'s',lines:[{speaker:'chizuru',pose:'behind',expression:'smile',text:'A'}]},
+        {id:'next',lines:[{speaker:'chizuru',expression:'normal',text:'B'}]},
+        {id:'explicit',lines:[{speaker:'chizuru',pose:'cheer',expression:'happy',text:'C'}]}
+    ]});
+    if(viewer)c.StoryViewer={active:true,get:id=>c.BattleStoryData.get(id)};
+    await c.StoryAdv.start('pose-persistence');
+    t.stageLine({speaker:'chizuru',expression:'embarrassed'});
+    assert.equal(t.S.actors.get('chizuru').pose,'behind');
+    t.stageLine({speaker:'narration',hide:'all'});
+    t.stageLine({speaker:'mai'}); t.stageLine({speaker:'chizuru'});
+    assert.equal(t.S.actors.get('chizuru').pose,'behind');
+    t.stageLine({speaker:'announce'}); t.stageLine({speaker:'chizuru',offscreen:true});
+    t.stageLine({speaker:'chizuru'}); assert.equal(t.S.actors.get('chizuru').pose,'behind');
+    t.stageLine({speaker:'chizuru',monologue:true,pose:'cheer'});
+    t.stageLine({speaker:'chizuru'}); assert.equal(t.S.actors.get('chizuru').pose,'cheer');
+    t.stageLine({speaker:'narration',show:[{id:'kanna',position:'farLeft',expression:'smug',pose:'pocket'}]});
+    t.stageLine({speaker:'narration',show:[{id:'kanna',onlyIfShown:true,expression:'gentle'}]});
+    assert.equal(t.S.actors.get('kanna').position,'farLeft'); assert.equal(t.S.actors.get('kanna').pose,'pocket');
+    t.stageLine({speaker:'narration',hide:['kanna'],show:[{id:'kanna',onlyIfShown:true,pose:'default'}]});
+    t.stageLine({speaker:'kanna'}); assert.equal(t.S.actors.get('kanna').pose,'pocket');
+    t.enterScene('next','pre'); assert.equal(t.S.actors.get('chizuru').pose,'default');
+    t.enterScene('explicit','pre'); assert.equal(t.S.actors.get('chizuru').pose,'cheer');
+    if(viewer)assert.equal(r.persistentWrites.length,0);
+});
+
+test('90b preload includes inherited pose expressions and scene resets plus default fallbacks', () => {
+    const {c}=runtime(), a=c.BattleStoryAssets;
+    const ep=c.BattleStoryData.validate({id:'pose-preload',portraitStyle:'full',scenes:[{id:'s',lines:[
+        {speaker:'chizuru',pose:'behind',expression:'smile',text:'A'},
+        {speaker:'kanna',pose:'pocket',expression:'smug',text:'B'},
+        {speaker:'chizuru',expression:'embarrassed',text:'C'},
+        {speaker:'narration',show:[{id:'kanna',expression:'gentle'}],text:'D'}
+    ]},{id:'reset',lines:[{speaker:'chizuru',expression:'normal',text:'E'}]}]});
+    const actual=c.__advTest.episodeImages(ep);
+    const expected=[...a.portraitCandidates('chizuru','smile','behind'),...a.portraitCandidates('kanna','smug','pocket'),
+        ...a.portraitCandidates('chizuru','embarrassed','behind'),...a.portraitCandidates('kanna','gentle','pocket'),
+        ...a.portraitCandidates('chizuru','normal')];
+    assert.deepEqual(clone(actual).sort(),[...new Set(expected)].sort());
+});
+
+test('90b preload does not let absent onlyIfShown or conflicting speaker/show overwrite a persistent pose',()=>{
+    const {c}=runtime(), a=c.BattleStoryAssets;
+    const ep=c.BattleStoryData.validate({id:'pose-preload-conditional',portraitStyle:'full',scenes:[{id:'s',lines:[
+        {speaker:'kanna',pose:'pocket',expression:'smile',text:'A'},
+        {speaker:'mai',text:'B'},
+        {speaker:'narration',text:'',show:[{id:'kanna',onlyIfShown:true,pose:'default',expression:'normal'}]},
+        {speaker:'kanna',expression:'gentle',text:'C'},
+        {speaker:'chizuru',pose:'cheer',expression:'happy',text:'D',show:[{id:'chizuru',pose:'behind',expression:'smile'}]},
+        {speaker:'chizuru',expression:'laugh',text:'E'}
+    ]}]});
+    const images=c.__advTest.episodeImages(ep);
+    assert.ok(images.includes(a.characters.kanna.poses.pocket.gentle));
+    assert.ok(images.includes(a.characters.chizuru.poses.cheer.happy));
+    assert.ok(images.includes(a.characters.chizuru.poses.cheer.laugh));
+    assert.equal(images.includes(a.characters.chizuru.poses.behind.laugh),false);
+});
+
+for(const mobile of [false,true])test(`90b/92b ${mobile?'phone':'PC'} normal/viewer shared DOM applies fixed metrics for all 75 pose expressions`,async()=>{
+    const r=await poseFadeRuntime({mobile,reduced:true}), a=r.c.BattleStoryAssets;
+    for(const [id,pose] of [['chizuru','behind'],['chizuru','cheer'],['kanna','pocket']]){
+        let baseline;
+        for(const [expression,file]of Object.entries(a.characters[id].poses[pose])){
+            r.c.__advTest.stageLine({speaker:id,position:'center',pose,expression});r.c.__advTest.renderActors(id);
+            const p=r.elements.get('adv-portraits').children.find(p=>p.dataset.actor===id&&!p.classList.contains('leaving'));
+            assert.equal(p.children[0].src,a.url(file));assert.equal(p.dataset.pose,pose);
+            const style=Object.fromEntries(Object.entries(p.style).filter(([,v])=>typeof v==='string'));
+            if(!baseline)baseline=style;assert.deepEqual(style,baseline);
+            assert.equal(Number(style['--adv-canvas-scale']),a.portraitMetrics(id,pose).canvas.height/a.portraitMetrics(id,pose).head.height);
+        }
+    }
+});
+
+test('90b resume reconstructs poses from the current scene and explicit defaults without serializing a second state', async () => {
+    const r=runtime(); r.c.BattleStoryData.register({id:'pose-resume',scenes:[
+        {id:'s',lines:[{speaker:'chizuru',pose:'behind',text:'A'},{speaker:'mai',text:'B'},{speaker:'chizuru',text:'C'}]},
+        {id:'next',lines:[{speaker:'chizuru',text:'D'},{speaker:'chizuru',pose:'cheer',text:'E'},{speaker:'chizuru',text:'F'}]}
+    ]});
+    await r.c.StoryAdv.start('pose-resume'); r.c.__advTest.advance(); r.c.__advTest.advance();
+    const save=Object.fromEntries(r.store), reload=runtime({save});
+    reload.c.BattleStoryData.register(r.c.BattleStoryData.get('pose-resume'));
+    await reload.c.StoryAdv.start('pose-resume',true);
+    assert.equal(reload.c.__advTest.S.actors.get('chizuru').pose,'behind');
+    reload.c.__advTest.enterScene('next','pre'); assert.equal(reload.c.__advTest.S.actors.get('chizuru').pose,'default');
+    reload.c.__advTest.advance(); reload.c.__advTest.advance();
+    const final=runtime({save:Object.fromEntries(reload.store)}); final.c.BattleStoryData.register(r.c.BattleStoryData.get('pose-resume'));
+    await final.c.StoryAdv.start('pose-resume',true); assert.equal(final.c.__advTest.S.actors.get('chizuru').pose,'cheer');
+    assert.equal(Object.hasOwn(JSON.parse(final.store.get(ADV_KEY)).resume,'poses'),false);
+});
+
+async function poseFadeRuntime(options = {}) {
+    const character = options.character || 'chizuru';
+    const r=runtime({reduced:false,...options});
+    r.c.BattleStoryData.register({id:'pose-fade',portraitStyle:'full',scenes:[{id:'s',lines:[{speaker:character,expression:'normal',text:'A'}]}]});
+    await r.c.StoryAdv.start('pose-fade');
+    r.change=(pose,expression='happy')=>{r.c.__advTest.stageLine({speaker:character,position:'center',pose,expression});r.c.__advTest.renderActors(character);};
+    r.portrait=()=>r.elements.get('adv-portraits').children.find(p=>p.dataset.actor===character&&!p.classList.contains('leaving'));
+    return r;
+}
+
+for (const character of ['chizuru', 'mai']) test(`90b/92b ${character}: cross-fades exactly 150 ms only for a changed displayed pose; expression changes are instant`, async () => {
+    const r=await poseFadeRuntime({character}), old=r.portrait().children[0];
+    r.change('cheer'); const p=r.portrait();
+    assert.equal(p.children.length,2); assert.equal(p.children[1],old);
+    assert.ok(p.children[0].classList.contains('adv-pose-in')); assert.ok(old.classList.contains('adv-pose-out'));
+    await r.tick(149); assert.equal(p.children.length,2);
+    await r.tick(1); assert.equal(p.children.length,1); assert.equal(p.children[0].classList.contains('adv-pose-in'),false);
+    r.change(undefined,'smile'); assert.equal(p.children.length,1); assert.equal(p.dataset.pose,'cheer');
+    assert.ok(p.children[0].src.includes(character+'-cheer-smile.webp'));
+    r.change('behind','embarrassed'); assert.equal(p.children.length,2);
+    r.change(undefined,'smile'); assert.equal(p.children.length,1,'a new expression settles an in-progress fade');
+});
+
+for(const mode of ['reduced','fast','ctrl','reduce-during-fade','fast-during-fade','pause','stop']) test(`90b pose fade respects ${mode}`,async()=>{
+    const r=await poseFadeRuntime({reduced:mode==='reduced'}), t=r.c.__advTest;
+    if(mode==='fast')t.toggleFastForward(); if(mode==='ctrl')t.S.ctrlHeld=true;
+    r.change('cheer'); const p=r.portrait();
+    if(['reduced','fast','ctrl'].includes(mode)){assert.equal(p.children.length,1);return;}
+    assert.equal(p.children.length,2);
+    if(mode==='reduce-during-fade')r.setReduced(true);
+    if(mode==='fast-during-fade')t.toggleFastForward();
+    if(mode==='stop')r.c.StoryAdv.stop();
+    if(mode==='pause'){
+        t.pausePlayback(); await r.tick(1000); assert.equal(p.children.length,2);
+        t.resumePlayback(); await r.tick(150);
+    }
+    assert.equal(p.children.length,1); assert.equal(p.children[0].classList.contains('adv-pose-in'),false);
+});
+
+test('90b missing pose image falls through default expression/normal/standing without a false pose fade',async()=>{
+    const r=await poseFadeRuntime({imageBehavior:{load(img){
+        if(img.src.includes('-cheer-'))img.onerror?.();else{img.complete=true;img.naturalWidth=1;img.onload?.();}
+    }}});
+    r.change('cheer'); const p=r.portrait(), a=r.c.BattleStoryAssets;
+    assert.equal(p.dataset.pose,'default'); assert.equal(p.children.length,1);
+    assert.equal(p.children[0].src,a.url(a.characters.chizuru.portraits.happy));
+    p.children[0].onerror(); assert.equal(p.children[0].src,a.url(a.characters.chizuru.portraits.normal));
+    p.children[0].onerror(); assert.equal(p.children[0].src,a.url(a.characters.chizuru.standing));
+    p.children[0].onerror(); assert.equal(p.children.length,0);
+});
+
+test('90b late images retain the old decoded portrait and stale completions cannot replace the current expression',async()=>{
+    const r=await poseFadeRuntime({imageBehavior:{load(img){
+        if(!img.src.includes('-cheer-')){img.complete=true;img.naturalWidth=1;img.onload?.();}
+    }}}), old=r.portrait().children[0];
+    r.change('cheer','happy'); assert.equal(r.portrait().children[0],old);
+    r.change(undefined,'smile'); assert.equal(r.portrait().children[0],old);
+    const images=r.preloaded.filter(img=>img.src.includes('-cheer-'));
+    images[0].onload(); await r.tick(0); assert.equal(r.portrait().children[0],old);
+    images[1].onload(); await r.tick(0);
+    assert.ok(r.portrait().children[0].src.includes('cheer-smile.webp')); assert.equal(r.portrait().children.length,2);
+    await r.tick(150); assert.equal(r.portrait().children.length,1);
+});
+
+test('90b/92b every assigned and inherited pose/expression has its exact image, and all 125 explicit assignments are recorded',async t=>{
+    const {c}=runtime(), a=c.BattleStoryAssets;
+    const episodes=[...c.__legacyTest.EPISODES.map((e,i)=>({number:i+1,scenes:['pre','postWin','postLose'].map(id=>({id,lines:e[id]||[]}))})),...c.BattleStoryData.all()];
+    let assigned=0, covered=0, restores=0; const rows=[];
+    for(const e of episodes)for(const s of e.scenes){
+        const poses=new Map();
+        s.lines.forEach((line,i)=>{
+            if(line.pose!==undefined){
+                poses.set(line.speaker,line.pose);assigned++; if(line.pose==='default')restores++;
+                rows.push(`| 第${e.number}話 | ${s.id}:${i+1} | ${a.characters[line.speaker].name} | ${line.pose} | ${line.expression} | ${line.text} |`);
+            }
+            if(!a.characters[line.speaker]||!line.text)return;
+            const pose=poses.get(line.speaker)||'default'; if(pose!=='default')covered++;
+            assert.ok(fs.existsSync(path.join(root,a.characters[line.speaker].poses[pose][line.expression])),`${e.number}/${s.id}:${i+1} ${pose}/${line.expression}`);
+        });
+    }
+    assert.equal(assigned,125);assert.equal(restores,27);assert.equal(covered,313);
+    await t.test('owner assignment table comparison',t=>{
+        if(!optionalSource(t,root,['docs/story/poses-assignments-90b.md']))return;
+        const doc=read('docs/story/poses-assignments-90b.md');for(const row of rows)assert.ok(doc.includes(row),row);
+        assert.equal(doc.split(/\r?\n/).filter(l=>/^\| 第\d+話 \| [a-zA-Z0-9]+:\d+ \|/.test(l)).length,assigned);
+    });
+});
 
 for (const mobile of [false, true]) test(`${mobile ? 'phone' : 'PC'}: every direct ADV episode start/resume waits for the character notice`, async () => {
     for (const number of [4, 5, 6, 7, 8, 9, 10]) {
@@ -179,13 +1022,23 @@ for (const mobile of [false, true]) test(`${mobile ? 'phone' : 'PC'}: every dire
     }
 });
 
-test('tutorial dialogue, expressions, backgrounds and summaries match every approved line in order', () => {
+test('tutorial dialogue, expressions, backgrounds and summaries match every approved line in order', async t => {
     const { c } = runtime();
     const nameIds = { 舞依: 'mai', 拓海: 'takumi', 千鶴: 'chizuru', 暁: 'akatsuki', 剛: 'tsuyoshi', 栞那: 'kanna' };
     const stages = { 開始前: 'pre', 勝利後: 'postWin', 敗北後: 'postLose' };
     let count = 0;
     for (const episode of c.__legacyTest.EPISODES) {
         const number = Number(episode.id.slice(-1));
+        assert.equal(episode.arc, 'reunion');
+        assert.equal(episode.protagonist, number === 3 ? 'chizuru' : 'takumi');
+        assert.ok(c.BattleStoryAssets.backgrounds[episode.background]);
+        for (const stage of Object.values(stages)) for (const line of episode[stage] || []) {
+            count++;
+            assert.doesNotMatch(line.text, /。$/);
+            if (line.speaker !== 'narration') assert.ok(c.BattleStoryAssets.characters[line.speaker].portraits[line.expression]);
+        }
+        await t.test(episode.id + ': approved tutorial source comparison', t => {
+        if (!optionalSource(t, root, ['docs/story/tutorial-rewrite.md', REVIEW_FILE])) return;
         const section = read('docs/story/tutorial-rewrite.md').split(`## 第${number}話 `)[1].split(/\r?\n## /)[0];
         assert.equal(episode.summary, section.match(/^紹介文：(.*)$/m)[1].trim());
         assert.equal(episode.background, section.match(/^背景：`([^`]+)`/m)[1]);
@@ -199,12 +1052,12 @@ test('tutorial dialogue, expressions, backgrounds and summaries match every appr
                     { speaker: nameIds[speaker], expression, text });
             assert.deepEqual(reviewedLines(number, stage, episode[stage]), expected, `${episode.id}/${stage}`);
             for (const line of episode[stage]) {
-                count++;
                 assert.doesNotMatch(line.text, /。$/);
                 if (line.speaker === 'narration') continue;
                 assert.ok(c.BattleStoryAssets.characters[line.speaker].portraits[line.expression]);
             }
         }
+        });
     }
     assert.equal(count, 54);
 });
@@ -232,8 +1085,9 @@ for (const mobile of [false, true]) {
             if (line.speaker !== 'narration') {
                 assert.equal(c.__advTest.S.actors.get(line.speaker).position, line.speaker === episode.protagonist ? 'right' : 'left');
                 assert.equal(current.expression, line.expression);
-                const portrait = elements.get('adv-portraits').children.find(p => p.dataset.actor === line.speaker && !p.classList.contains('leaving'));
-                assert.equal(portrait.children[0].src, c.BattleStoryAssets.portraitPath(line.speaker, line.expression));
+                const portrait = elements.get('adv-icon-crop');
+                assert.equal(portrait.children[0].src, c.BattleStoryAssets.url(c.BattleStoryAssets.iconPath(line.speaker, line.expression)));
+                assert.ok(portrait.classList.contains('adv-icon-sheet'));
             }
             c.__advTest.advance(); await tick(0);
         }
@@ -266,7 +1120,7 @@ for (const mobile of [false, true]) {
             assert.equal(c.__legacyTest.S.objectives.modeOn, true);
         }
         assert.deepEqual(warnings, []);
-        assert.ok(requests.every(file => c.BattleStoryAssets.paths().includes(file)));
+        assert.ok(requests.every(file => c.BattleStoryAssets.paths().map(c.BattleStoryAssets.url).includes(file)));
     });
 
     for (const number of [1, 2, 3]) for (const winner of ['player', 'cpu']) test(`${label}: tutorial${number} ${winner} returns automatically to ADV and keeps tutorial results`, async () => {
@@ -368,8 +1222,8 @@ test('tutorial selection keeps unlock/status cards, three-episode achievement an
 });
 
 test('preload selects episode backgrounds, inline changes, shown actors and registered fallbacks only', async () => {
-    const { c, preloaded, requests } = runtime();
-    c.BattleStoryData.register({ id: 'asset-scope', scenes: [{ id: 'first', background: 'classroom', lines: [
+    const { c, preloaded, requests } = fullRuntime();
+    c.BattleStoryData.register({ id: 'asset-scope', portraitStyle: 'full', scenes: [{ id: 'first', background: 'classroom', lines: [
         { speaker: 'chizuru', expression: 'smile', text: '準備中', show: [
             { id: 'kanna', expression: 'surprised' }, { id: 'mai' }, { id: 'tsuyoshi' }, { id: 'unregistered' }
         ] },
@@ -381,8 +1235,8 @@ test('preload selects episode backgrounds, inline changes, shown actors and regi
         ...a.portraitCandidates('chizuru', 'smile'), ...a.portraitCandidates('kanna', 'surprised'),
         ...a.portraitCandidates('mai', 'normal'), ...a.portraitCandidates('tsuyoshi', 'normal')];
     await c.StoryAdv.start('asset-scope');
-    assert.deepEqual(preloaded.map(img => img.src).sort(), expected.sort());
-    assert.ok(requests.every(file => a.paths().includes(file)));
+    assert.deepEqual(preloaded.map(img => img.src).sort(), expected.map(a.url).sort());
+    assert.ok(requests.every(file => a.paths().map(a.url).includes(file)));
     assert.ok(!requests.includes(a.characters.chizuru.portraits.angry));
     assert.ok(!requests.includes(a.backgrounds['shopping-street']));
 });
@@ -475,17 +1329,17 @@ for (const mobile of [false, true]) {
 
 test('preload failures retain gradient / normal / standing / name-only fallbacks and are cached', async () => {
     for (const failureCount of [1, 2, 3]) {
-        const { c, elements, preloaded } = runtime({ imageBehavior: { load() {} } });
+        const { c, elements, preloaded } = fullRuntime({ imageBehavior: { load() {} } });
         const ep = clone(c.BattleStoryData.get('episode4'));
         ep.id = 'failed-art'; ep.scenes[0].lines[0].expression = 'smile'; c.BattleStoryData.register(ep);
         const candidates = c.BattleStoryAssets.portraitCandidates('chizuru', 'smile');
-        const failed = candidates.slice(0, failureCount);
+        const failed = candidates.slice(0, failureCount).map(c.BattleStoryAssets.url);
         failed.push(c.BattleStoryAssets.backgrounds['festival-classroom']);
         const started = c.StoryAdv.start(ep.id);
         preloaded.forEach(img => failed.includes(img.src) ? img.onerror() : img.onload()); await started;
         const portraits = elements.get('adv-portraits').children[0].children;
         assert.equal(elements.get('adv-background').style.backgroundImage, '');
-        if (failureCount < 3) assert.equal(portraits[0].src, candidates[failureCount]);
+        if (failureCount < 3) assert.equal(portraits[0].src, c.BattleStoryAssets.url(candidates[failureCount]));
         else assert.equal(portraits.length, 0);
         const count = preloaded.length;
         await c.StoryAdv.start(ep.id);
@@ -513,7 +1367,7 @@ test('missing, rejecting or throwing decode falls back to load/error events', as
 });
 
 test('the six-second timeout starts playback with existing fallbacks and allows late images', async () => {
-    const { c, tick, elements, preloaded } = runtime({ imageBehavior: { load() {} } });
+    const { c, tick, elements, preloaded } = fullRuntime({ imageBehavior: { load() {} } });
     const started = c.StoryAdv.start('episode4');
     await tick(5999);
     assert.equal(elements.get('adv-loading').hidden, false);
@@ -523,7 +1377,7 @@ test('the six-second timeout starts playback with existing fallbacks and allows 
     assert.equal(elements.get('adv-dialogue').hidden, false);
     assert.equal(elements.get('adv-text').textContent, 'カレーよし。おにぎりもよし');
     assert.equal(elements.get('adv-background').style.backgroundImage, '');
-    assert.equal(elements.get('adv-portraits').children[0].children[0].src, c.BattleStoryAssets.characters.chizuru.portraits.normal);
+    assert.equal(elements.get('adv-portraits').children[0].children[0].src, c.BattleStoryAssets.url(c.BattleStoryAssets.characters.chizuru.portraits.normal));
     preloaded.forEach(img => img.onload()); await tick(0);
     assert.ok(elements.get('adv-background').style.backgroundImage.includes('festival-classroom.webp'));
     const count = preloaded.length;
@@ -568,6 +1422,7 @@ test('episode4 dialogue and directions reproduce the scenario word for word in o
     assert.equal(ep.unlockRequires, null);
     assert.equal(c.BattleStoryData.get('episode5').unlockRequires, 'episode4');
     await t.test('word-for-word dialogue and directions match the optional source scenario', t => {
+        if (!optionalSource(t, root, ['docs/story/episode4-scenario.md', REVIEW_FILE])) return;
         if (!fs.existsSync(path.join(root, 'docs/story/episode4-scenario.md'))) {
             t.skip('Source scenario docs/story/episode4-scenario.md is absent in this publish copy; only the word-for-word comparison is skipped.');
             return;
@@ -610,6 +1465,7 @@ test('episode4 stage directions and mapped expressions are registered and ordere
     assert.ok(directions.length > 0);
     assert.equal(warnings.length, 0);
     await t.test('word-for-word stage directions match the optional source scenario', t => {
+        if (!optionalSource(t, root, ['docs/story/episode4-scenario.md'])) return;
         if (!fs.existsSync(path.join(root, 'docs/story/episode4-scenario.md'))) {
             t.skip('Source scenario docs/story/episode4-scenario.md is absent in this publish copy; only the word-for-word comparison is skipped.');
             return;
@@ -631,7 +1487,7 @@ test('a publish copy without docs skips only the two source comparisons', async 
     const countedAssert = new Proxy(assert, { get(target, key) {
         return typeof target[key] === 'function' ? (...args) => { assertions++; return target[key](...args); } : target[key];
     } });
-    vm.runInNewContext(read('tests/story-adv.test.cjs'), { __dirname, URL, require(name) {
+    vm.runInNewContext(read('tests/story-adv.test.cjs'), { __dirname, URL, URLSearchParams, require(name) {
         if (name === 'node:test') return (name, callback) => cases.set(name, callback);
         if (name === 'node:fs') return portableFs;
         if (name === 'node:assert/strict') return countedAssert;
@@ -642,7 +1498,7 @@ test('a publish copy without docs skips only the two source comparisons', async 
         await cases.get(name)({ test: async (name, callback) => callback({ skip: reason => skipped.push({ name, reason }) }) });
     }
     assert.equal(skipped.length, 2);
-    assert.ok(skipped.every(item => item.reason.includes('only the word-for-word comparison is skipped')));
+    assert.ok(skipped.every(item => item.reason.includes('comparison is skipped')));
     assert.ok(assertions > 50, 'registry and episode checks still run without docs');
 });
 
@@ -664,15 +1520,15 @@ test('fallback never constructs an unlisted image filename', async () => {
 });
 
 test('a failed registered portrait tries normal, then standing, then name only', async () => {
-    const { c, elements, requests } = runtime();
+    const { c, elements, requests } = fullRuntime();
     const ep = clone(c.BattleStoryData.get('episode4')); ep.id = 'fallback'; ep.scenes[0].lines[0].expression = 'smile';
     c.BattleStoryData.register(ep); await c.StoryAdv.start('fallback');
     const image = elements.get('adv-portraits').children[0].children[0];
-    assert.equal(image.src, c.BattleStoryAssets.characters.chizuru.portraits.smile);
-    image.onerror(); assert.equal(image.src, c.BattleStoryAssets.characters.chizuru.portraits.normal);
+    assert.equal(image.src, c.BattleStoryAssets.url(c.BattleStoryAssets.characters.chizuru.portraits.smile));
+    image.onerror(); assert.equal(image.src, c.BattleStoryAssets.url(c.BattleStoryAssets.characters.chizuru.portraits.normal));
     image.onerror(); assert.equal(image.src, c.BattleStoryAssets.characters.chizuru.standing);
     image.onerror(); assert.equal(elements.get('adv-portraits').children[0].children.length, 0);
-    assert.ok(requests.every(file => c.BattleStoryAssets.paths().includes(file)));
+    assert.ok(requests.every(file => c.BattleStoryAssets.paths().map(c.BattleStoryAssets.url).includes(file)));
 });
 
 test('unknown speakers, expressions and backgrounds warn once and fall back without throwing', async () => {
@@ -686,7 +1542,7 @@ test('unknown speakers, expressions and backgrounds warn once and fall back with
     assert.equal(normalized.scenes[0].lines[1].expression, 'normal');
     const count = warnings.length; c.BattleStoryData.register(invalid); assert.equal(warnings.length, count);
     await c.StoryAdv.start('unknown-episode');
-    assert.ok(requests.every(file => c.BattleStoryAssets.paths().includes(file)));
+    assert.ok(requests.every(file => c.BattleStoryAssets.paths().map(c.BattleStoryAssets.url).includes(file)));
     assert.equal(c.document.getElementById('adv-name').textContent, 'unlisted');
 });
 
@@ -761,7 +1617,7 @@ test('AUTO pauses for backlog and effects; the 800ms pause preserves dialogue', 
 });
 
 test('multi-character staging keeps explicit actors, dims others, and hides all for announcements', async () => {
-    const { c, elements } = runtime(); await c.StoryAdv.start('episode4');
+    const { c, elements } = fullRuntime(); await c.StoryAdv.start('episode4');
     c.__advTest.stageLine({ speaker: 'chizuru', position: 'right', show: [{ id: 'mai', position: 'center' }, { id: 'kanna', position: 'left' }] });
     assert.equal(c.__advTest.S.actors.size, 3);
     c.__advTest.renderActors('chizuru');
@@ -784,7 +1640,7 @@ for (const mobile of [false, true]) {
         }
         Object.assign(c, { getUserProfile: () => ({ favoriteCharacterId: 'mai', favoriteSkillKey: 'tasteThief' }),
             setupMatchAutosaveOnce() {}, setupMatchExitGuardOnce() {}, renderUserStageProfile() {},
-            renderCoinStageProfile() {}, updateResumeMatchButtonVisibility() {}, startMenuFloatingBackground() {} });
+            renderCoinStageProfile() {}, updateResumeMatchButtonVisibility() {} });
         c.setupStartOverlay();
         let chosen = null, returned = false;
         c.openStorySkillChoice(c.BattleStoryData.get('episode4'), key => { chosen = key; }, async () => { returned = true; });
@@ -1010,32 +1866,43 @@ test('winning ending clears resume and marks episode4; losing offers retry witho
 });
 
 test('portrait layer fills the scene behind controls, with character framing at the requested viewports', async () => {
-    const { c, elements } = runtime(); await c.StoryAdv.start('episode4');
+    const { c, elements } = fullRuntime(); await c.StoryAdv.start('episode4');
     c.__advTest.stageLine({ speaker: 'chizuru', position: 'right', show: [{ id: 'kanna', position: 'left' }] });
     c.__advTest.renderActors('chizuru');
     for (const actor of elements.get('adv-portraits').children) {
-        const framing = c.BattleStoryAssets.characters[actor.dataset.actor];
-        assert.equal(Number(actor.style['--adv-focus-y']), framing.focusY);
-        assert.equal(Number(actor.style['--adv-portrait-scale']), framing.scale);
+        const { canvas, head, headTopOffset } = c.BattleStoryAssets.characters[actor.dataset.actor].portraitMetrics;
+        assert.equal(Number(actor.style['--adv-canvas-scale']), canvas.height / head.height);
+        assert.equal(Number(actor.style['--adv-head-from-top']), head.top / head.height);
+        assert.equal(Number(actor.style['--adv-head-top-offset']), headTopOffset);
     }
     const css = read('story-adv.css');
     assert.match(css, /\.adv-portraits \{ position: absolute; inset: 0; z-index: 1/);
     for (const [cls, z] of [['toolbar', 6], ['dialogue', 3]]) assert.match(css, new RegExp('\\.adv-' + cls + ' \\{[^}]*z-index: ' + z));
     assert.match(css, /100dvh - var\(--adv-toolbar-height/);
     assert.doesNotMatch(css, /\.adv-portrait[^}]*max-height/);
-    // Conservative face bounds measured from the retained full-body source artwork.
-    // These are layout budgets; actual browser rendering still requires visual review.
-    const bounds = { chizuru: [.13, .235], kanna: [.13, .235], mai: [.08, .18], takumi: [.08, .19], akatsuki: [.07, .18] };
-    for (const [width, height] of [[1440, 900], [1366, 768], [390, 844], [360, 740], [844, 390]]) {
-        const toolbar = width <= 600 ? 102 : 62;
-        const dialogue = height < 500 ? 158 : width <= 600 ? 226 : 272;
-        for (const [id, [faceTop, faceBottom]] of Object.entries(bounds)) {
-            const { focusY, scale } = c.BattleStoryAssets.characters[id];
-            const portrait = (height - toolbar - 12) * scale;
-            const top = toolbar + 12 - portrait * focusY;
-            assert.ok(top + portrait * faceTop > toolbar, `${width}x${height}: ${id} above toolbar`);
-            assert.ok(top + portrait * faceBottom < height - dialogue - 14, `${width}x${height}: ${id} above dialogue`);
-            assert.ok(portrait >= height, `${width}x${height}: full-height large portrait`);
+    assert.doesNotMatch(css, /adv-focus-y|adv-portrait-scale/);
+    // All eight measured heads, positions and viewport budgets are checked in
+    // story-portraits.test.cjs using the actual CSS expressions.
+});
+
+for (const mobile of [false, true]) for (const viewer of [false, true]) test(`${mobile ? 'phone' : 'PC'} ${viewer ? 'viewer' : 'normal'}: every expression renders with its character's base head/eye metrics`, async () => {
+    const { c, elements } = viewer ? fullViewerRuntime({ mobile }) : fullRuntime({ mobile }); await c.StoryAdv.start('episode4');
+    const container = elements.get('adv-portraits');
+    for (const [id, character] of Object.entries(c.BattleStoryAssets.characters)) {
+        c.__advTest.S.actors.clear(); container.replaceChildren(); let baseStyle;
+        for (const expression of Object.keys(character.portraits)) {
+            c.__advTest.stageLine({ speaker: id, position: 'center', expression }); c.__advTest.renderActors(id);
+            const actor = container.children.find(el => el.dataset.actor === id);
+            const numericStyle = Object.fromEntries(Object.entries(actor.style).filter(([key]) => key.startsWith('--adv-')));
+            if (!baseStyle) baseStyle = numericStyle;
+            assert.deepEqual(numericStyle, baseStyle, id + '/' + expression + ': no framing jump');
+            assert.equal(actor.children[0].src, c.BattleStoryAssets.url(character.portraits[expression]), id + '/' + expression);
+            assert.equal(Number(actor.style['--adv-canvas-scale']), character.portraitMetrics.canvas.height / character.portraitMetrics.head.height);
+            assert.equal(Number(actor.style['--adv-head-top-offset']), character.portraitMetrics.headTopOffset);
+            for (const viewport of [[1440, 900], [1366, 768], [390, 844], [360, 740], [844, 390]]) {
+                const g = require('./helpers/portrait-layout.cjs').geometry(id, viewport, { style: numericStyle });
+                assert.ok(g.hairTop >= g.toolbar + 16 - 1e-7 && g.chin < g.dialogueTop, id + '/' + expression + ': visible face at ' + viewport.join('x'));
+            }
         }
     }
 });
@@ -1052,10 +1919,11 @@ test('episodes1–3 mechanics, tutorial setup, HUD, objectives and guards are un
     const source = read('story-mode.js'); const hash = text => crypto.createHash('sha256').update(text).digest('hex');
     // Only the approved presentation fields may change; all remaining metadata is frozen.
     const { c } = runtime();
-    const mechanics = c.__legacyTest.EPISODES.map(({ arc, background, protagonist, summary, pre, postWin, postLose, ...rest }) => rest);
+    const mechanics = c.__legacyTest.EPISODES.map(({ arc, background, protagonist, portraitStyle, summary, pre, postWin, postLose, ...rest }) => rest);
     assert.equal(hash(JSON.stringify(mechanics)), '1ea3c457ec4ad956f35cef45508c44e6ed5d60334982d498573e097a17be80c5');
     // Exclude only the approved BGM argument and the notice gate before the introduction.
     assert.equal(hash(source.slice(source.indexOf('    function getNextCardId'), source.indexOf('    function handleStoryBattleEnded'))
+        .replace("            introScene: S.phase === 'post' ? (S.pendingWinner !== 'player' && ep.postLose?.length ? 'lose' : 'win') : S.phase,\n", '')
         .replaceAll('playStorySceneBgm(ep.protagonist);', 'playStorySceneBgm();')
         .replace('        if (!beforeStory(() => startIntro(episodeId))) return;\n', '')), '37382307e675f6ab78d30c443d823665d166f9c4b3e19f66e757a6d1a9d07ca0');
     assert.match(read('achievements.js'), /\['episode1', 'episode2', 'episode3'\]/);
@@ -1070,18 +1938,20 @@ test('kanna, tsuyoshi and classmates are absent from selectable, gallery, favour
             assert.doesNotMatch(value, /kanna|tsuyoshi|classmate/);
         }
     }
-    for (const file of ['profile.js', 'achievements.js', 'network.js', 'battle-engine-worker.js', 'battle-images.js']) assert.doesNotMatch(read(file), /kanna|tsuyoshi|classmate/, file);
+    for (const file of ['profile.js', 'achievements.js', 'network.js', 'battle-engine-worker.js']) assert.doesNotMatch(read(file), /kanna|tsuyoshi|classmate/, file);
+    const imageContext = { window: {} }; vm.runInNewContext(read('battle-images.js'), imageContext);
+    assert.deepEqual(Object.keys(imageContext.window.BattleImages.standingPaths), ['chizuru', 'mai', 'takumi', 'akatsuki']);
     for (const file of ['web.html', 'mobile/mobile.html']) assert.doesNotMatch(read(file), /value="(?:kanna|tsuyoshi|classmate1|classmate2)"/);
 });
 
 test('both pages load ADV data locally in order with the current cache key', async () => {
     for (const file of ['web.html', 'mobile/mobile.html']) {
         const source = read(file); let last = -1;
-        for (const module of ['story-data/characters.js', 'story-data/registry.js', 'story-data/episode4.js', 'story-data/episode5.js', 'story-data/episode6.js', 'story-data/episode7.js', 'story-data/episode8.js', 'story-data/episode9.js', 'story-data/episode10.js', 'story-adv.js', 'story-mode.js']) {
-            const version = module === 'story-data/characters.js' ? '20261003-expressions-80d1' : module.startsWith('story-data/') ? '20261004-adv-menu1' : '20261004-character-notice1';
+        for (const module of ['story-data/portrait-metrics.js', 'story-data/characters.js', 'story-data/registry.js', 'story-data/episode4.js', 'story-data/episode5.js', 'story-data/episode6.js', 'story-data/episode7.js', 'story-data/episode8.js', 'story-data/episode9.js', 'story-data/episode10.js', 'story-adv.js', 'story-mode.js']) {
+            const version = module === 'story-adv.js' ? '20261006-icons99e' : ['story-mode.js', 'story-data/characters.js', 'story-data/registry.js', 'story-data/icon-metrics.js', 'story-data/character-intros.js'].includes(module) ? '20261006-icons99e' : module === 'story-data/characters.js' ? '20261005-face95b' : module === 'story-data/portrait-metrics.js' ? '20261005-outline94b' : ['story-data/episode5.js', 'story-data/episode6.js', 'story-data/episode7.js', 'story-data/episode9.js', 'story-data/episode10.js'].includes(module) ? '20261005-story-poses92b' : '20261004-story-poses90b';
             const position = source.indexOf(module + '?v=' + version); assert.ok(position > last, file + ': ' + module); last = position;
         }
-        assert.ok(source.includes('story-adv.css?v=20261004-character-notice1'));
+        assert.ok(source.includes('story-adv.css?v=20261006-icons99e'));
     }
     assert.doesNotMatch(read('story-adv.js'), /\bfetch\s*\(/);
     assert.match(read('story-adv.css'), /\.adv-portraits \{ position: absolute; inset: 0; z-index: 1/);
@@ -1210,6 +2080,7 @@ for (const [number, player, cpu, speechCount, title, nextTitle, summary] of NEW_
         assert.equal(warnings.length, 0);
         await t.test('word-for-word scenario speech, speaker, direction and inherited position', t => {
             const file = `docs/story/episode${number}-scenario.md`;
+            if (!optionalSource(t, root, [file, REVIEW_FILE, FIXES_FILE])) return;
             if (!fs.existsSync(path.join(root, file))) { t.skip('Source scenario is absent; only the word-for-word comparison is skipped.'); return; }
             const source = applyStoryFixes(read(file), number);
             const actual = clone(spoken.map(({ speaker, text, direction, position }) =>
@@ -1235,6 +2106,7 @@ for (const [number, player, cpu, speechCount, title, nextTitle, summary] of NEW_
         });
         await t.test('word-for-word loss speech and direction', t => {
             const file = number >= 8 ? `docs/story/lose-lines-ep${number}.md` : 'docs/story/lose-lines-ep5-7.md';
+            if (!optionalSource(t, root, [file, REVIEW_FILE])) return;
             if (!fs.existsSync(path.join(root, file))) { t.skip('Source loss dialogue is absent; only the word-for-word comparison is skipped.'); return; }
             const section = read(file).split(new RegExp(`## 第${number}話[^\\n]*\\n`))[1].split(/\n## /)[0];
             const expected = [...section.matchAll(/(【(右|左)：([^／】]+)[^】]*】)([^「]+)「([^」]*)」/g)].map(([, direction, side, name, speaker, text]) => {
@@ -1256,7 +2128,7 @@ test('episode5–10 publish copies skip only missing original comparisons', asyn
     const countedAssert = new Proxy(assert, { get(target, key) {
         return typeof target[key] === 'function' ? (...args) => { assertions++; return target[key](...args); } : target[key];
     } });
-    vm.runInNewContext(read('tests/story-adv.test.cjs'), { __dirname, URL, require(name) {
+    vm.runInNewContext(read('tests/story-adv.test.cjs'), { __dirname, URL, URLSearchParams, require(name) {
         if (name === 'node:test') return (name, callback) => cases.set(name, callback);
         if (name === 'node:fs') return portableFs;
         if (name === 'node:assert/strict') return countedAssert;
@@ -1265,18 +2137,19 @@ test('episode5–10 publish copies skip only missing original comparisons', asyn
     for (const number of [5, 6, 7, 8, 9, 10]) await cases.get(`episode${number}: data, staging and optional source comparisons`)({
         test: async (name, callback) => callback({ skip: reason => skipped.push(reason) })
     });
-    assert.equal(skipped.length, 12); assert.ok(skipped.every(reason => reason.includes('only the word-for-word comparison')));
+    assert.equal(skipped.length, 12); assert.ok(skipped.every(reason => reason.includes('comparison is skipped')));
     assert.ok(assertions > 1000, 'all data/staging checks still run');
 });
 
 test('portrait expressions are exactly the approved registrations, including kitchen', () => {
     const { c } = runtime(); const a = c.BattleStoryAssets;
     for (const [id, character] of Object.entries(a.characters)) {
-        const expressions = fs.readdirSync(path.join(root, 'assets/battle-images/story/portraits'))
-            .filter(f => f.startsWith(id + '-') && f.endsWith('.webp')).map(f => f.slice(id.length + 1, -5));
-        assert.deepEqual(clone(Object.keys(character.portraits)).sort(), expressions.sort());
-        for (const expression of expressions) {
-            assert.equal(character.portraits[expression], `assets/battle-images/story/portraits/${id}-${expression}.webp`);
+        const registered = Object.values(character.poses).flatMap(Object.values).sort();
+        const files = fs.readdirSync(path.join(root, 'assets/battle-images/story/portraits'))
+            .filter(f => f.startsWith(id + '-') && f.endsWith('.webp')).map(f => 'assets/battle-images/story/portraits/' + f).sort();
+        assert.deepEqual(clone(registered), files);
+        for (const expression of Object.keys(character.portraits)) {
+            assert.equal(character.poses.default[expression], `assets/battle-images/story/portraits/${id}-${expression}.webp`);
         }
         assert.equal(a.portraitPath(id, 'unlisted'), character.portraits.normal);
     }
@@ -1341,9 +2214,9 @@ test('episode8 silent angry direction updates only a shown Chizuru and preserves
         assert.deepEqual(clone([...S.actors.values()]), [akatsuki], 'absent Chizuru is never introduced');
         S.actors.set('chizuru', { id: 'chizuru', position: 'farLeft', expression: 'normal' });
         c.__advTest.stageLine(direction);
-        assert.deepEqual(clone(S.actors.get('chizuru')), { id: 'chizuru', position: 'farLeft', expression: 'pout' });
+        assert.deepEqual(clone(S.actors.get('chizuru')), { id: 'chizuru', position: 'farLeft', expression: 'pout', pose: 'default' });
         assert.deepEqual(clone(S.actors.get('akatsuki')), akatsuki);
-        assert.ok(c.__advTest.episodeImages(S.episode).includes(c.BattleStoryAssets.characters.chizuru.portraits.pout));
+        assert.ok(c.__advTest.episodeImages(S.episode).includes(c.BattleStoryAssets.iconPath('chizuru', 'pout')));
         Object.assign(S, { sceneId: scene.id, lineIndex: lineIndex - 1, stage: 'post' });
         c.__advTest.renderCurrent();
         c.__advTest.advance(); await tick(0);
@@ -1405,15 +2278,18 @@ test('episode9 classmates use their registered portraits in preload and playback
     for (let i = 0; i < lines.length; i++) {
         Object.assign(c.__advTest.S, { lineIndex: i }); c.__advTest.renderCurrent(); await r.tick(650);
         assert.equal(elements.get('adv-name').textContent, c.BattleStoryAssets.characters[lines[i].speaker].name);
-        const actor = elements.get('adv-portraits').children.find(n => n.dataset.actor === lines[i].speaker && !n.classList.contains('leaving'));
-        assert.equal(actor.children[0].src, c.BattleStoryAssets.portraitPath(lines[i].speaker, lines[i].expression));
+        const actor = elements.get('adv-icon-crop');
+        assert.equal(actor.classList.contains('adv-icon-sheet'), false);
+        assert.ok(actor.style['--adv-icon-crop-scale']);
+        assert.equal(elements.get('adv-portraits').children.length, 0);
+        assert.equal(actor.children[0].src, c.BattleStoryAssets.url(c.BattleStoryAssets.portraitPath(lines[i].speaker, lines[i].expression)));
     }
-    assert.ok(requests.length); assert.ok(requests.every(file => c.BattleStoryAssets.paths().includes(file)));
+    assert.ok(requests.length); assert.ok(requests.every(file => c.BattleStoryAssets.paths().map(c.BattleStoryAssets.url).includes(file)));
     assert.deepEqual(r.warnings, []);
 });
 
 test('episode9 backgrounds, left-side Mai, expressions and in-room Tsuyoshi follow the script', async () => {
-    const { c, elements, requests } = runtime(); const ep = c.BattleStoryData.get('episode9');
+    const { c, elements, requests } = fullRuntime(); const ep = c.BattleStoryData.get('episode9');
     assert.deepEqual(clone(ep.scenes.map(s => [s.id, s.background])), [
         ['scene1', 'festival-kitchen'], ['scene2', 'festival-classroom'],
         ['scene3', 'festival-kitchen'], ['scene4', 'festival-kitchen'], ['scene5', 'festival-kitchen'],
@@ -1443,7 +2319,7 @@ test('episode9 backgrounds, left-side Mai, expressions and in-room Tsuyoshi foll
     Object.assign(c.__advTest.S, { sceneId: scene.id, lineIndex: index }); c.__advTest.renderCurrent();
     assert.equal(elements.get('adv-name').textContent, '剛'); assert.equal(elements.get('adv-text').textContent, line.text);
     assert.equal(c.__advTest.S.actors.has('tsuyoshi'), true);
-    assert.ok(requests.includes(c.BattleStoryAssets.characters.tsuyoshi.portraits.normal));
+    assert.ok(requests.includes(c.BattleStoryAssets.url(c.BattleStoryAssets.characters.tsuyoshi.portraits.normal)));
 });
 
 test('episode backgrounds, notify, intro dimming and inherited positions match the staging brief', async () => {
@@ -1507,7 +2383,7 @@ for (const mobile of [false, true]) {
         test(`${label}: episode${number} preparation and battle use the correct player/opponent artwork`, async () => {
             const r = runtime({ main: true, mobile }), { c, elements, Element, load } = r;
             for (const id of ['start-cpu-setup-stage', 'start-character-step', 'start-character-cards', 'start-skill-step', 'start-skill-footer', 'start-skill-list', 'start-skill-detail', 'start-skill-message', 'start-setup-button', 'start-back-menu-button', 'start-cpu-setup-title', 'start-cpu-setup-subtitle', 'start-cpu-personality', 'start-turn-stage', 'menu-cpu-button']) { const node = new Element(); node.id = id; }
-            Object.assign(c, { getUserProfile: () => ({ favoriteCharacterId: 'akatsuki', favoriteSkillKey: 'tasteThief' }), setupMatchAutosaveOnce() {}, setupMatchExitGuardOnce() {}, renderUserStageProfile() {}, renderCoinStageProfile() {}, updateResumeMatchButtonVisibility() {}, startMenuFloatingBackground() {} });
+            Object.assign(c, { getUserProfile: () => ({ favoriteCharacterId: 'akatsuki', favoriteSkillKey: 'tasteThief' }), setupMatchAutosaveOnce() {}, setupMatchExitGuardOnce() {}, renderUserStageProfile() {}, renderCoinStageProfile() {}, updateResumeMatchButtonVisibility() {} });
             c.setupStartOverlay(); const ep = c.BattleStoryData.get(`episode${number}`);
             c.openStorySkillChoice(ep, skill => c.startStoryCpuBattle(ep, skill), () => {});
             assert.equal(elements.get('start-cpu-setup-title').textContent, `第${number}話 対戦準備`);
@@ -1521,8 +2397,8 @@ for (const mobile of [false, true]) {
             assert.ok(['makanaiSupply', 'aceProcurement'].includes(c.GameState.players.cpu.selectedSkillKey));
             assert.equal(c.GameState.settings.cpuPersonality, 'default'); assert.equal(c.shouldAutosaveCurrentMatch(), false);
             for (const [side, id] of [['player', player], ['cpu', cpu]]) {
-                assert.ok(c.getSkillCutinImagePathForSide(side).endsWith(`/skill-cutins/${id}-skill-cutin.webp`));
-                assert.ok(c.getBattleModeCutinImagePathForSide(side).endsWith(`/battle-mode-cutins/${id}-battle-mode-cutin.webp`));
+                assert.ok(c.getSkillCutinImagePathForSide(side).endsWith(`/story/icons/${id}-smile-alpha.webp?v=20261006-icons99c`));
+                assert.ok(c.getBattleModeCutinImagePathForSide(side).endsWith(`/story/icons/${id}-laugh-alpha.webp?v=20261006-icons99c`));
             }
             load(mobile ? 'mobile/render-sp.js' : 'render.js');
             const playerIcon = new Element(), cpuIcon = new Element(); playerIcon.className = 'char-chizuru'; cpuIcon.className = 'char-mai';
@@ -1636,7 +2512,7 @@ test('every raw expression in episodes1–10 and each silent show resolves to it
 
 test('all explicit facial directions agree with the expression catalog while Japanese directions stay intact', t => {
     const file = 'docs/story/expression-catalog.md';
-    if (!fs.existsSync(path.join(root, file))) { t.skip('optional expression catalog is absent'); return; }
+    if (!optionalSource(t, root, [file])) return;
     const { c } = runtime(); const mappings = {}; let id;
     for (const row of read(file).split(/\r?\n/)) {
         const heading = row.match(/^## .*（([^）]+)）/);
@@ -1651,7 +2527,7 @@ test('all explicit facial directions agree with the expression catalog while Jap
     }
 });
 
-test('fixes F1–F5 are applied only in data and approval flags follow the owner decisions', () => {
+test('fixes F1–F5 are applied only in data and approval flags follow the owner decisions', async t => {
     const { c } = runtime(), ep7 = c.BattleStoryData.get('episode7');
     assert.equal(ep7.clear.next.title, 'なんか気になる');
     for (const [n, original, fixed] of [
@@ -1660,10 +2536,14 @@ test('fixes F1–F5 are applied only in data and approval flags follow the owner
         [8, '昨日会ったばっかりなのにね', 'さっき会ったばっかりなのにね'],
         [10, 'そのくだり昨日もやったやろ', 'そのくだりさっきもやったやろ']
     ]) {
-        const ep = c.BattleStoryData.get(`episode${n}`), texts = ep.scenes.flatMap(s => reviewedLines(n, s.id, s.lines)).map(l => l.text);
-        assert.ok(texts.includes(fixed)); assert.ok(!texts.includes(original));
+        const ep = c.BattleStoryData.get(`episode${n}`), texts = ep.scenes.flatMap(s => s.lines).map(l => l.text);
+        assert.ok(texts.some(text => text === fixed || text === fixed + '！' || text === fixed + '！？'));
+        assert.ok(!texts.some(text => text === original || text === original + '！' || text === original + '！？'));
         const file = `docs/story/episode${n}-scenario.md`;
-        if (fs.existsSync(path.join(root, file))) { assert.ok(read(file).includes(original)); assert.ok(applyStoryFixes(read(file), n).includes(fixed)); }
+        await t.test(`episode${n}: original fix source comparison`, t => {
+            if (!optionalSource(t, root, [file, FIXES_FILE])) return;
+            assert.ok(read(file).includes(original)); assert.ok(applyStoryFixes(read(file), n).includes(fixed));
+        });
     }
 });
 
@@ -1728,8 +2608,13 @@ for (const mobile of [false, true]) {
         const portraits = ending.children.find(n => n.className === 'adv-arc-portraits'); assert.equal(portraits.children.length, 6);
         assert.deepEqual(portraits.children.map(f => f.children[1].textContent), ['千鶴', '栞那', '舞依', '拓海', '暁', '剛']);
         const ids = ['chizuru', 'kanna', 'mai', 'takumi', 'akatsuki', 'tsuyoshi'];
-        assert.deepEqual(portraits.children.map(f => f.children[0].src), ids.map(id => c.BattleStoryAssets.characters[id].portraits.normal));
-        assert.ok(requests.every(file => c.BattleStoryAssets.paths().includes(file) || file === 'assets/battle-images/card-back.webp'));
+        assert.deepEqual(portraits.children.map(f => f.children[0].children[0].src), ids.map(id => c.BattleStoryAssets.url(c.BattleStoryAssets.characters[id].standing)));
+        for (const figure of portraits.children) {
+            const frame = figure.children[0], m = c.BattleStoryAssets.characters[frame.dataset.actor].portraitMetrics;
+            assert.ok(frame.classList.contains('adv-arc-standing'));
+            assert.equal(frame.style['--adv-canvas-scale'], undefined);
+        }
+        assert.ok(requests.every(file => c.BattleStoryAssets.paths().map(c.BattleStoryAssets.url).includes(file) || file === 'assets/battle-images/card-back.webp'));
         assert.equal(ending.children[2].textContent, '六人の物語は、ここから始まる');
         assert.match(read('story-adv.css'), /\.adv-arc-portraits \{ display: grid; grid-template-columns: repeat\(6,/);
         assert.match(read('story-adv.css'), /\.adv-arc-portraits \{ grid-template-columns: repeat\(3,/);
@@ -1857,7 +2742,7 @@ test('skip confirms, rebuilds skipped speech / actors / inline background, and s
     elements.get('adv-skip').onclick(); await elements.get('adv-skip-yes').onclick();
     assert.equal(c.choice.episode.id, 'playback-fixture'); assert.equal(c.__advTest.S.stage, 'battle');
     assert.deepEqual(clone(c.__advTest.S.backlog.map(l => l.text)), ['最初の会話です。', '読み飛ばす会話']);
-    assert.deepEqual(clone([...c.__advTest.S.actors.values()]), [{ id: 'mai', position: 'left', expression: 'normal' }]);
+    assert.deepEqual(clone([...c.__advTest.S.actors.values()]), [{ id: 'mai', position: 'left', expression: 'normal', pose: 'default' }]);
     assert.ok(elements.get('adv-background').style.backgroundImage.includes('rooftop.webp'));
     assert.equal(c.__advTest.S.lineIndex, 3); assert.equal(c.__advTest.S.battleActive, false);
     assert.equal(JSON.parse(r.store.get(ADV_KEY)).resume.stage, 'battle');
@@ -1872,7 +2757,7 @@ test('end skip across win scenes retains every skipped log line and final actors
     assert.deepEqual(clone(r.c.__advTest.S.backlog.map(l => l.text)),
         ['最初の会話です。', '読み飛ばす会話', '勝利の会話です。', '後でログを読む会話', '最後の会話']);
     assert.deepEqual(clone([...r.c.__advTest.S.actors.values()]), [
-        { id: 'kanna', position: 'left', expression: 'troubled' }, { id: 'mai', position: 'center', expression: 'smile' }
+        { id: 'kanna', position: 'left', expression: 'troubled', pose: 'default' }, { id: 'mai', position: 'center', expression: 'smile', pose: 'default' }
     ]);
     assert.ok(r.elements.get('adv-background').style.backgroundImage.includes('rooftop.webp'));
     const saved = Object.fromEntries(r.store);
@@ -2094,27 +2979,41 @@ test('ADV WebAudio can freeze/resume cues and fast-forward shortens both notes w
     }
 });
 
-test('review table permits exactly the documented punctuation and presentation additions across all ten episodes', () => {
+test('review table permits exactly the documented punctuation and presentation additions across all ten episodes', async t => {
     const { c } = runtime(), review = storyReview();
     const episodes = [...c.__legacyTest.EPISODES.map((e, i) => ({ number: i + 1, scenes: ['pre', 'postWin', 'postLose'].filter(k => e[k]).map(k => ({ id: k, lines: e[k] })) })), ...c.BattleStoryData.all()];
     let changes = 0, effects = 0, spoken = 0; const used = { motions: new Set(), marks: new Set(), screens: new Set(), cues: new Set() };
     for (const ep of episodes) for (const scene of ep.scenes) scene.lines.forEach((line, index) => {
         const key = ep.number + '/' + scene.id + ':' + (index + 1), edit = review.changes.get(key), fx = review.effects.get(key);
         if (line.text) { spoken++; assert.doesNotMatch(line.text, /。$/); }
+        for (const [field, catalog] of [['motion', 'motions'], ['mark', 'marks'], ['screen', 'screens'], ['se', 'cues']]) {
+            if (!line[field]) continue;
+            assert.ok(c.BattleStoryData.presentation[catalog].includes(line[field]), key);
+            used[catalog].add(line[field]);
+        }
+    });
+    assert.equal(spoken, 1062);
+    for (const name of ['hop', 'shake', 'zoom', 'tremble', 'slideIn']) assert.ok(used.motions.has(name));
+    for (const name of ['flash', 'screenShake', 'speedLines']) assert.ok(used.screens.has(name));
+    for (const name of ['pop', 'shock', 'laugh', 'idea', 'thud', 'sparkle', 'swish']) assert.ok(used.cues.has(name));
+    for (const name of ['!', '?', '!?', 'sweat', 'anger', 'note', 'sparkle', '…']) assert.ok(used.marks.has(name));
+    await t.test('coordinate-specific authoring review comparison', t => {
+    if (!optionalSource(t, root, [REVIEW_FILE])) return;
+    for (const ep of episodes) for (const scene of ep.scenes) scene.lines.forEach((line, index) => {
+        const key = ep.number + '/' + scene.id + ':' + (index + 1), edit = review.changes.get(key), fx = review.effects.get(key);
         if (edit) {
             changes++; assert.equal(line.text, edit.after, key);
             assert.ok(edit.after === edit.before + '！' || edit.after === edit.before + '！？', key);
             assert.doesNotMatch(edit.before, /[！？。]$/);
         }
         if (fx) { effects++; for (const [field, value] of Object.entries(fx)) assert.equal(line[field], value, key); }
-        for (const [field, catalog] of [['motion', 'motions'], ['mark', 'marks'], ['screen', 'screens'], ['se', 'cues']]) {
-            if (!line[field]) continue;
-            assert.ok(c.BattleStoryData.presentation[catalog].includes(line[field]), key);
-            used[catalog].add(line[field]);
-            if (field !== 'se' || !['chime', 'crowd', 'notify'].includes(line[field])) assert.equal(fx?.[field], line[field], 'undocumented addition: ' + key);
+        for (const field of ['motion', 'mark', 'screen', 'se']) {
+            if (line[field] && (field !== 'se' || !['chime', 'crowd', 'notify'].includes(line[field]))) {
+                assert.equal(fx?.[field], line[field], 'undocumented addition: ' + key);
+            }
         }
     });
-    assert.equal(spoken, 1062); assert.equal(changes, review.changes.size); assert.equal(effects, review.effects.size);
+    assert.equal(changes, review.changes.size); assert.equal(effects, review.effects.size);
     assert.ok(changes / spoken <= .2);
     for (const row of read('docs/story/emphasis-changes-20261004.md').split(/\r?\n/)) {
         const cells = row.split('|').map(x => x.trim());
@@ -2125,19 +3024,28 @@ test('review table permits exactly the documented punctuation and presentation a
         assert.equal(Number(cells[3]), [...review.changes.keys()].filter(k => k.startsWith(number + '/')).length);
         assert.equal(Number(cells[4]), [...review.effects.keys()].filter(k => k.startsWith(number + '/')).length);
     }
-    for (const name of ['hop', 'shake', 'zoom', 'tremble', 'slideIn']) assert.ok(used.motions.has(name));
-    for (const name of ['flash', 'screenShake', 'speedLines']) assert.ok(used.screens.has(name));
-    for (const name of ['pop', 'shock', 'laugh', 'idea', 'thud', 'sparkle', 'swish']) assert.ok(used.cues.has(name));
-    for (const name of ['!', '?', '!?', 'sweat', 'anger', 'note', 'sparkle', '…']) assert.ok(used.marks.has(name));
+    });
 });
 
-test('the entire original episode data stays unchanged after reversing only the reviewed additions', () => {
+test('the entire original episode data stays unchanged after reversing only the reviewed additions', async t => {
     const { c } = runtime();
+    // This shipped-data fingerprint remains enforceable when authoring docs are absent.
+    const shipped = [
+        ...c.__legacyTest.EPISODES.map((e, i) => ({ number: i + 1, scenes: ['pre', 'postWin', 'postLose'].filter(k => e[k]).map(k => ({ id: k, lines: clone(e[k]) })) })),
+        ...c.BattleStoryData.all().map(clone)
+    ];
+    for (const ep of shipped) delete ep.portraitStyle; // Owner's 99a presentation change; scenario fingerprint stays intact.
+    for (const ep of shipped) for (const s of ep.scenes) for (const line of s.lines) delete line.pose;
+    assert.equal(crypto.createHash('sha256').update(JSON.stringify(shipped)).digest('hex'), 'f353dbb61438abd2c4cd9572aea8c051805954e5c8128ea0e9b264a70dd2ff64');
+    await t.test('original data fingerprint after documented review reversal', t => {
+    if (!optionalSource(t, root, [REVIEW_FILE])) return;
     const original = [
         ...c.__legacyTest.EPISODES.map((e, i) => ({ number: i + 1, scenes: ['pre', 'postWin', 'postLose'].filter(k => e[k]).map(k => ({ id: k, lines: reviewedLines(i + 1, k, e[k]) })) })),
         ...c.BattleStoryData.all().map(e => ({ ...clone(e), scenes: e.scenes.map(s => ({ ...clone(s), lines: reviewedLines(e.number, s.id, s.lines) })) }))
     ];
+    for (const ep of original) delete ep.portraitStyle;
     assert.equal(crypto.createHash('sha256').update(JSON.stringify(original)).digest('hex'), '056654abad608b7475a9cb75f09bdbab21dd5bddf639754b0b0ce4906471350e');
+    });
 });
 
 test('unknown cue, motion, mark and screen names are removed with one warning and never dispatched', async () => {
@@ -2158,7 +3066,7 @@ for (const motion of ['hop', 'shake', 'zoom', 'tremble', 'slideIn']) for (const 
             { speaker: 'mai', position: 'left', text: '次の会話' }
         ] }] });
         await c.StoryAdv.start('line-beat');
-        const portrait = elements.get('adv-portraits').children.find(p => p.dataset.actor === 'chizuru');
+        const portrait = elements.get('adv-face-icon');
         assert.equal(c.__advTest.S.busy, false); assert.equal(portrait.classList.contains('adv-motion-' + motion), !reduced);
         assert.equal(portrait.querySelector('.adv-emotion-mark').textContent, '!?');
         assert.equal(elements.get('adv-line-effects').classList.contains('adv-screen-flash'), !reduced);
@@ -2189,7 +3097,7 @@ test('line beats freeze during log/pause, are cancelled by stop/skip, and fast-f
     c.__advTest.openLog(false); await tick(650);
     assert.equal(elements.get('story-adv').classList.contains('adv-screen-shake'), false);
     await c.StoryAdv.start('beat-controls'); c.__advTest.toggleFastForward();
-    assert.equal(elements.get('adv-portraits').children[0].querySelector('.adv-emotion-mark'), null);
+    assert.equal(elements.get('adv-face-icon').querySelector('.adv-emotion-mark'), null);
     await tick(300); assert.equal(elements.get('adv-line-effects').className, 'adv-line-effects');
     assert.ok(!elements.get('adv-portraits').children.some(p => p.querySelector('.adv-emotion-mark')));
     c.StoryAdv.stop(); await tick(2000); assert.equal(elements.get('adv-line-effects').className, 'adv-line-effects');
@@ -2243,4 +3151,146 @@ test('dialogue/log/CLEAR share readable size targets and decorations cannot inte
     assert.match(css, /animation: none !important; transition: none !important/);
     for (const id of ['chizuru', 'mai', 'takumi', 'akatsuki', 'kanna', 'tsuyoshi']) assert.ok(css.includes(`data-speaker="${id}"`));
     assert.match(read('story-adv.js'), /class="adv-next"[^]*?<svg viewBox="0 0 42 24"/);
+});
+
+function viewerRuntime(options = {}) {
+    const fixtures = {
+        [PROGRESS_KEY]: JSON.stringify({ episode1: true, episode10: true, future: 'keep' }),
+        [ADV_KEY]: JSON.stringify({ version: 1, auto: true, resume: { episodeId: 'episode10', sceneId: 'win', stage: 'post', lineIndex: 4 } }),
+        battleAlaCarteCharacterNotice20261004: '1',
+        balc_achievements_v1: '{"coins":123}', balc_missions_v1: '{"cleared":["keep"]}',
+        'battle-a-la-carte:match-autosave:v1': '{"keep":true}', profile: '{"coins":321}'
+    };
+    const r = runtime({ ...options, viewer: true, save: fixtures });
+    // Mount the actual entry-page markup before firing any startup hooks.
+    r.c.document.body.innerHTML = read(options.mobile ? 'mobile/mobile.html' : 'web.html');
+    r.c.__legacyTest.init();
+    r.elements.get('character-notice-confirm').listeners.click();
+    return r;
+}
+const viewerChoices = ['勝った場合の続きを読む', '負けた場合の会話を読む', 'スキップして次の場面へ'];
+async function viewerSkip(r) {
+    r.elements.get('adv-skip').onclick();
+    const pending = r.elements.get('adv-skip-yes').onclick();
+    await r.tick(2000); await pending;
+}
+function assertViewerUnchanged(r, before) {
+    assert.deepEqual([...r.store], before);
+    assert.deepEqual(r.persistentWrites, []);
+    assert.equal(r.c.StoryViewer.blockedWrites, 0, 'no attempted storage mutation, even on the read-only facade');
+    assert.equal(r.c.__advTest.saved.resume, null);
+    assert.equal(r.c.__advTest.S.battleActive, false);
+    assert.equal(r.c.__legacyTest.S.battleActive, false);
+    assert.ok(!r.calls.includes('skill-choice') && !r.calls.includes('init-normal'));
+}
+for (const mobile of [false, true]) {
+    const label = mobile ? 'phone' : 'PC';
+    test(`${label}: viewer lists all ten episodes in two arcs without progress or a normal-menu link`, () => {
+        const r = viewerRuntime({ mobile }), before = [...r.store];
+        const list = r.elements.get('story-episode-list');
+        assert.deepEqual(list.children.filter(n => n.className === 'story-arc-heading').map(n => n.textContent), ['再会編', '出会い・文化祭編']);
+        const cards = list.children.filter(n => n.className === 'story-episode-card'); assert.equal(cards.length, 10);
+        assert.deepEqual(cards.map(n => n.children.at(-1).getAttribute('data-story-episode-id')), Array.from({ length: 10 }, (_, i) => 'episode' + (i + 1)));
+        assert.ok(cards.every(n => !n.children.at(-1).disabled));
+        assert.equal(r.c.BattleStoryProgress.load().episode10, undefined);
+        r.c.BattleStoryProgress.complete('episode10');
+        for (let n = 1; n <= 3; n++) {
+            const adapted = r.c.StoryViewer.get('episode' + n), source = r.c.__legacyTest.EPISODES[n - 1];
+            assert.deepEqual(clone(adapted.scenes[0].lines.slice(0, -1).map(l => l.text)), clone(source.pre.map(l => l.text)));
+            assert.deepEqual(clone(adapted.scenes[1].lines.map(l => l.text)), clone(source.postWin.map(l => l.text)));
+            assert.deepEqual(clone(adapted.scenes[2].lines.map(l => l.text)), clone((source.postLose || []).map(l => l.text)));
+        }
+        const html = read(mobile ? 'mobile/mobile.html' : 'web.html');
+        assert.ok(html.indexOf('story-viewer.js?v=') < html.indexOf('missions.js?v='));
+        assert.ok(html.includes(r.c.CharacterNotice.shortText));
+        assert.doesNotMatch(html, /(?:href|onclick)=["'][^"']*\?viewer/);
+        assert.equal(r.elements.get('start-story-back-button').classList.contains('hidden'), true);
+        assertViewerUnchanged(r, before);
+    });
+    for (const outcome of ['win', 'lose', 'skip']) test(`${label}: viewer all episodes ${outcome} route reaches CLEAR and list with zero persistent writes`, async () => {
+        const r = viewerRuntime({ mobile }), { c, elements } = r, before = [...r.store];
+        for (let n = 1; n <= 10; n++) {
+            await c.StoryAdv.start('episode' + n, true);
+            assert.equal(c.__advTest.S.stage, 'pre', 'viewer always starts afresh');
+            assert.equal(elements.get('adv-viewer-badge').hidden, false);
+            await viewerSkip(r);
+            const ending = elements.get('adv-ending');
+            assert.deepEqual(ending.children.map(button => button.textContent), viewerChoices);
+            const button = ending.children[['win', 'lose', 'skip'].indexOf(outcome)]; button.onclick();
+            await r.tick(2000);
+            if (outcome === 'lose') {
+                if (ending.hidden) await viewerSkip(r);
+                assert.deepEqual(ending.children.map(button => button.textContent), viewerChoices);
+                // Empty tutorial1 loss is a boundary, with no invented dialogue.
+                ending.children[0].onclick(); await r.tick(2000);
+            }
+            assert.equal(c.__advTest.S.stage, 'post');
+            if (ending.hidden) await viewerSkip(r);
+            assert.equal(c.__advTest.S.stage, 'clear');
+            assert.equal(ending.children[0].textContent, `第${n}話 CLEAR`);
+            if (n === 10) {
+                ending.children.at(-1).onclick();
+                assert.equal(ending.children[0].textContent, '出会い・文化祭編 CLEAR');
+                assert.equal(ending.children.find(el => el.className === 'adv-arc-notice character-notice' || el.className === 'character-notice adv-arc-notice').textContent, c.CharacterNotice.shortText);
+                assert.equal(ending.children.find(el => el.className === 'adv-arc-portraits').children.length, 6);
+            }
+            ending.children.at(-1).onclick();
+            assert.equal(elements.get('story-adv').hidden, true);
+            assert.equal(elements.get('story-episode-list').children.filter(el => el.className === 'story-episode-card').length, 10);
+            assertViewerUnchanged(r, before);
+        }
+        c.listeners.pagehide(); assertViewerUnchanged(r, before);
+    });
+    test(`${label}: viewer manual reading, AUTO, fast-forward, pause, nested log and exit use the existing ADV`, async () => {
+        const r = viewerRuntime({ mobile, reduced: false }), { c, elements } = r, before = [...r.store];
+        await c.StoryAdv.start('episode2');
+        const state = c.__advTest.S;
+        elements.get('adv-pause').onclick(); const typed = state.typed;
+        await r.tick(4000); assert.equal(state.typed, typed);
+        elements.get('adv-pause-log').onclick(); assert.equal(state.logOpen, true);
+        elements.get('adv-log-close').onclick(); assert.equal(state.paused, true);
+        elements.get('adv-resume').onclick(); await r.tick(2000); assert.equal(state.typing, false);
+        elements.get('adv-auto').onclick(); assert.equal(c.__advTest.saved.auto, true);
+        await r.tick(7000); assert.ok(state.lineIndex > 0);
+        elements.get('adv-auto').onclick();
+        elements.get('adv-fast').onclick(); await r.tick(15000);
+        assert.deepEqual(elements.get('adv-ending').children.map(b => b.textContent), viewerChoices);
+        assert.equal(state.fastForward, false);
+        elements.get('adv-ending').children[0].onclick(); await r.tick(2000);
+        elements.get('adv-log-button').onclick();
+        assert.ok(elements.get('adv-log-lines').children.length >= c.StoryViewer.get('episode2').scenes[0].lines.filter(l => l.text).length);
+        elements.get('adv-log-close').onclick();
+        elements.get('adv-pause').onclick(); elements.get('adv-pause-exit').onclick();
+        assert.equal(elements.get('story-adv').hidden, true);
+        assertViewerUnchanged(r, before);
+        await c.StoryAdv.start('episode1');
+        for (let i = 0; elements.get('adv-ending').hidden && i < 40; i++) {
+            await r.tick(2000); c.__advTest.advance();
+        }
+        assert.deepEqual(elements.get('adv-ending').children.map(b => b.textContent), viewerChoices);
+        assertViewerUnchanged(r, before);
+    });
+    test(`${label}: viewer startup suppresses autosave, profile migration, missions, achievements and account mount`, () => {
+        const r = viewerRuntime({ mobile, main: true }), { c, load } = r, before = [...r.store];
+        load('missions.js'); load('achievements.js');
+        c.document.currentScript = { src: 'https://offline.invalid/network.js' }; load('network.js');
+        c.fetch = () => { throw Error('viewer must not start account networking'); };
+        for (const callback of c.document.eventHandlers.get('DOMContentLoaded')) callback();
+        assert.equal(vm.runInContext('gameStartedOnce', c), false);
+        assert.equal(c.__legacyTest.S.observerInstalled, false);
+        assert.equal(c.__legacyTest.S.guardsInstalled, false);
+        assertViewerUnchanged(r, before);
+    });
+}
+test('viewer storage membrane blocks set/remove/clear and property writes while ordinary pages retain real storage', () => {
+    const r = viewerRuntime(), before = [...r.store];
+    for (const method of ['setItem', 'removeItem', 'clear']) assert.throws(() => r.c.localStorage[method]('keep', 'value'), /storage is disabled/);
+    assert.throws(() => vm.runInContext("localStorage.profile = 'changed'", r.c), /storage is disabled/);
+    assert.throws(() => vm.runInContext('delete localStorage.profile', r.c), /storage is disabled/);
+    assert.deepEqual([...r.store], before); assert.deepEqual(r.persistentWrites, []);
+    for (const search of ['', '?viewers', '?x=viewer']) {
+        const normal = runtime(); normal.c.location.search = search; normal.load('story-viewer.js');
+        assert.equal(normal.c.StoryViewer.active, false);
+        normal.c.localStorage.setItem('normal', 'works'); assert.equal(normal.store.get('normal'), 'works');
+    }
 });

@@ -6,6 +6,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
+const optionalSource = (t, sourceRoot, files) => require('./helpers/optional-source.cjs')(t, sourceRoot, files, fs);
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const codec = require('../audio-pack-codec.js');
 const { buildAudioPack } = require('../tools/build-audio-pack.cjs');
@@ -13,7 +14,26 @@ const manifest = JSON.parse(read('assets/audio-pack/manifest.json'));
 const flush = async () => { for (let i = 0; i < 60; i++) await Promise.resolve(); };
 const sha256 = bytes => crypto.createHash('sha256').update(Buffer.from(bytes)).digest('hex');
 
-test('all sources build deterministically, round-trip exactly and have non-audio headers and hashes', () => {
+test('all sources build deterministically, round-trip exactly and have non-audio headers and hashes', async t => {
+    assert.equal(Object.keys(manifest.tracks).length, 16);
+    for (const [name, track] of Object.entries(manifest.tracks)) {
+        const encoded = fs.readFileSync(path.join(root, 'assets/audio-pack', track.file));
+        const decoded = Buffer.from(codec.decode(encoded, name));
+        assert.equal(decoded.length, track.originalByteSize, name);
+        assert.equal(sha256(decoded), track.sha256, name);
+        assert.deepEqual(Buffer.from(codec.encode(decoded, name)), encoded, name + ': deterministic pack');
+        assert.equal(encoded.length, decoded.length + codec.HEADER_SIZE);
+        assert.equal(encoded.subarray(0, 8).toString(), 'BALCAUD1');
+        assert.notEqual(encoded.subarray(0, 3).toString(), 'ID3');
+        assert.ok(!(encoded[0] === 255 && (encoded[1] & 224) === 224), name + ': no MPEG sync');
+        await t.test(name + ': exact original comparison', t => {
+            const file = 'assets/audio/' + name + '.mp3';
+            if (!optionalSource(t, root, [file])) return;
+            assert.deepEqual(decoded, fs.readFileSync(path.join(root, file)), name + ': exact round-trip');
+        });
+    }
+    await t.test('complete source rebuild matches the shipped manifest and packs', t => {
+    if (!optionalSource(t, root, Object.keys(manifest.tracks).map(name => 'assets/audio/' + name + '.mp3'))) return;
     const tmpRoot = path.join(root, 'tmp');
     fs.mkdirSync(tmpRoot, { recursive: true });
     const outputDir = fs.mkdtempSync(path.join(tmpRoot, 'audio-pack-test-'));
@@ -41,6 +61,7 @@ test('all sources build deterministically, round-trip exactly and have non-audio
         assert.ok(path.resolve(outputDir).startsWith(path.resolve(tmpRoot) + path.sep));
         fs.rmSync(outputDir, { recursive: true, force: true });
     }
+    });
 });
 
 test('codec rejects wrong name, bad header, length, checksum and invalid names', () => {
@@ -55,14 +76,15 @@ test('codec rejects wrong name, bad header, length, checksum and invalid names',
     assert.notDeepEqual(codec.encode([1, 2, 3], 'cook').slice(16), codec.encode([1, 2, 3], 'bgm').slice(16));
 });
 
-test('six owner tracks match copied sources; unassigned mansion is absent', () => {
+test('six owner tracks match copied sources; unassigned mansion is absent', async t => {
     const sourceDir = path.resolve(root, '../battle-a-la-carte - ギットハブ版 -ユニティ改/新bgm');
     for (const [id, source] of Object.entries({ chizuru: 'chiduru', mai: 'mai', takumi: 'takumi', akatsuki: 'akatsuki', kanna: 'kanna', tsuyoshi: 'tsuyoshi' })) {
         const track = manifest.tracks['theme-' + id];
         assert.ok(track);
-        if (fs.existsSync(path.join(sourceDir, source + '.mp3'))) {
+        await t.test(id + ': owner source comparison', t => {
+            if (!optionalSource(t, sourceDir, [source + '.mp3'])) return;
             assert.equal(track.sha256, sha256(fs.readFileSync(path.join(sourceDir, source + '.mp3'))));
-        }
+        });
     }
     assert.ok(!fs.existsSync(path.join(root, 'assets/audio/不気味な洋館.mp3')));
     assert.ok(!Object.keys(manifest.tracks).some(name => name.includes('洋館')));

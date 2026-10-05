@@ -96,10 +96,107 @@
         });
     }
 
+    let destructivePromptOpen = false;
+    function confirmDestructive({ title, erased = [], kept = [], confirmText = '初期化する', erasedLabel = '初期化されるもの' }) {
+        // Repeated taps must not queue a second destructive action.
+        if (destructivePromptOpen) return Promise.resolve(false);
+        destructivePromptOpen = true;
+        return new Promise(resolve => {
+            const previousFocus = root.document.activeElement;
+            const overlay = root.document.createElement('div');
+            overlay.className = 'stage-prompt-overlay destructive-prompt-overlay';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.setAttribute('aria-labelledby', 'destructive-prompt-title');
+            overlay.setAttribute('aria-describedby', 'destructive-prompt-details');
+            const panel = root.document.createElement('div');
+            panel.className = 'stage-prompt-panel destructive-prompt-panel';
+            const heading = root.document.createElement('h2');
+            heading.id = 'destructive-prompt-title';
+            heading.textContent = title;
+            const details = root.document.createElement('div');
+            details.id = 'destructive-prompt-details';
+            details.className = 'destructive-prompt-details';
+            const list = (label, items) => {
+                if (!items.length) return;
+                const caption = root.document.createElement('h3');
+                caption.textContent = label;
+                const ul = root.document.createElement('ul');
+                items.forEach(item => {
+                    const li = root.document.createElement('li');
+                    li.textContent = item; ul.appendChild(li);
+                });
+                details.append(caption, ul);
+            };
+            list(erasedLabel, erased);
+            list('初期化されないもの', kept);
+            const warning = root.document.createElement('p');
+            warning.className = 'destructive-prompt-warning';
+            warning.textContent = 'この操作は元に戻せません。';
+            details.appendChild(warning);
+            const actions = root.document.createElement('div');
+            actions.className = 'stage-prompt-actions';
+            const cancel = root.document.createElement('button');
+            cancel.type = 'button'; cancel.className = 'start-sub-button'; cancel.textContent = 'やめる';
+            const accept = root.document.createElement('button');
+            accept.type = 'button'; accept.className = 'danger-confirm-button'; accept.textContent = confirmText;
+            accept.disabled = true;
+            const delayHint = root.document.createElement('p');
+            delayHint.className = 'destructive-prompt-delay';
+            delayHint.setAttribute('role', 'status');
+            delayHint.textContent = '内容をご確認ください（1秒後に操作できます）';
+            let closed = false;
+            const readyAt = Date.now() + 1000;
+            const timer = root.setTimeout(() => {
+                if (closed) return;
+                accept.disabled = false;
+                delayHint.textContent = '内容を確認したうえで操作してください';
+            }, 1000);
+            const siblings = [...stage.children].map(node => [node, node.inert]);
+            siblings.forEach(([node]) => { node.inert = true; });
+            const close = answer => {
+                if (closed) return;
+                closed = true; root.clearTimeout(timer);
+                root.document.removeEventListener('keydown', onKey, true);
+                overlay.remove();
+                siblings.forEach(([node, inert]) => { node.inert = inert; });
+                destructivePromptOpen = false;
+                previousFocus?.focus?.();
+                resolve(answer);
+            };
+            const onKey = event => {
+                if (event.key === 'Escape') {
+                    event.preventDefault(); event.stopImmediatePropagation(); close(false);
+                } else if (event.key === 'Tab') {
+                    event.preventDefault();
+                    const buttons = accept.disabled ? [cancel] : [cancel, accept];
+                    const current = buttons.indexOf(root.document.activeElement);
+                    buttons[(current + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length].focus();
+                }
+            };
+            cancel.addEventListener('click', () => close(false));
+            accept.addEventListener('click', () => {
+                if (accept.disabled || Date.now() < readyAt) return;
+                close(true);
+            });
+            overlay.addEventListener('pointerdown', event => event.stopPropagation());
+            overlay.addEventListener('click', event => {
+                event.stopPropagation();
+                if (event.target === overlay) close(false);
+            });
+            actions.append(cancel, accept);
+            panel.append(heading, details, delayHint, actions);
+            overlay.appendChild(panel); stage.appendChild(overlay);
+            root.document.addEventListener('keydown', onKey, true);
+            cancel.focus();
+        });
+    }
+
     root.StageLayout = Object.freeze({ ...api, stage, logical, getScale: () => scale,
         toStagePoint: point => screenToStage(point, stage.getBoundingClientRect(), scale),
         toStageRect: rect => rectToStage(rect, stage.getBoundingClientRect(), scale),
-        confirm: message => prompt(message, true), alert: message => prompt(message, false), fit });
+        confirm: message => prompt(message, true), confirmDestructive,
+        alert: message => prompt(message, false), fit });
     root.addEventListener('resize', fit);
     root.addEventListener('orientationchange', fit);
     root.visualViewport?.addEventListener('resize', fit);

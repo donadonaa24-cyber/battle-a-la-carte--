@@ -294,6 +294,7 @@
         else window.CharacterNotice?.showOnce();
     }
     function init() {
+        if (window.StoryViewer?.active) return;
         refreshCosmetics();
         document.getElementById('mission-list')?.addEventListener('click', event => {
             const button = event.target.closest('button[data-mission-id]');

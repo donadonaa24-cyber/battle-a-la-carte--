@@ -4,6 +4,10 @@ let matchFinaleTimer = null;
 let matchFinaleSequence = 0;
 let spotlightTimer = null;
 let spotlightHideAt = 0;
+let spotlightPresentation = null;
+let battleModePresentation = null;
+let selectionSkillPresentation = null;
+let selectionResizeBound = false;
 let gameStartedOnce = false;
 
 let selectedStartCharacter = 'chizuru';
@@ -12,16 +16,12 @@ let turnCardRoleMap = null;
 let selectedStartSkillKey = 'lastOrder';
 let selectedCpuPersonality = 'default';
 let startTitleTimer = null;
-let startMenuFloatTimer = null;
 let selectedGalleryType = 'characters';
 let startCpuSetupStep = 1;
 let pendingMissionId = null;
 let storyPreviousCpuPersonality = null;
 let choosingMissionOpponent = false;
 let startOverlayAudioUnlockBound = false;
-const START_MENU_CARD_VISIBLE_MS = 5000;
-const START_MENU_CARD_FADE_MS = 600;
-const START_MENU_CARD_CYCLE_MS = START_MENU_CARD_VISIBLE_MS + (START_MENU_CARD_FADE_MS * 2);
 const SPOTLIGHT_DISPLAY_MS = 2000;
 const BATTLE_MODE_TEXT_STEP1_MS = 1000;
 const BATTLE_MODE_TEXT_STEP2_MS = 2000;
@@ -111,11 +111,11 @@ function readSavedMatch() {
 
         const payload = JSON.parse(raw);
         if (!payload || payload.schemaVersion !== MATCH_AUTOSAVE_SCHEMA_VERSION || !payload.snapshot) {
-            localStorage.removeItem(MATCH_AUTOSAVE_KEY);
+            // Keep unsupported/completed saves on disk until an explicit replacement.
             return null;
         }
         if (payload.snapshot.gameEnded) {
-            localStorage.removeItem(MATCH_AUTOSAVE_KEY);
+            // Keep unsupported/completed saves on disk until an explicit replacement.
             return null;
         }
         return payload;
@@ -249,7 +249,6 @@ function resumeSavedMatch() {
         applySavedMatchSnapshot(saved.snapshot);
         if (typeof applyRuntimeSettings === 'function') applyRuntimeSettings();
         if (typeof startBgmOnce === 'function') startBgmOnce();
-        stopMenuFloatingBackground();
         if (startTitleTimer) {
             clearTimeout(startTitleTimer);
             startTitleTimer = null;
@@ -270,7 +269,7 @@ function resumeSavedMatch() {
     } catch (e) {
         console.error('failed to resume saved match', e);
         setStartMenuMessage('保存された対戦の再開に失敗しました。新しく対戦を開始してください。');
-        clearSavedMatch();
+        // A failed restore must not erase the saved source data.
         return;
     } finally {
         matchAutosaveRestoring = false;
@@ -756,9 +755,6 @@ function showStartStage(activeId) {
 
     if (activeId === 'start-menu-stage') {
         renderStartMenuPlayerCard();
-        startMenuFloatingBackground();
-    } else {
-        stopMenuFloatingBackground();
     }
     if ((activeId === 'start-title-stage' || activeId === 'start-menu-stage') && typeof playTitleBGM === 'function') {
         playTitleBGM();
@@ -778,86 +774,6 @@ function escapeHtmlText(text) {
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
-}
-
-function getStartMenuFloatImagePool() {
-    const pool = ['assets/battle-images/card-back.webp'];
-
-    if (Array.isArray(window.ingredientDefinitions) && typeof window.getIngredientImagePath === 'function') {
-        window.ingredientDefinitions.forEach(def => {
-            const path = window.getIngredientImagePath(def.name);
-            if (path) pool.push(path);
-        });
-    }
-
-    if (Array.isArray(window.eventDefinitions) && typeof window.getEventImagePath === 'function') {
-        window.eventDefinitions.forEach(def => {
-            const path = window.getEventImagePath(def.name);
-            if (path) pool.push(path);
-        });
-    }
-
-    if (Array.isArray(window.recipes) && typeof window.getRecipeImagePath === 'function') {
-        window.recipes.forEach(recipe => {
-            const path = window.getRecipeImagePath(recipe.name);
-            if (path) pool.push(path);
-        });
-    }
-
-    return [...new Set(pool)];
-}
-
-function spawnMenuFloatingCard() {
-    const layer = document.getElementById('start-menu-floating-bg');
-    if (!layer) return;
-
-    const pool = getStartMenuFloatImagePool();
-    if (pool.length === 0) return;
-
-    const card = document.createElement('span');
-    card.className = 'menu-floating-card';
-
-    const durationSec = START_MENU_CARD_CYCLE_MS / 1000;
-    const xPercent = 12 + Math.random() * 76;
-    const yPercent = 16 + Math.random() * 64;
-    const rotDeg = Math.round(-8 + Math.random() * 16);
-    const scaleValue = (1.00 + Math.random() * 0.08).toFixed(2);
-    const isRareGlow = Math.random() < 0.10;
-
-    card.style.left = `${xPercent.toFixed(2)}%`;
-    card.style.top = `${yPercent.toFixed(2)}%`;
-    card.style.setProperty('--duration', `${durationSec.toFixed(2)}s`);
-    card.style.setProperty('--delay', '0s');
-    card.style.setProperty('--rot', `${rotDeg}deg`);
-    card.style.setProperty('--scale', scaleValue);
-    card.style.backgroundImage = `url("${pool[Math.floor(Math.random() * pool.length)]}")`;
-    if (isRareGlow) card.classList.add('rare-glow');
-
-    layer.appendChild(card);
-}
-
-function startMenuFloatingBackground() {
-    const layer = document.getElementById('start-menu-floating-bg');
-    if (!layer) return;
-    if (startMenuFloatTimer) return;
-
-    layer.innerHTML = '';
-    spawnMenuFloatingCard();
-
-    startMenuFloatTimer = setInterval(() => {
-        layer.innerHTML = '';
-        spawnMenuFloatingCard();
-    }, START_MENU_CARD_CYCLE_MS);
-}
-
-function stopMenuFloatingBackground() {
-    if (startMenuFloatTimer) {
-        clearInterval(startMenuFloatTimer);
-        startMenuFloatTimer = null;
-    }
-
-    const layer = document.getElementById('start-menu-floating-bg');
-    if (layer) layer.innerHTML = '';
 }
 
 function getGalleryItemsByType(type) {
@@ -990,6 +906,19 @@ function bindMainEvents() {
     bindIfExists('final-field-exit-button', finishCompletedMatch);
 
     bindIfExists('spotlight-close-button', hideSpotlightCard);
+    bindIfExists('spotlight-overlay', event => {
+        if (!isSelectionPresentationPending()) return;
+        event.preventDefault();
+        event.stopPropagation();
+        hideSpotlightCard();
+    });
+    if (!selectionResizeBound) {
+        selectionResizeBound = true;
+        const resizeSelection = () => window.renderSelectionPanel?.();
+        window.addEventListener('resize', resizeSelection);
+        window.addEventListener('orientationchange', resizeSelection);
+        window.visualViewport?.addEventListener('resize', resizeSelection);
+    }
 
     bindIfExists('selection-confirm-button', () => {
         unlockAudio();
@@ -1103,7 +1032,14 @@ function bindMainEvents() {
         cancelEndTurn();
     });
 
-    bindIfExists('reset-game-button', () => {
+    bindIfExists('reset-game-button', async () => {
+        if (!await window.StageLayout?.confirmDestructive?.({
+            title: '対戦を最初からやり直しますか？',
+            erasedLabel: '失われるもの',
+            erased: ['現在の対戦状態・保存した対戦の再開データ'],
+            kept: ['プロフィール・コイン・実績・ミッション・ストーリー進捗・スリーブ・盤面背景'],
+            confirmText: '対戦をやり直す'
+        })) return;
         clearSavedMatch();
         stopBGM();
         location.reload();
@@ -1285,7 +1221,6 @@ function beginMatchByRole(role, storySetup = null) {
         applyCharacterChoice();
         applyBattleSkillSetup();
     }
-    stopMenuFloatingBackground();
     if (startTitleTimer) {
         clearTimeout(startTitleTimer);
         startTitleTimer = null;
@@ -1332,8 +1267,21 @@ function beginMatchByRole(role, storySetup = null) {
     }, cpuStartDelay);
 }
 
-function onTurnCardSelected(side) {
+async function onTurnCardSelected(side) {
     if (!turnCardRoleMap || selectedTurnCard) return;
+    // A new CPU/mission match replaces the single device autosave slot.
+    let hasSavedMatch = false;
+    try { hasSavedMatch = !!localStorage.getItem(MATCH_AUTOSAVE_KEY); } catch (_) { /* storage unavailable */ }
+    if (hasSavedMatch) {
+        if (!await window.StageLayout?.confirmDestructive?.({
+            title: '保存した対戦を上書きしますか？',
+            erasedLabel: '失われるもの',
+            erased: ['保存した対戦の状態（前の対戦を「続きから」で再開できなくなります）'],
+            kept: ['プロフィール・コイン・実績・ミッション・ストーリー進捗・ADV再開位置・スリーブ・盤面背景'],
+            confirmText: '新しい対戦を始める'
+        })) return;
+        clearSavedMatch();
+    }
     selectedTurnCard = side;
 
     revealTurnCards(side);
@@ -1384,6 +1332,7 @@ function setupOnlineStartLayout() {
 }
 
 function setupStartOverlay() {
+    if (window.StoryViewer?.active) return;
     setupOnlineStartLayout();
     setupMatchAutosaveOnce();
     setupMatchExitGuardOnce();
@@ -1836,7 +1785,6 @@ function setupStartOverlay() {
 
     if (menuHomeButton) {
         menuHomeButton.addEventListener('click', () => {
-            stopMenuFloatingBackground();
             window.location.href = 'index.html';
         });
     }
@@ -1883,6 +1831,20 @@ function setupStartOverlay() {
 
     if (friendBackButton) {
         friendBackButton.addEventListener('click', async () => {
+            let hasRoomRecovery = false;
+            try {
+                hasRoomRecovery = ['aniani:battle:room:v1', 'aniani:battle:checkpoint:v2', 'aniani:battle:pending:v1']
+                    .some(key => !!sessionStorage.getItem(key));
+            } catch (_) { /* session storage unavailable */ }
+            if (isFriendBattleActive() || hasRoomRecovery) {
+                if (!await window.StageLayout?.confirmDestructive?.({
+                    title: '部屋から退出しますか？',
+                    erasedLabel: '失われるもの',
+                    erased: ['現在の部屋への参加・待機状態', 'このタブに保存した部屋・対戦操作の再接続情報'],
+                    kept: ['プロフィール・コイン・実績・ミッション・ストーリー進捗・スリーブ・盤面背景・CPU戦の再開データ'],
+                    confirmText: '部屋から退出する'
+                })) return;
+            }
             try { await window.FriendBattle.leaveRoom(); } catch { setFriendRoomMessage('退出を確認できませんでした。通信を確認して再度お試しください。'); return; }
             openMenuStage();
         });
@@ -1923,7 +1885,7 @@ function setupStartOverlay() {
     }
 
     if (coinBackgroundShop) {
-        coinBackgroundShop.addEventListener('click', event => {
+        coinBackgroundShop.addEventListener('click', async event => {
             const button = event.target.closest('button[data-bg-action][data-bg-key]');
             if (!button) return;
 
@@ -1939,6 +1901,7 @@ function setupStartOverlay() {
                     return;
                 }
 
+                if (!await window.confirmBackgroundDesignPurchase?.(designKey)) return;
                 const result = purchaseBackgroundDesign(designKey);
                 if (!result || !result.ok) {
                     if (result?.reason === 'not-enough-coins') {
@@ -1992,8 +1955,9 @@ function setupStartOverlay() {
     }
 
     if (userResetButton) {
-        userResetButton.addEventListener('click', () => {
+        userResetButton.addEventListener('click', async () => {
             if (typeof resetUserProfile !== 'function') return;
+            if (!await window.confirmUserProfileReset?.()) return;
             resetUserProfile();
             if (GameState?.settings) {
                 GameState.settings.backgroundDesign = 'default';
@@ -2125,6 +2089,7 @@ function renderMatchResultSummary() {
     playerIdentity.className = 'result-player-identity';
     const playerIcon = document.createElement('div');
     playerIcon.className = `character-icon char-${model.me.characterId || 'chizuru'} face-normal`;
+    window.BattleImages?.applyExpression?.(playerIcon, model.me.characterId, model.winner === 'me' ? 'gentle' : model.winner === 'opponent' ? 'troubled' : 'normal', 'assets/');
     window.Achievements?.applyFrame(playerIcon, model.online ? model.me : undefined);
     playerIdentity.appendChild(playerIcon);
     const playerName = document.createElement('span');
@@ -2155,6 +2120,7 @@ function returnToFinalField() {
 async function finishCompletedMatch() {
     if (window.StoryAdv?.finishBattleReturn()) return;
     if (!GameState.gameEnded) return;
+    const preserveSavedMatch = !!GameState.storyEpisodeId || isFriendBattleActive();
     const exitButtons = [document.getElementById('result-exit-button'), document.getElementById('final-field-exit-button')];
     exitButtons.forEach(button => { if (button) button.disabled = true; });
     try {
@@ -2166,7 +2132,7 @@ async function finishCompletedMatch() {
         await window.StageLayout?.alert?.('部屋を退出できませんでした。通信を確認してもう一度お試しください。');
         return;
     }
-    clearSavedMatch();
+    if (!preserveSavedMatch) clearSavedMatch();
     hideResultOverlay();
     hideSpotlightCard();
     if (typeof closePackShop === 'function') closePackShop();
@@ -2292,11 +2258,13 @@ function getCharacterNameForSide(side) {
 
 function getSkillCutinImagePathForSide(side) {
     const characterId = getCharacterIdForSide(side);
+    if (BattleImages.expressionPath) return BattleImages.expressionPath(characterId, 'smile', 'assets/');
     return BattleImages.lightPath(SKILL_CUTIN_IMAGE_PATHS[characterId] || SKILL_CUTIN_IMAGE_PATHS.chizuru);
 }
 
 function getBattleModeCutinImagePathForSide(side) {
     const characterId = getCharacterIdForSide(side);
+    if (BattleImages.expressionPath) return BattleImages.expressionPath(characterId, 'laugh', 'assets/');
     return BattleImages.lightPath(BATTLE_MODE_CUTIN_IMAGE_PATHS[characterId] || BATTLE_MODE_CUTIN_IMAGE_PATHS.chizuru);
 }
 
@@ -2304,6 +2272,38 @@ function resolveSpotlightDisplayMs(durationMs) {
     const parsed = Number(durationMs);
     if (Number.isFinite(parsed) && parsed > 0) return Math.floor(parsed);
     return SPOTLIGHT_DISPLAY_MS;
+}
+
+// Presentation holds live only on this client; no rule state or online revision is delayed.
+function isSelectionPresentationPending() {
+    const match = GameState.matchStartedAt;
+    return !!((spotlightPresentation?.blocksSelection && spotlightPresentation.match === match) ||
+        (battleModePresentation && battleModePresentation.match === match));
+}
+
+function prepareSelectionPresentation() {
+    const ctx = GameState.selectionMode === 'skill-target' ? GameState.pendingSkillContext : null;
+    if (!ctx) { selectionSkillPresentation = null; return; }
+    // Revealed Roman cards already follow the activation cut-in from the rule engine.
+    if (Array.isArray(ctx.openedCards)) return;
+    const side = ctx.actor === 'cpu' ? 'cpu' : 'player';
+    const key = JSON.stringify([GameState.matchStartedAt, GameState.turnNumber, side, ctx.skillKey]);
+    if (selectionSkillPresentation?.key === key) return;
+    selectionSkillPresentation = { key, side, skillKey: ctx.skillKey };
+    const skill = getSelectedSkillDefinitionForSide(side);
+    if (skill?.key === ctx.skillKey) showSpotlightSkillCutin(side, skill, true);
+}
+
+function finishSpotlightPresentation(refresh = true) {
+    const item = spotlightPresentation;
+    spotlightPresentation = null;
+    document.getElementById('spotlight-overlay')?.classList.add('hidden');
+    document.getElementById('spotlight-overlay')?.classList.remove('spotlight-activation', 'spotlight-still');
+    spotlightHideAt = 0;
+    if (spotlightTimer) clearTimeout(spotlightTimer);
+    spotlightTimer = null;
+    item?.resolve();
+    if (refresh && item?.blocksSelection && GameState.selectionMode) window.updateUI?.(true);
 }
 
 function showSpotlightCard({ badge, name, sub, imagePath, kind, durationMs }) {
@@ -2314,19 +2314,26 @@ function showSpotlightCard({ badge, name, sub, imagePath, kind, durationMs }) {
     const nameEl = document.getElementById('spotlight-name');
     const subEl = document.getElementById('spotlight-sub');
 
-    if (!overlay || !badgeEl || !cardEl || !artEl || !nameEl || !subEl) return;
-
-    if (spotlightTimer) {
-        clearTimeout(spotlightTimer);
-        spotlightTimer = null;
-    }
-
     const cardKind = kind || 'recipe';
+    const blocksSelection = ['event', 'pack', 'skill', 'battle-mode', 'battle-mode-text'].includes(cardKind);
+    if (!['battle-mode', 'battle-mode-text'].includes(cardKind)) battleModePresentation = null;
+    const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    const mode = window.DishEffects?.preferences?.().dishMode || 'normal';
+    finishSpotlightPresentation(false);
+    if (!overlay || !badgeEl || !cardEl || !artEl || !nameEl || !subEl ||
+        (blocksSelection && mode === 'skip')) return Promise.resolve();
     const isBattleModeLike = cardKind === 'battle-mode' || cardKind === 'battle-mode-text';
     const isSkillLike = cardKind === 'skill' || isBattleModeLike;
     const isFinale = cardKind.includes('final-recipe');
     const isLegendary = cardKind.includes('legendary');
-    const waitMs = resolveSpotlightDisplayMs(durationMs);
+    const normalMs = resolveSpotlightDisplayMs(durationMs);
+    const waitMs = blocksSelection ? (reduced ? Math.min(normalMs, 450) :
+        mode === 'short' ? Math.min(normalMs, 650) : normalMs) : normalMs;
+    let resolve;
+    const promise = new Promise(done => { resolve = done; });
+    spotlightPresentation = { promise, resolve, blocksSelection, match: GameState.matchStartedAt };
+    overlay.classList.toggle('spotlight-activation', blocksSelection);
+    overlay.classList.toggle('spotlight-still', blocksSelection && reduced);
     overlay.classList.remove('spotlight-skill', 'spotlight-battle-mode', 'spotlight-finale', 'spotlight-legendary');
     overlay.classList.toggle('spotlight-skill', isSkillLike);
     overlay.classList.toggle('spotlight-battle-mode', isBattleModeLike);
@@ -2340,14 +2347,19 @@ function showSpotlightCard({ badge, name, sub, imagePath, kind, durationMs }) {
     nameEl.textContent = name || '';
     subEl.textContent = sub || '';
     artEl.style.backgroundImage = imagePath ? `url("${imagePath}")` : 'none';
+    window.BattleImages?.applyExpressionPath?.(artEl, imagePath);
 
     spotlightHideAt = Date.now() + waitMs;
     spotlightTimer = setTimeout(() => {
-        hideSpotlightCard();
+        finishSpotlightPresentation();
     }, waitMs);
+    window.suspendSelectionPanelsForPresentation?.();
+    return promise;
 }
 
 function hideSpotlightCard() {
+    battleModePresentation = null;
+    finishSpotlightPresentation();
     const overlay = document.getElementById('spotlight-overlay');
     if (!overlay) return;
 
@@ -2362,11 +2374,7 @@ function hideSpotlightCard() {
 }
 
 function showSpotlightCardAsync(config) {
-    const waitMs = resolveSpotlightDisplayMs(config?.durationMs);
-    showSpotlightCard(config);
-    return new Promise(resolve => {
-        setTimeout(() => resolve(), waitMs);
-    });
+    return showSpotlightCard(config);
 }
 
 function showSpotlightEventCard(eventCard) {
@@ -2391,8 +2399,10 @@ function showSpotlightEventCardAsync(eventCard) {
     });
 }
 
-function showSpotlightSkillCutin(side, skill) {
+function showSpotlightSkillCutin(side, skill, selectionPreview = false) {
     const safeSide = side === 'cpu' ? 'cpu' : 'player';
+    const key = JSON.stringify([GameState.matchStartedAt, GameState.turnNumber, safeSide, skill?.key]);
+    if (!selectionPreview && selectionSkillPresentation?.key === key) return;
     const actorName = getCharacterNameForSide(safeSide);
     const imagePath = getSkillCutinImagePathForSide(safeSide);
     showSpotlightCard({
@@ -2418,36 +2428,48 @@ function showSpotlightSkillCutinAsync(side, skill) {
 }
 
 async function playBattleALaCarteModeCutinSequence(side) {
+    const sequence = { match: GameState.matchStartedAt };
+    battleModePresentation = sequence;
+    const current = () => battleModePresentation === sequence && GameState.matchStartedAt === sequence.match;
     const safeSide = side === 'cpu' ? 'cpu' : 'player';
     const imagePath = getBattleModeCutinImagePathForSide(safeSide);
     const badge = 'BATTLE A LA CARTE MODE';
 
-    await showSpotlightCardAsync({
-        badge,
-        name: '潜在覚醒！',
-        sub: '',
-        imagePath: null,
-        kind: 'battle-mode-text',
-        durationMs: BATTLE_MODE_TEXT_STEP1_MS
-    });
+    try {
+        await showSpotlightCardAsync({
+            badge,
+            name: '潜在覚醒！',
+            sub: '',
+            imagePath: null,
+            kind: 'battle-mode-text',
+            durationMs: BATTLE_MODE_TEXT_STEP1_MS
+        });
+        if (!current()) return;
 
-    await showSpotlightCardAsync({
-        badge,
-        name: 'すべての食材に感謝！',
-        sub: '',
-        imagePath: null,
-        kind: 'battle-mode-text',
-        durationMs: BATTLE_MODE_TEXT_STEP2_MS
-    });
+        await showSpotlightCardAsync({
+            badge,
+            name: 'すべての食材に感謝！',
+            sub: '',
+            imagePath: null,
+            kind: 'battle-mode-text',
+            durationMs: BATTLE_MODE_TEXT_STEP2_MS
+        });
+        if (!current()) return;
 
-    await showSpotlightCardAsync({
-        badge,
-        name: 'バトルアラカルトモード！！',
-        sub: '',
-        imagePath,
-        kind: 'battle-mode',
-        durationMs: BATTLE_MODE_CUTIN_IMAGE_MS
-    });
+        await showSpotlightCardAsync({
+            badge,
+            name: 'バトルアラカルトモード！！',
+            sub: '',
+            imagePath,
+            kind: 'battle-mode',
+            durationMs: BATTLE_MODE_CUTIN_IMAGE_MS
+        });
+    } finally {
+        if (battleModePresentation === sequence) {
+            battleModePresentation = null;
+            window.updateUI?.(true);
+        }
+    }
 }
 
 function showBattleALaCarteModeCutin(side) {
@@ -2541,7 +2563,7 @@ function endGame(winner) {
     GameState.missionResultText = window.Missions?.complete(GameState, winner) || '';
     observeAchievementScores();
     window.Achievements?.observeMatch(GameState);
-    clearSavedMatch();
+    if (!GameState.storyEpisodeId && !isFriendBattleActive()) clearSavedMatch();
     GameState.currentTurn = null;
     GameState.currentPhase = 'ゲーム終了';
     GameState.selectionMode = null;

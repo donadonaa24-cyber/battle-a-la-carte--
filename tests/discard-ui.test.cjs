@@ -131,7 +131,7 @@ for (const file of ['style.css', 'mobile/style-sp.css']) {
         const button = declarations(css, `${base} #selection-confirm-button`);
         assert.equal(button.width, '100%'); assert.ok(parseInt(button['min-height']) >= 56);
         const mobile = declarations(css, `#app-stage[data-stage-width="432"] ${base} #selection-confirm-button`);
-        assert.ok(parseInt(mobile['min-height']) >= 48);
+        assert.equal(mobile['min-height'], 'var(--selection-touch-height, 56px)');
         const backdrop = declarations(css, '.modal-input-backdrop');
         assert.equal(backdrop['pointer-events'], 'auto');
         const layer = parseInt(declarations(css, '#game-container.discard-selection-active')['--discard-input-layer']);

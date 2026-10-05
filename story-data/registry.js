@@ -32,6 +32,7 @@
         const result = { ...value };
         const character = assets.characters[result.id];
         if (!character) warn(`unknown character: ${result.id}`);
+        if (result.pose !== undefined) result.pose = assets.resolvePose(result.id, result.pose);
         if (!positions.includes(result.position)) {
             if (result.position != null) warn(`unknown position: ${result.position}`);
             result.position = 'center';
@@ -46,14 +47,15 @@
         if (!episode || typeof episode.id !== 'string' || !Array.isArray(episode.scenes)) {
             warn('invalid episode'); return null;
         }
-        return { ...episode, arc: episode.arc || 'festival', afterBattle: { ...(episode.afterBattle || {}) },
+        return { ...episode, portraitStyle: episode.portraitStyle || 'icon', arc: episode.arc || 'festival', afterBattle: { ...(episode.afterBattle || {}) },
             clear: { title: episode.title || '', ...(episode.clear || {}) }, scenes: episode.scenes.map(scene => ({ ...scene, background: background(scene.background),
             lines: (Array.isArray(scene.lines) ? scene.lines : []).map(line => {
                 const result = validatePresentation({ ...line });
                 if (!['narration', 'announce'].includes(line.speaker)) {
-                    const speaker = actor({ id: line.speaker, position: line.position || episode.defaultPositions?.[line.speaker], expression: line.expression });
+                    const speaker = actor({ id: line.speaker, position: line.position || episode.defaultPositions?.[line.speaker], expression: line.expression, pose: line.pose });
                     result.position = speaker.position;
                     result.expression = speaker.expression || 'normal';
+                    if (line.pose !== undefined) result.pose = speaker.pose;
                 }
                 if (line.background !== undefined) result.background = background(line.background);
                 if (Array.isArray(line.show)) result.show = line.show.map(actor);

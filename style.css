@@ -1578,68 +1578,68 @@ button.selection-choice:focus-visible {
 
 .character-icon.char-chizuru,
 .start-char-portrait.char-chizuru {
-    background-image: url("assets/battle-images/character-icons/chizuru-icons.webp");
+    background-image: url("assets/battle-images/character-icons/chizuru-icons-v3.webp");
     background-size: 380% auto;
 }
 
 .character-icon.char-mai,
 .start-char-portrait.char-mai {
-    background-image: url("assets/battle-images/character-icons/mai-icons.webp");
+    background-image: url("assets/battle-images/character-icons/mai-icons-v3.webp");
     background-size: 380% auto;
 }
 
 .character-icon.char-takumi,
 .start-char-portrait.char-takumi {
-    background-image: url("assets/battle-images/character-icons/takumi-icons.webp");
+    background-image: url("assets/battle-images/character-icons/takumi-icons-v3.webp");
     background-size: 380% auto;
 }
 
 .character-icon.char-akatsuki,
 .start-char-portrait.char-akatsuki {
-    background-image: url("assets/battle-images/character-icons/akatsuki-icons.webp");
+    background-image: url("assets/battle-images/character-icons/akatsuki-icons-v3.webp");
     background-size: 380% auto;
 }
 
 .character-icon.char-chizuru.face-normal,
-.start-char-portrait.char-chizuru { background-position: calc(0% - 14px) 38%; }
-.character-icon.char-chizuru.face-happy { background-position: calc(50% - 8px) 38%; }
-.character-icon.char-chizuru.face-worried { background-position: calc(100% - 2px) 38%; }
+.start-char-portrait.char-chizuru { background-position: 4.761905% 38%; }
+.character-icon.char-chizuru.face-happy { background-position: 50% 38%; }
+.character-icon.char-chizuru.face-worried { background-position: 95.238095% 38%; }
 
 .character-icon.char-mai.face-normal,
-.start-char-portrait.char-mai { background-position: calc(0% - 14px) 38%; }
-.character-icon.char-mai.face-happy { background-position: calc(50% - 8px) 38%; }
-.character-icon.char-mai.face-worried { background-position: calc(100% - 2px) 38%; }
+.start-char-portrait.char-mai { background-position: 4.761905% 38%; }
+.character-icon.char-mai.face-happy { background-position: 50% 38%; }
+.character-icon.char-mai.face-worried { background-position: 95.238095% 38%; }
 
 .character-icon.char-takumi.face-normal,
-.start-char-portrait.char-takumi { background-position: calc(0% - 14px) 32%; }
-.character-icon.char-takumi.face-happy { background-position: calc(50% - 8px) 32%; }
-.character-icon.char-takumi.face-worried { background-position: calc(100% - 2px) 32%; }
+.start-char-portrait.char-takumi { background-position: 4.761905% 38%; }
+.character-icon.char-takumi.face-happy { background-position: 50% 38%; }
+.character-icon.char-takumi.face-worried { background-position: 95.238095% 38%; }
 
 .character-icon.char-akatsuki.face-normal,
-.start-char-portrait.char-akatsuki { background-position: calc(0% - 14px) 32%; }
-.character-icon.char-akatsuki.face-happy { background-position: calc(50% - 8px) 32%; }
-.character-icon.char-akatsuki.face-worried { background-position: calc(100% - 2px) 32%; }
+.start-char-portrait.char-akatsuki { background-position: 4.761905% 38%; }
+.character-icon.char-akatsuki.face-happy { background-position: 50% 38%; }
+.character-icon.char-akatsuki.face-worried { background-position: 95.238095% 38%; }
 
 .character-icon.battle-mode-chef.char-chizuru {
-    background-image: url("assets/battle-images/battle-mode-icons/chizuru-battle-mode-icon.webp");
+    background-image: url("assets/battle-images/battle-mode-icons/chizuru-battle-mode-icon-v2.webp");
     background-size: 368% auto;
     background-position: 50% 16%;
 }
 
 .character-icon.battle-mode-chef.char-mai {
-    background-image: url("assets/battle-images/battle-mode-icons/mai-battle-mode-icon.webp");
+    background-image: url("assets/battle-images/battle-mode-icons/mai-battle-mode-icon-v2.webp");
     background-size: 368% auto;
     background-position: 50% 16%;
 }
 
 .character-icon.battle-mode-chef.char-takumi {
-    background-image: url("assets/battle-images/battle-mode-icons/takumi-battle-mode-icon.webp");
+    background-image: url("assets/battle-images/battle-mode-icons/takumi-battle-mode-icon-v2.webp");
     background-size: 384% auto;
     background-position: 50% 15%;
 }
 
 .character-icon.battle-mode-chef.char-akatsuki {
-    background-image: url("assets/battle-images/battle-mode-icons/akatsuki-battle-mode-icon.webp");
+    background-image: url("assets/battle-images/battle-mode-icons/akatsuki-battle-mode-icon-v2.webp");
     background-size: 384% auto;
     background-position: 50% 15%;
 }
@@ -2119,17 +2119,34 @@ button.selection-choice:focus-visible {
 
 #start-menu-stage {
     position: relative;
+    isolation: isolate;
     overflow: hidden;
     border-radius: 16px;
     padding: 4px;
 }
 
-.start-menu-floating-bg {
+/* Static card-back art spans the menu; content keeps its own full-opacity layer. */
+#start-menu-stage::before,
+#start-menu-stage::after {
+    content: "";
     position: absolute;
-    inset: -10px;
+    inset: 0;
     pointer-events: none;
     z-index: 0;
-    overflow: hidden;
+    animation: none;
+    transition: none;
+}
+
+#start-menu-stage::before {
+    background-image: var(--selected-card-back, url("assets/battle-images/card-back.webp"));
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.12;
+}
+
+#start-menu-stage::after {
+    background: radial-gradient(ellipse at center, transparent 25%, rgba(8, 20, 58, 0.58) 100%);
 }
 
 .start-menu-content {
@@ -2140,57 +2157,15 @@ button.selection-choice:focus-visible {
     gap: 8px;
 }
 
-.menu-floating-card {
-    position: absolute;
-    width: 96px;
-    height: 136px;
-    transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scale(var(--scale, 1));
-    border-radius: 10px;
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-color: rgba(7, 21, 61, 0.72);
-    border: 1px solid rgba(255,255,255,0.28);
-    box-shadow: 0 8px 22px rgba(0,0,0,0.28);
-    opacity: 0;
-    filter: saturate(1.08);
-    animation: start-menu-card-fade var(--duration, 6.2s) ease-in-out 1 both;
-    animation-delay: var(--delay, 0s);
+#start-panel #start-menu-stage .start-stage-footer {
+    background: rgba(11, 30, 78, 0.72);
 }
 
-.menu-floating-card.rare-glow {
-    border-color: rgba(255, 238, 170, 0.95);
-    box-shadow:
-        0 0 0 1px rgba(255, 246, 200, 0.62),
-        0 0 10px rgba(255, 223, 130, 0.48),
-        0 0 18px rgba(255, 201, 88, 0.35);
-    filter: saturate(1.14) brightness(1.04);
-    animation: start-menu-card-fade var(--duration, 6.2s) ease-in-out 1 both;
-}
-
-@keyframes start-menu-card-fade {
-    0% {
-        transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scale(calc(var(--scale, 1) * 0.96));
-        opacity: 0;
-    }
-    8% {
-        opacity: 0.84;
-    }
-    88% {
-        opacity: 0.84;
-    }
-    100% {
-        transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scale(calc(var(--scale, 1) * 1.01));
-        opacity: 0;
-    }
-}
-
-@keyframes start-menu-card-glow {
-    0%, 100% {
-        filter: saturate(1.18) brightness(1.06);
-    }
-    50% {
-        filter: saturate(1.35) brightness(1.22);
+@media (prefers-reduced-motion: reduce) {
+    #start-menu-stage::before,
+    #start-menu-stage::after {
+        animation: none;
+        transition: none;
     }
 }
 
@@ -3180,13 +3155,13 @@ button.selection-choice:focus-visible {
     .spotlight-close-button { top: -44px; right: 0; }
 }
 
-#start-gallery-list .char-chizuru { background-image: url("assets/images/character-icons/chizuru-icons.png"); }
+#start-gallery-list .char-chizuru { background-image: url("assets/battle-images/character-icons/chizuru-icons-v3.webp"); }
 
-#start-gallery-list .char-mai { background-image: url("assets/images/character-icons/mai-icons.png"); }
+#start-gallery-list .char-mai { background-image: url("assets/battle-images/character-icons/mai-icons-v3.webp"); }
 
-#start-gallery-list .char-takumi { background-image: url("assets/images/character-icons/takumi-icons.png"); }
+#start-gallery-list .char-takumi { background-image: url("assets/battle-images/character-icons/takumi-icons-v3.webp"); }
 
-#start-gallery-list .char-akatsuki { background-image: url("assets/images/character-icons/akatsuki-icons.png"); }
+#start-gallery-list .char-akatsuki { background-image: url("assets/battle-images/character-icons/akatsuki-icons-v3.webp"); }
 
 /* Battle surrender menu (PC). */
 .battle-menu { position: relative; flex-shrink: 0; }
@@ -3722,10 +3697,42 @@ body:has(.pc-field-ui) #online-bar { z-index: 300; }
 /* Card selection can be paused to inspect the field without changing its state. */
 .selection-return-button { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 4100; width: 220px; max-width: calc(100% - 16px); min-height: 40px; box-sizing: border-box; padding: 8px 12px; border: 2px solid #ffc95d; border-radius: 12px; background: #153b83; color: #fff4c9; font-size: 14px; font-weight: 700; line-height: 1.35; box-shadow: 0 3px 12px #0008; cursor: pointer; }
 .selection-return-button.hidden { display: none; }
-#selection-field-view-button { flex: 1 1 100%; }
-#selection-panel .selection-actions { flex-wrap: wrap; }
+/* Separate the board peek from the commit row; titles wrap within their own column. */
+#selection-panel .selection-header { display: grid; grid-template-columns: minmax(0, 1fr) 104px; align-items: start; gap: 12px; flex: 0 0 auto; margin-bottom: 10px; }
+#selection-panel .selection-header h3 { min-width: 0; margin: 0; font-size: 18px; line-height: 1.35; overflow-wrap: anywhere; }
+#selection-field-view-button { position: static; width: 104px; min-width: 0; min-height: var(--selection-header-touch-height, 40px); box-sizing: border-box; padding: 6px; border: 1px solid var(--selection-peek-border, #91a6bf); border-radius: 9px; background: var(--selection-peek-bg, #eef3f9); color: var(--selection-peek-text, #234367); font-size: 12px; font-weight: 700; line-height: 1.35; cursor: pointer; touch-action: manipulation; }
+#selection-panel .selection-actions { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: stretch; gap: 14px; margin-top: 12px; padding-top: 10px; }
+#selection-panel .selection-actions:has(#selection-cancel-button.hidden) { grid-template-columns: minmax(0, 1fr); }
+#selection-panel .selection-actions button { width: 100%; min-width: 0; min-height: var(--selection-touch-height, 56px); box-sizing: border-box; padding: 12px 10px; border-radius: 12px; font-size: 18px; font-weight: 900; line-height: 1.35; white-space: normal; touch-action: manipulation; }
+#selection-panel #selection-confirm-button { border: 2px solid #ae6414; background: linear-gradient(180deg, #ffe592, #f6b33e); color: #4c2c08; }
+#selection-panel #selection-cancel-button { border: 2px solid var(--selection-cancel-border, #9cacc0); background: var(--selection-cancel-bg, #e9eff6); color: var(--selection-cancel-text, #294464); }
+#selection-panel .selection-actions button:disabled { opacity: .5; cursor: default; }
+#selection-panel button:focus-visible { outline: 3px solid #3989e1; outline-offset: 3px; }
+#app-stage[data-stage-width="432"] #selection-panel[data-selection-key="discard"] #selection-confirm-button { min-height: var(--selection-touch-height, 56px); }
+.spotlight-overlay.spotlight-activation { pointer-events: auto; touch-action: manipulation; cursor: pointer; }
+.spotlight-overlay.spotlight-still, .spotlight-overlay.spotlight-still *, .spotlight-overlay.spotlight-still::before, .spotlight-overlay.spotlight-still::after { animation: none !important; transition: none !important; }
 #game-container.selection-field-view .modal-input-backdrop { display: none; }
 .pack-card.exchangeable-pack { position: relative; box-shadow: 0 0 0 2px #ffc95d, 0 0 10px #ffc95d99; }
 .unowned-pack.exchangeable-pack { filter: none; opacity: 1; }
 .unowned-pack.exchangeable-pack .card-art { filter: grayscale(1) brightness(.68); opacity: .72; }
 .pack-card.exchangeable-pack::after { content: '交換可能'; position: absolute; left: 0; right: 0; top: 2px; z-index: 2; padding: 2px 0; border-radius: 4px; background: #ffda76; color: #553000; font-size: 9px; font-weight: 900; line-height: 1.25; text-align: center; pointer-events: none; }
+
+/* Data loss confirmation: cancel first, delayed acceptance, and isolated profile reset. */
+#start-panel .profile-danger-actions { display: flex; justify-content: flex-end; margin-top: 18px; padding-top: 16px; border-top: 1px solid #ba6c754d; }
+#start-panel .danger-secondary-button { flex: 0 1 auto; width: auto; padding: 10px 20px; border: 1px solid #d78991; background: #302436; color: #ffc6cc; }
+.destructive-prompt-panel { width: min(600px, 94%); max-height: calc(100cqh - 32px); display: flex; flex-direction: column; overflow: hidden; border: 2px solid #d4b571; background: linear-gradient(155deg, #173466, #10213e); box-shadow: 0 18px 60px #000b, inset 0 0 0 3px #d4b5711f; font-size: 17px; }
+.destructive-prompt-panel h2 { flex: 0 0 auto; margin: 0 0 12px; color: #ffe3a4; font-size: 23px; line-height: 1.4; }
+.destructive-prompt-details { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding-right: 6px; }
+.destructive-prompt-details h3 { margin: 8px 0; font-size: 17px; color: #eaf3ff; }
+.destructive-prompt-details ul { margin: 0 0 14px; padding-left: 24px; }
+.destructive-prompt-details li { margin-bottom: 7px; overflow-wrap: anywhere; }
+.destructive-prompt-panel .destructive-prompt-warning { font-weight: 900; color: #ffc6cc; margin: 12px 0; }
+.destructive-prompt-panel .destructive-prompt-delay { flex: 0 0 auto; margin: 10px 0; font-size: 14px; color: #cedaf1; }
+.destructive-prompt-panel .stage-prompt-actions { flex: 0 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.destructive-prompt-panel .stage-prompt-actions button { min-height: 48px; margin: 0; padding: 10px 12px; font-size: 17px; font-weight: 900; line-height: 1.4; white-space: normal; touch-action: manipulation; }
+.destructive-prompt-panel .danger-confirm-button { border: 1px solid #ffc2c8; border-radius: 10px; background: #b9323a; color: #fff; }
+.destructive-prompt-panel .danger-confirm-button:disabled { opacity: .45; cursor: default; }
+.destructive-prompt-panel button:focus-visible { outline: 3px solid #ffe3a4; outline-offset: 3px; }
+#app-stage[data-stage-width="432"] .destructive-prompt-panel { width: 100%; padding: 14px; font-size: 16px; }
+#app-stage[data-stage-width="432"] .destructive-prompt-panel h2 { font-size: 20px; }
+#app-stage[data-stage-width="432"] .destructive-prompt-panel .stage-prompt-actions button { font-size: 16px; }

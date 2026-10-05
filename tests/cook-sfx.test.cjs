@@ -44,7 +44,7 @@ function runtime(mobile, reduced = false) {
     vm.runInContext('AudioManager.isUnlocked = true;', c);
     Object.assign(c, { addLog() {}, updateUI() {}, setCPUStatus() {}, enablePlayerControls() {}, hideDiscardBanner() {},
         updateBattleMenu() {}, clearSavedMatch() {}, getOpponentLabelText: () => 'CPU',
-        startMenuFloatingBackground() {}, stopMenuFloatingBackground() {}, playTitleBGM() {},
+        playTitleBGM() {},
         showSpotlightCard: data => cards.push({ name: data.name, at: now }),
         showSpotlightCardAsync: async data => { cards.push({ name: data.name, at: now }); },
         showSpotlightEventCard() {}, showSpotlightEventCardAsync: async () => {}, hideSpotlightCard() {} });
@@ -356,9 +356,9 @@ test('cook sound modules and lifecycle mirrors match and updated assets are load
     for (const name of ['player', 'cpu', 'main']) assert.equal(read(`${name}.js`), read(`mobile/${name}-sp.js`).replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
     for (const [html, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
         assert.ok(read(html).includes(`audio${suffix}.js?v=20261004-adv-menu1`));
-        assert.ok(read(html).includes(`main${suffix}.js?v=20261004-character-notice1`));
+        assert.ok(read(html).includes(`main${suffix}.js?v=20261006-icons99c`));
         assert.ok(read(html).includes(`player${suffix}.js?v=20261002-ach1`));
-        assert.ok(read(html).includes('network.js?v=20261003-rewards-bgm1'));
+        assert.ok(read(html).includes('network.js?v=20261004-selection-ui1'));
     }
     assert.ok(read('network.js').includes('battle-engine-worker.js?v=20261003-rewards-bgm1'));
     assert.ok(read('battle-engine-worker.js').includes('player.js?v=20261002-ach1'));

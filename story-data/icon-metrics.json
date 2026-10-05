@@ -1,0 +1,685 @@
+{
+  "version": "20261006-icons99c",
+  "sourceSize": 512,
+  "method": "reviewed-eye-midpoint + cheek-ink-contour-at-eye-plus-45; normal-reference-shared-overscan",
+  "characters": {
+    "chizuru": {
+      "reference": "normal",
+      "targetEye": {
+        "x": 0.5,
+        "y": 0.4765625
+      },
+      "targetFaceWidth": 0.37532757391078825,
+      "overscan": 1.0443897708821934,
+      "cells": {
+        "normal": {
+          "source": "assets/images/story/icons/chizuru-normal.png",
+          "sha256": "8b1bd1fd0ee3eb529d5be832c5a2dc857e2a299047e933727147c51c2cc3b59e",
+          "eyeCenter": {
+            "x": 254,
+            "y": 244
+          },
+          "face": {
+            "left": 162,
+            "right": 345,
+            "y": 289
+          },
+          "faceWidth": 184,
+          "scale": 1.0443897708821934,
+          "left": -0.018115237898588155,
+          "top": -0.02115450018604531
+        },
+        "smile": {
+          "source": "assets/images/story/icons/chizuru-smile.png",
+          "sha256": "768311f082fa183c1d28b4c2d02b9fc9b65210496300677ddaa45f57d7faa3fe",
+          "eyeCenter": {
+            "x": 254,
+            "y": 243
+          },
+          "face": {
+            "left": 161,
+            "right": 345,
+            "y": 288
+          },
+          "faceWidth": 185,
+          "scale": 1.0387444207693168,
+          "left": -0.015314614991028264,
+          "top": -0.016435340326062475
+        },
+        "troubled": {
+          "source": "assets/images/story/icons/chizuru-troubled.png",
+          "sha256": "9fd8bf9219b42d712a9f1b528929bdec2f3f7875815e7e6511e9bb10bf107f7f",
+          "eyeCenter": {
+            "x": 255,
+            "y": 244
+          },
+          "face": {
+            "left": 163,
+            "right": 347,
+            "y": 289
+          },
+          "faceWidth": 185,
+          "scale": 1.0387444207693168,
+          "left": -0.01734341268784334,
+          "top": -0.018464138022877552
+        },
+        "surprised": {
+          "source": "assets/images/story/icons/chizuru-surprised.png",
+          "sha256": "671e73ac671f6f5cd75006365d308e951c81d80d07141024bc46ffe028513080",
+          "eyeCenter": {
+            "x": 255,
+            "y": 245
+          },
+          "face": {
+            "left": 163,
+            "right": 345,
+            "y": 290
+          },
+          "faceWidth": 183,
+          "scale": 1.0500968188105115,
+          "left": -0.022997439056016478,
+          "top": -0.025925235563623694
+        },
+        "gentle": {
+          "source": "assets/images/story/icons/chizuru-gentle.png",
+          "sha256": "6a003fe7daeb5fb946950596c544859f351e2b461c360a16954c89030db378dc",
+          "eyeCenter": {
+            "x": 254,
+            "y": 241
+          },
+          "face": {
+            "left": 161,
+            "right": 346,
+            "y": 286
+          },
+          "faceWidth": 186,
+          "scale": 1.0331597733458258,
+          "left": -0.012544106308280734,
+          "top": -0.009749033938171892
+        },
+        "laugh": {
+          "source": "assets/images/story/icons/chizuru-laugh.png",
+          "sha256": "82465a4249cd8e964e70ac0632df6257a583b2fd85cc910e7e21ef76061f89de",
+          "eyeCenter": {
+            "x": 255,
+            "y": 241
+          },
+          "face": {
+            "left": 160,
+            "right": 346,
+            "y": 286
+          },
+          "faceWidth": 187,
+          "scale": 1.027634854771784,
+          "left": -0.011810328060165798,
+          "top": -0.007148437499999882
+        }
+      }
+    },
+    "mai": {
+      "reference": "normal",
+      "targetEye": {
+        "x": 0.5,
+        "y": 0.494140625
+      },
+      "targetFaceWidth": 0.43148678414096914,
+      "overscan": 1.1387692447431763,
+      "cells": {
+        "normal": {
+          "source": "assets/images/story/icons/mai-normal.png",
+          "sha256": "5085ecc7dc9f86d20d87f6d1481601cc3ef0766340eb0fd9d70a91d61db7e213",
+          "eyeCenter": {
+            "x": 283,
+            "y": 253
+          },
+          "face": {
+            "left": 188,
+            "right": 381,
+            "y": 298
+          },
+          "faceWidth": 194,
+          "scale": 1.1387692447431763,
+          "left": -0.12943690676234154,
+          "top": -0.06857152132817113
+        },
+        "smile": {
+          "source": "assets/images/story/icons/mai-smile.png",
+          "sha256": "2708c6ddab9a7f6ee20e3f1126eadca01be7e572bfe22788e7e27e91512b23f1",
+          "eyeCenter": {
+            "x": 255,
+            "y": 252
+          },
+          "face": {
+            "left": 159,
+            "right": 352,
+            "y": 297
+          },
+          "faceWidth": 194,
+          "scale": 1.1387692447431763,
+          "left": -0.06716046369044915,
+          "top": -0.06634736264703212
+        },
+        "troubled": {
+          "source": "assets/images/story/icons/mai-troubled.png",
+          "sha256": "e6aeee1f40d4b577baeed16666be55f6d1f6cadf406ec4368357529407c0e036",
+          "eyeCenter": {
+            "x": 227,
+            "y": 253
+          },
+          "face": {
+            "left": 131,
+            "right": 323,
+            "y": 298
+          },
+          "faceWidth": 193,
+          "scale": 1.144669603524229,
+          "left": -0.007499999999999951,
+          "top": -0.07148712830396475
+        },
+        "surprised": {
+          "source": "assets/images/story/icons/mai-surprised.png",
+          "sha256": "006939b7e7df31675374aacebe983f93bf111ed937b487894bf85a7fb5206701",
+          "eyeCenter": {
+            "x": 283,
+            "y": 249
+          },
+          "face": {
+            "left": 190,
+            "right": 379,
+            "y": 294
+          },
+          "faceWidth": 190,
+          "scale": 1.1627433341061906,
+          "left": -0.14268821006260146,
+          "top": -0.07133416053211217
+        },
+        "gentle": {
+          "source": "assets/images/story/icons/mai-gentle.png",
+          "sha256": "57d7f86e63a8666db958ef7b85734e5d81a13ca53c6f7af0a1516afd9465d1c4",
+          "eyeCenter": {
+            "x": 255,
+            "y": 247
+          },
+          "face": {
+            "left": 159,
+            "right": 350,
+            "y": 292
+          },
+          "faceWidth": 192,
+          "scale": 1.150631424375918,
+          "left": -0.0730683851872247,
+          "top": -0.060949144181351
+        },
+        "laugh": {
+          "source": "assets/images/story/icons/mai-laugh.png",
+          "sha256": "e3606a9cf745dc2df80844ce11cfb3631f3bb24f757e835525e7175bb540bf6c",
+          "eyeCenter": {
+            "x": 226,
+            "y": 247
+          },
+          "face": {
+            "left": 131,
+            "right": 322,
+            "y": 292
+          },
+          "faceWidth": 192,
+          "scale": 1.150631424375918,
+          "left": -0.0078959021659325,
+          "top": -0.060949144181351
+        }
+      }
+    },
+    "takumi": {
+      "reference": "normal",
+      "targetEye": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "targetFaceWidth": 0.38117903930131,
+      "overscan": 1.1548146042737912,
+      "cells": {
+        "normal": {
+          "source": "assets/images/story/icons/takumi-normal.png",
+          "sha256": "10711804dcb50a1804e31a7b90eb4580b60387064e03a544f8606b0ab9389100",
+          "eyeCenter": {
+            "x": 283,
+            "y": 256
+          },
+          "face": {
+            "left": 196,
+            "right": 364,
+            "y": 301
+          },
+          "faceWidth": 169,
+          "scale": 1.1548146042737912,
+          "left": -0.13830572853414635,
+          "top": -0.07740730213689562
+        },
+        "smile": {
+          "source": "assets/images/story/icons/takumi-smile.png",
+          "sha256": "d2508c74e25df67685bb4b96ed1c84f09962aad3b3af4aeae1e08c8eaa847bb9",
+          "eyeCenter": {
+            "x": 256,
+            "y": 255
+          },
+          "face": {
+            "left": 170,
+            "right": 340,
+            "y": 300
+          },
+          "faceWidth": 171,
+          "scale": 1.1413080007150334,
+          "left": -0.07065400035751668,
+          "top": -0.06842488316862017
+        },
+        "troubled": {
+          "source": "assets/images/story/icons/takumi-troubled.png",
+          "sha256": "369eb7b1061e7e8b3ee5bdae8006d8cf582998fe1a734704f9c7abf47aaa9c14",
+          "eyeCenter": {
+            "x": 241,
+            "y": 256
+          },
+          "face": {
+            "left": 153,
+            "right": 326,
+            "y": 301
+          },
+          "faceWidth": 174,
+          "scale": 1.1216302765647743,
+          "left": -0.02795487627365356,
+          "top": -0.06081513828238716
+        },
+        "surprised": {
+          "source": "assets/images/story/icons/takumi-surprised.png",
+          "sha256": "017dc4a81716bc63050154c2514eb212da73108d4e17795d3ee6028835254e74",
+          "eyeCenter": {
+            "x": 283,
+            "y": 250
+          },
+          "face": {
+            "left": 195,
+            "right": 366,
+            "y": 295
+          },
+          "faceWidth": 172,
+          "scale": 1.1346724890829694,
+          "left": -0.1271724890829694,
+          "top": -0.05403930131004364
+        },
+        "gentle": {
+          "source": "assets/images/story/icons/takumi-gentle.png",
+          "sha256": "68989e80c26d93e68d2abe9c4ee2c6de5cfd637bc4964beafefe53455ef51889",
+          "eyeCenter": {
+            "x": 256,
+            "y": 249
+          },
+          "face": {
+            "left": 169,
+            "right": 341,
+            "y": 294
+          },
+          "faceWidth": 173,
+          "scale": 1.128113688568039,
+          "left": -0.06405684428401948,
+          "top": -0.04863341494812834
+        },
+        "laugh": {
+          "source": "assets/images/story/icons/takumi-laugh.png",
+          "sha256": "63bfb2ad36ab79eea04dd41087f356ec528dfe122d3dc7a855c6e830825ebb31",
+          "eyeCenter": {
+            "x": 241,
+            "y": 249
+          },
+          "face": {
+            "left": 151,
+            "right": 327,
+            "y": 294
+          },
+          "faceWidth": 177,
+          "scale": 1.102619593911134,
+          "left": -0.019006488540201816,
+          "top": -0.036234919695063206
+        }
+      }
+    },
+    "akatsuki": {
+      "reference": "normal",
+      "targetEye": {
+        "x": 0.5,
+        "y": 0.484375
+      },
+      "targetFaceWidth": 0.39235294117647057,
+      "overscan": 1.1037621202327084,
+      "cells": {
+        "normal": {
+          "source": "assets/images/story/icons/akatsuki-normal.png",
+          "sha256": "6ef51305670c9f87486a25775ecb8dc63cb4beca1c59e81c033745cfa953a0b7",
+          "eyeCenter": {
+            "x": 275,
+            "y": 248
+          },
+          "face": {
+            "left": 183,
+            "right": 364,
+            "y": 293
+          },
+          "faceWidth": 182,
+          "scale": 1.1037621202327084,
+          "left": -0.09284098254686479,
+          "top": -0.05025977698771811
+        },
+        "smile": {
+          "source": "assets/images/story/icons/akatsuki-smile.png",
+          "sha256": "0a6fc39b29587d8e4cf9dd0676f6bc6876cf26d46d638653f3dc5cf30c64ccc8",
+          "eyeCenter": {
+            "x": 252,
+            "y": 247
+          },
+          "face": {
+            "left": 160,
+            "right": 343,
+            "y": 292
+          },
+          "faceWidth": 184,
+          "scale": 1.0917647058823527,
+          "left": -0.03735294117647048,
+          "top": -0.04231617647058816
+        },
+        "troubled": {
+          "source": "assets/images/story/icons/akatsuki-troubled.png",
+          "sha256": "fb7eddcc302971aeba5f11bb5e476a341bcdc0cac957f302c3f49ead88a5f201",
+          "eyeCenter": {
+            "x": 239,
+            "y": 249
+          },
+          "face": {
+            "left": 149,
+            "right": 329,
+            "y": 294
+          },
+          "faceWidth": 181,
+          "scale": 1.1098602534936626,
+          "left": -0.018079298017549483,
+          "top": -0.055381256093597564
+        },
+        "surprised": {
+          "source": "assets/images/story/icons/akatsuki-surprised.png",
+          "sha256": "9b614953dfa9a8d872451c43dda02c1be101bc0e253923fd9d446fdcd76639f3",
+          "eyeCenter": {
+            "x": 274,
+            "y": 240
+          },
+          "face": {
+            "left": 181,
+            "right": 364,
+            "y": 285
+          },
+          "faceWidth": 184,
+          "scale": 1.0917647058823527,
+          "left": -0.0842647058823528,
+          "top": -0.0273897058823529
+        },
+        "gentle": {
+          "source": "assets/images/story/icons/akatsuki-gentle.png",
+          "sha256": "91ee646761077041a29e82bd79af6537fc327254e78a0b7cd2c51575ac5d44cc",
+          "eyeCenter": {
+            "x": 253,
+            "y": 241
+          },
+          "face": {
+            "left": 160,
+            "right": 342,
+            "y": 286
+          },
+          "faceWidth": 183,
+          "scale": 1.0977306332369012,
+          "left": -0.0424333011893282,
+          "top": -0.03233023947283831
+        },
+        "laugh": {
+          "source": "assets/images/story/icons/akatsuki-laugh.png",
+          "sha256": "6e467304521e08cd215b8f89f04c4aae63372e62b2a01202f19e0b8330a08d61",
+          "eyeCenter": {
+            "x": 240,
+            "y": 241
+          },
+          "face": {
+            "left": 147,
+            "right": 329,
+            "y": 286
+          },
+          "faceWidth": 183,
+          "scale": 1.0977306332369012,
+          "left": -0.014561234329797501,
+          "top": -0.03233023947283831
+        }
+      }
+    },
+    "kanna": {
+      "reference": "normal",
+      "targetEye": {
+        "x": 0.5,
+        "y": 0.50390625
+      },
+      "targetFaceWidth": 0.3369467213114754,
+      "overscan": 1.0782295081967213,
+      "cells": {
+        "normal": {
+          "source": "assets/images/story/icons/kanna-normal.png",
+          "sha256": "c3acaf60dc8b7c46be84f402a86e416423a7bba17e663425f26a67030786a896",
+          "eyeCenter": {
+            "x": 266,
+            "y": 258
+          },
+          "face": {
+            "left": 184,
+            "right": 343,
+            "y": 303
+          },
+          "faceWidth": 160,
+          "scale": 1.0782295081967213,
+          "left": -0.060173924180327854,
+          "top": -0.039420338114754094
+        },
+        "smile": {
+          "source": "assets/images/story/icons/kanna-smile.png",
+          "sha256": "f8c0c87aadc6e70cf92518d7381096ad77da4f825f015408c5ee4be449c1ca03",
+          "eyeCenter": {
+            "x": 266,
+            "y": 259
+          },
+          "face": {
+            "left": 184,
+            "right": 343,
+            "y": 304
+          },
+          "faceWidth": 160,
+          "scale": 1.0782295081967213,
+          "left": -0.060173924180327854,
+          "top": -0.04152625512295083
+        },
+        "troubled": {
+          "source": "assets/images/story/icons/kanna-troubled.png",
+          "sha256": "0b39b1be1f8e57ae906c1b0f90d86fd330ab430c51834b321e92c8429672e028",
+          "eyeCenter": {
+            "x": 268,
+            "y": 257
+          },
+          "face": {
+            "left": 185,
+            "right": 346,
+            "y": 302
+          },
+          "faceWidth": 162,
+          "scale": 1.0649180327868852,
+          "left": -0.05741803278688529,
+          "top": -0.030632684426229462
+        },
+        "surprised": {
+          "source": "assets/images/story/icons/kanna-surprised.png",
+          "sha256": "b79e3aee8be3274a53ce842dcab00473989f7a28e0db8f4ecfa7688f41ea9ec5",
+          "eyeCenter": {
+            "x": 265,
+            "y": 247
+          },
+          "face": {
+            "left": 182,
+            "right": 342,
+            "y": 292
+          },
+          "faceWidth": 161,
+          "scale": 1.0715324305060583,
+          "left": -0.0546017462580185,
+          "top": -0.013024434248039785
+        },
+        "gentle": {
+          "source": "assets/images/story/icons/kanna-gentle.png",
+          "sha256": "5865c4c11dfde99976578ccb8185e8466528eed5f3c9825d216b7d6faa25a655",
+          "eyeCenter": {
+            "x": 265,
+            "y": 249
+          },
+          "face": {
+            "left": 183,
+            "right": 341,
+            "y": 294
+          },
+          "faceWidth": 159,
+          "scale": 1.0850108258583357,
+          "left": -0.06157786885245897,
+          "top": -0.023765030544385946
+        },
+        "laugh": {
+          "source": "assets/images/story/icons/kanna-laugh.png",
+          "sha256": "773800c3aefecbfa7504176e49698429edde77cd7b339faf9446c1121d7ea46f",
+          "eyeCenter": {
+            "x": 266,
+            "y": 249
+          },
+          "face": {
+            "left": 184,
+            "right": 343,
+            "y": 294
+          },
+          "faceWidth": 160,
+          "scale": 1.0782295081967213,
+          "left": -0.060173924180327854,
+          "top": -0.0204670850409836
+        }
+      }
+    },
+    "tsuyoshi": {
+      "reference": "normal",
+      "targetEye": {
+        "x": 0.5,
+        "y": 0.494140625
+      },
+      "targetFaceWidth": 0.3921605742026749,
+      "overscan": 1.0403430776775624,
+      "cells": {
+        "normal": {
+          "source": "assets/images/story/icons/tsuyoshi-normal.png",
+          "sha256": "06fdc00b584b8cfd7f3cde3c0ed78b11ac092ac2a4d9dec331b55ad0ff23e1c4",
+          "eyeCenter": {
+            "x": 251,
+            "y": 253
+          },
+          "face": {
+            "left": 165,
+            "right": 357,
+            "y": 298
+          },
+          "faceWidth": 193,
+          "scale": 1.0403430776775624,
+          "left": -0.010011938470836257,
+          "top": -0.019935153618014234
+        },
+        "smile": {
+          "source": "assets/images/story/icons/tsuyoshi-smile.png",
+          "sha256": "e0b60dfe78376581710a5a5107a816cd0ad24590fc56baf5c65ac74bc3cb4466",
+          "eyeCenter": {
+            "x": 252,
+            "y": 253
+          },
+          "face": {
+            "left": 165,
+            "right": 351,
+            "y": 298
+          },
+          "faceWidth": 187,
+          "scale": 1.0737230694747033,
+          "left": -0.028473073257080483,
+          "top": -0.03642956362714833
+        },
+        "troubled": {
+          "source": "assets/images/story/icons/tsuyoshi-troubled.png",
+          "sha256": "37c4081ab71893faf9a2e0a4de1f3947f1777d0b766f0e1fcd45c014dd3c8333",
+          "eyeCenter": {
+            "x": 252,
+            "y": 253
+          },
+          "face": {
+            "left": 165,
+            "right": 357,
+            "y": 298
+          },
+          "faceWidth": 193,
+          "scale": 1.0403430776775624,
+          "left": -0.012043858544425246,
+          "top": -0.019935153618014234
+        },
+        "surprised": {
+          "source": "assets/images/story/icons/tsuyoshi-surprised.png",
+          "sha256": "bedfe5e3fd152b5e7a90f22a932a2acd89c346b08cccb6f7d7f48c4ffb1eb3c4",
+          "eyeCenter": {
+            "x": 251,
+            "y": 243
+          },
+          "face": {
+            "left": 163,
+            "right": 352,
+            "y": 288
+          },
+          "faceWidth": 190,
+          "scale": 1.0567695473251029,
+          "left": -0.018064758551954774,
+          "top": -0.007412109375000031
+        },
+        "gentle": {
+          "source": "assets/images/story/icons/tsuyoshi-gentle.png",
+          "sha256": "b71d5a0c3e367b594a482e99cc9eb94cfe6a94d37891943f2b95d8522bc6a7c7",
+          "eyeCenter": {
+            "x": 251,
+            "y": 246
+          },
+          "face": {
+            "left": 164,
+            "right": 353,
+            "y": 291
+          },
+          "faceWidth": 190,
+          "scale": 1.0567695473251029,
+          "left": -0.018064758551954774,
+          "top": -0.013604118441358004
+        },
+        "laugh": {
+          "source": "assets/images/story/icons/tsuyoshi-laugh.png",
+          "sha256": "7cf06c644e2a78ab89deead3c1bb493c5047caa8e60031134018ba31054fb387",
+          "eyeCenter": {
+            "x": 251,
+            "y": 246
+          },
+          "face": {
+            "left": 164,
+            "right": 353,
+            "y": 291
+          },
+          "faceWidth": 190,
+          "scale": 1.0567695473251029,
+          "left": -0.018064758551954774,
+          "top": -0.013604118441358004
+        }
+      }
+    }
+  }
+}
