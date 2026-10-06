@@ -1,7 +1,10 @@
 (function (root) {
     'use strict';
     // The only character-to-track mapping, shared by PC, phone, ADV and gallery.
-    const tracks = Object.freeze({ chizuru: 'theme-chizuru', mai: 'theme-mai', akatsuki: 'theme-akatsuki', takumi: 'theme-takumi', kanna: 'theme-kanna', tsuyoshi: 'theme-tsuyoshi' });
+    const tracks = Object.freeze({ chizuru: 'theme-chizuru', mai: 'theme-mai', akatsuki: 'theme-akatsuki', takumi: 'theme-takumi', kanna: 'theme-kanna', tsuyoshi: 'theme-tsuyoshi',
+        ryuta: 'bgm-sky-high-refrain', // 仮：龍太のイメージ曲は後で差し替え
+        yuzuki: 'bgm-miracle' // 仮：結月のイメージ曲は後で差し替え
+    });
     const STORAGE_KEY = 'battle-a-la-carte:bgm-track:v1';
     const normalize = key => key === 'variantA' ? 'miracle' :
         ['default', 'miracle', 'skyHigh', 'code241', 'characterTheme'].includes(key) ? key : 'default';

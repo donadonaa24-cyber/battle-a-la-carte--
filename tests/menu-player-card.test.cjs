@@ -239,7 +239,7 @@ test('PC/mobile share menu card logic, markup, styles and cache versions', () =>
     assert.equal(cardCss(read('style.css')), cardCss(read('mobile/style-sp.css')));
     for (const [file, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
         for (const asset of [`style${suffix}.css`, `main${suffix}.js`, 'profile.js', 'achievements.js', 'network.js']) {
-            const version = asset.startsWith('main') ? '20261006-icons99c' : asset.startsWith('style') ? '20261004-menu-back1' : asset === 'profile.js' ? '20261004-data-safety1' : asset === 'achievements.js' ? '20261004-story-viewer1' : '20261004-selection-ui1';
+            const version = asset.startsWith('main') ? '20261007-osananajimi105a' : asset.startsWith('style') ? '20261007-osananajimi105a' : asset === 'profile.js' ? '20261007-osananajimi105a' : asset === 'achievements.js' ? '20261007-osananajimi105a' : '20261007-osananajimi105a';
             assert.ok(read(file).includes(`${asset}?v=${version}`), `${file}: ${asset}`);
         }
     }

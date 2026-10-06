@@ -2758,5 +2758,1261 @@
     "bytes": 410402,
     "width": 1024,
     "height": 1536
+  },
+  {
+    "original": "assets/images/story/costumes/tsuyoshi-summer-expressions.png",
+    "battle": "assets/battle-images/story/costumes/tsuyoshi-summer-expressions.webp",
+    "originalBytes": 1728968,
+    "bytes": 75882,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-normal.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-normal.webp",
+    "originalBytes": 335618,
+    "bytes": 14184,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-normal-alpha.webp",
+    "originalBytes": 356290,
+    "bytes": 152622,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-smile.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-smile.webp",
+    "originalBytes": 337695,
+    "bytes": 14332,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-smile-alpha.webp",
+    "originalBytes": 358864,
+    "bytes": 153548,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-troubled.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-troubled.webp",
+    "originalBytes": 340614,
+    "bytes": 14540,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-troubled-alpha.webp",
+    "originalBytes": 361248,
+    "bytes": 154370,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-surprised.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-surprised.webp",
+    "originalBytes": 319374,
+    "bytes": 14412,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-surprised-alpha.webp",
+    "originalBytes": 341133,
+    "bytes": 152820,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-gentle.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-gentle.webp",
+    "originalBytes": 314625,
+    "bytes": 14018,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-gentle-alpha.webp",
+    "originalBytes": 335203,
+    "bytes": 148064,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-laugh.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-laugh.webp",
+    "originalBytes": 317650,
+    "bytes": 14088,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/tsuyoshi-summer-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/tsuyoshi-summer-laugh-alpha.webp",
+    "originalBytes": 338779,
+    "bytes": 150362,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/tsuyoshi-summer-standing.png",
+    "battle": "assets/battle-images/characters/standing/tsuyoshi-summer-standing.webp",
+    "originalBytes": 2723894,
+    "bytes": 37512,
+    "width": 512,
+    "height": 768
+  },
+  {
+    "original": "assets/images/characters/standing/tsuyoshi-summer-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/tsuyoshi-summer-standing-alpha.webp",
+    "originalBytes": 2887671,
+    "bytes": 626642,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/costumes/akatsuki-summer-expressions.png",
+    "battle": "assets/battle-images/story/costumes/akatsuki-summer-expressions.webp",
+    "originalBytes": 2345511,
+    "bytes": 79218,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-normal.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-normal.webp",
+    "originalBytes": 387098,
+    "bytes": 14812,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-normal-alpha.webp",
+    "originalBytes": 410730,
+    "bytes": 149682,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-smile.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-smile.webp",
+    "originalBytes": 390225,
+    "bytes": 14974,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-smile-alpha.webp",
+    "originalBytes": 414534,
+    "bytes": 152888,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-troubled.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-troubled.webp",
+    "originalBytes": 392232,
+    "bytes": 15082,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-troubled-alpha.webp",
+    "originalBytes": 416593,
+    "bytes": 151230,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-surprised.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-surprised.webp",
+    "originalBytes": 410741,
+    "bytes": 15480,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-surprised-alpha.webp",
+    "originalBytes": 434617,
+    "bytes": 152078,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-gentle.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-gentle.webp",
+    "originalBytes": 399741,
+    "bytes": 14968,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-gentle-alpha.webp",
+    "originalBytes": 422361,
+    "bytes": 148898,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-laugh.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-laugh.webp",
+    "originalBytes": 410381,
+    "bytes": 15016,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/akatsuki-summer-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/akatsuki-summer-laugh-alpha.webp",
+    "originalBytes": 433633,
+    "bytes": 149954,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/akatsuki-summer-standing.png",
+    "battle": "assets/battle-images/characters/standing/akatsuki-summer-standing.webp",
+    "originalBytes": 2351714,
+    "bytes": 22164,
+    "width": 512,
+    "height": 768
+  },
+  {
+    "original": "assets/images/characters/standing/akatsuki-summer-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/akatsuki-summer-standing-alpha.webp",
+    "originalBytes": 2469388,
+    "bytes": 383030,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/backgrounds/summer-station-morning.png",
+    "battle": "assets/battle-images/story/backgrounds/summer-station-morning.webp",
+    "originalBytes": 5229177,
+    "bytes": 310162,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/summer-beach-day.png",
+    "battle": "assets/battle-images/story/backgrounds/summer-beach-day.webp",
+    "originalBytes": 3681167,
+    "bytes": 160480,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/summer-beach-sheet.png",
+    "battle": "assets/battle-images/story/backgrounds/summer-beach-sheet.webp",
+    "originalBytes": 4836565,
+    "bytes": 224954,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/summer-beach-house-evening.png",
+    "battle": "assets/battle-images/story/backgrounds/summer-beach-house-evening.webp",
+    "originalBytes": 5153445,
+    "bytes": 255640,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/summer-station-gate-evening.png",
+    "battle": "assets/battle-images/story/backgrounds/summer-station-gate-evening.webp",
+    "originalBytes": 4854137,
+    "bytes": 166128,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/battle-mode-icons/tsuyoshi-battle-mode-icon.png",
+    "battle": "assets/battle-images/battle-mode-icons/tsuyoshi-battle-mode-icon.webp",
+    "originalBytes": 1277000,
+    "bytes": 49258,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/skill-cutins/tsuyoshi-skill-cutin.png",
+    "battle": "assets/battle-images/skill-cutins/tsuyoshi-skill-cutin.webp",
+    "originalBytes": 4050054,
+    "bytes": 208244,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/battle-mode-cutins/tsuyoshi-battle-mode-cutin.png",
+    "battle": "assets/battle-images/battle-mode-cutins/tsuyoshi-battle-mode-cutin.webp",
+    "originalBytes": 3978293,
+    "bytes": 254098,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/story/costumes/kanna-halloween-expressions.png",
+    "battle": "assets/battle-images/story/costumes/kanna-halloween-expressions.webp",
+    "originalBytes": 2841487,
+    "bytes": 122454,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-normal.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-normal.webp",
+    "originalBytes": 469926,
+    "bytes": 19866,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-normal-alpha.webp",
+    "originalBytes": 470834,
+    "bytes": 224292,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-smile.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-smile.webp",
+    "originalBytes": 472474,
+    "bytes": 19996,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-smile-alpha.webp",
+    "originalBytes": 473479,
+    "bytes": 226398,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-troubled.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-troubled.webp",
+    "originalBytes": 475731,
+    "bytes": 20276,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-troubled-alpha.webp",
+    "originalBytes": 476767,
+    "bytes": 227514,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-surprised.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-surprised.webp",
+    "originalBytes": 507530,
+    "bytes": 21766,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-surprised-alpha.webp",
+    "originalBytes": 508733,
+    "bytes": 244268,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-gentle.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-gentle.webp",
+    "originalBytes": 502951,
+    "bytes": 21336,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-gentle-alpha.webp",
+    "originalBytes": 504156,
+    "bytes": 241002,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-laugh.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-laugh.webp",
+    "originalBytes": 508886,
+    "bytes": 21534,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/kanna-halloween-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/kanna-halloween-laugh-alpha.webp",
+    "originalBytes": 510506,
+    "bytes": 241708,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/kanna-halloween-standing.png",
+    "battle": "assets/battle-images/characters/standing/kanna-halloween-standing.webp",
+    "originalBytes": 2568852,
+    "bytes": 43868,
+    "width": 512,
+    "height": 768
+  },
+  {
+    "original": "assets/images/characters/standing/kanna-halloween-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/kanna-halloween-standing-alpha.webp",
+    "originalBytes": 2579574,
+    "bytes": 447594,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/costumes/chizuru-halloween-expressions.png",
+    "battle": "assets/battle-images/story/costumes/chizuru-halloween-expressions.webp",
+    "originalBytes": 2692384,
+    "bytes": 91390,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-normal.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-normal.webp",
+    "originalBytes": 459890,
+    "bytes": 15648,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-normal-alpha.webp",
+    "originalBytes": 464772,
+    "bytes": 164166,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-smile.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-smile.webp",
+    "originalBytes": 465363,
+    "bytes": 16022,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-smile-alpha.webp",
+    "originalBytes": 469935,
+    "bytes": 164662,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-troubled.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-troubled.webp",
+    "originalBytes": 463286,
+    "bytes": 15744,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-troubled-alpha.webp",
+    "originalBytes": 467942,
+    "bytes": 166188,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-surprised.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-surprised.webp",
+    "originalBytes": 460784,
+    "bytes": 15712,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-surprised-alpha.webp",
+    "originalBytes": 465459,
+    "bytes": 164246,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-gentle.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-gentle.webp",
+    "originalBytes": 452343,
+    "bytes": 14886,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-gentle-alpha.webp",
+    "originalBytes": 457195,
+    "bytes": 162618,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-laugh.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-laugh.webp",
+    "originalBytes": 454010,
+    "bytes": 15420,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/chizuru-halloween-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/chizuru-halloween-laugh-alpha.webp",
+    "originalBytes": 459259,
+    "bytes": 161588,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/chizuru-halloween-standing.png",
+    "battle": "assets/battle-images/characters/standing/chizuru-halloween-standing.webp",
+    "originalBytes": 2331894,
+    "bytes": 29406,
+    "width": 512,
+    "height": 768
+  },
+  {
+    "original": "assets/images/characters/standing/chizuru-halloween-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/chizuru-halloween-standing-alpha.webp",
+    "originalBytes": 2341826,
+    "bytes": 296812,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/backgrounds/halloween-cooking-room.png",
+    "battle": "assets/battle-images/story/backgrounds/halloween-cooking-room.webp",
+    "originalBytes": 4215808,
+    "bytes": 241748,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/halloween-hallway-evening.png",
+    "battle": "assets/battle-images/story/backgrounds/halloween-hallway-evening.webp",
+    "originalBytes": 4564896,
+    "bytes": 193042,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/expressions/yuzuki-expressions.png",
+    "battle": "assets/battle-images/story/expressions/yuzuki-expressions.webp",
+    "originalBytes": 3151830,
+    "bytes": 144162,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-normal.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-normal.webp",
+    "originalBytes": 529625,
+    "bytes": 24360,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-normal-alpha.webp",
+    "originalBytes": 568229,
+    "bytes": 232012,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-smile.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-smile.webp",
+    "originalBytes": 536883,
+    "bytes": 24644,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-smile-alpha.webp",
+    "originalBytes": 576278,
+    "bytes": 234430,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-troubled.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-troubled.webp",
+    "originalBytes": 530041,
+    "bytes": 24322,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-troubled-alpha.webp",
+    "originalBytes": 569068,
+    "bytes": 231724,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-surprised.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-surprised.webp",
+    "originalBytes": 533919,
+    "bytes": 24776,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-surprised-alpha.webp",
+    "originalBytes": 573237,
+    "bytes": 232570,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-gentle.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-gentle.webp",
+    "originalBytes": 528243,
+    "bytes": 24208,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-gentle-alpha.webp",
+    "originalBytes": 566511,
+    "bytes": 229624,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-laugh.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-laugh.webp",
+    "originalBytes": 529197,
+    "bytes": 24162,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-laugh-alpha.webp",
+    "originalBytes": 566867,
+    "bytes": 229804,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/yuzuki-standing.png",
+    "battle": "assets/battle-images/characters/standing/yuzuki-standing.webp",
+    "originalBytes": 2796321,
+    "bytes": 40674,
+    "width": 512,
+    "height": 768
+  },
+  {
+    "original": "assets/images/characters/standing/yuzuki-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/yuzuki-standing-alpha.webp",
+    "originalBytes": 2808205,
+    "bytes": 379678,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/costumes/yuzuki-kyudo-expressions.png",
+    "battle": "assets/battle-images/story/costumes/yuzuki-kyudo-expressions.webp",
+    "originalBytes": 3302684,
+    "bytes": 136200,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-normal.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-normal.webp",
+    "originalBytes": 555771,
+    "bytes": 22726,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-normal-alpha.webp",
+    "originalBytes": 558100,
+    "bytes": 259074,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-smile.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-smile.webp",
+    "originalBytes": 563411,
+    "bytes": 23312,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-smile-alpha.webp",
+    "originalBytes": 565564,
+    "bytes": 262104,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-troubled.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-troubled.webp",
+    "originalBytes": 556865,
+    "bytes": 23058,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-troubled-alpha.webp",
+    "originalBytes": 559158,
+    "bytes": 259460,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-surprised.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-surprised.webp",
+    "originalBytes": 560029,
+    "bytes": 23128,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-surprised-alpha.webp",
+    "originalBytes": 562412,
+    "bytes": 260072,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-gentle.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-gentle.webp",
+    "originalBytes": 553516,
+    "bytes": 22906,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-gentle-alpha.webp",
+    "originalBytes": 555848,
+    "bytes": 255974,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-laugh.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-laugh.webp",
+    "originalBytes": 553547,
+    "bytes": 22824,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/yuzuki-kyudo-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/yuzuki-kyudo-laugh-alpha.webp",
+    "originalBytes": 555978,
+    "bytes": 255356,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/yuzuki-kyudo-standing.png",
+    "battle": "assets/battle-images/characters/standing/yuzuki-kyudo-standing.webp",
+    "originalBytes": 2587569,
+    "bytes": 36896,
+    "width": 512,
+    "height": 768
+  },
+  {
+    "original": "assets/images/characters/standing/yuzuki-kyudo-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/yuzuki-kyudo-standing-alpha.webp",
+    "originalBytes": 2597450,
+    "bytes": 378794,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/costumes/takumi-kyudo-expressions.png",
+    "battle": "assets/battle-images/story/costumes/takumi-kyudo-expressions.webp",
+    "originalBytes": 2825176,
+    "bytes": 100166,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-normal.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-normal.webp",
+    "originalBytes": 473471,
+    "bytes": 16926,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-normal-alpha.webp",
+    "originalBytes": 477567,
+    "bytes": 173750,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-smile.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-smile.webp",
+    "originalBytes": 478140,
+    "bytes": 17340,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-smile-alpha.webp",
+    "originalBytes": 481902,
+    "bytes": 178404,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-troubled.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-troubled.webp",
+    "originalBytes": 478662,
+    "bytes": 17280,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-troubled-alpha.webp",
+    "originalBytes": 482475,
+    "bytes": 179524,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-surprised.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-surprised.webp",
+    "originalBytes": 478226,
+    "bytes": 17176,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-surprised-alpha.webp",
+    "originalBytes": 482563,
+    "bytes": 174156,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-gentle.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-gentle.webp",
+    "originalBytes": 462052,
+    "bytes": 16424,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-gentle-alpha.webp",
+    "originalBytes": 465945,
+    "bytes": 170976,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-laugh.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-laugh.webp",
+    "originalBytes": 475549,
+    "bytes": 16848,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/takumi-kyudo-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/takumi-kyudo-laugh-alpha.webp",
+    "originalBytes": 480072,
+    "bytes": 175726,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/takumi-kyudo-standing.png",
+    "battle": "assets/battle-images/characters/standing/takumi-kyudo-standing.webp",
+    "originalBytes": 2307657,
+    "bytes": 35656,
+    "width": 512,
+    "height": 768
+  },
+  {
+    "original": "assets/images/characters/standing/takumi-kyudo-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/takumi-kyudo-standing-alpha.webp",
+    "originalBytes": 2317493,
+    "bytes": 387880,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/costumes/mai-kyudo-expressions.png",
+    "battle": "assets/battle-images/story/costumes/mai-kyudo-expressions.webp",
+    "originalBytes": 2937152,
+    "bytes": 104128,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-normal.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-normal.webp",
+    "originalBytes": 489156,
+    "bytes": 17676,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-normal-alpha.webp",
+    "originalBytes": 492480,
+    "bytes": 192362,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-smile.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-smile.webp",
+    "originalBytes": 489463,
+    "bytes": 18092,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-smile-alpha.webp",
+    "originalBytes": 492190,
+    "bytes": 195696,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-troubled.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-troubled.webp",
+    "originalBytes": 493434,
+    "bytes": 18078,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-troubled-alpha.webp",
+    "originalBytes": 496627,
+    "bytes": 192798,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-surprised.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-surprised.webp",
+    "originalBytes": 504664,
+    "bytes": 17830,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-surprised-alpha.webp",
+    "originalBytes": 508760,
+    "bytes": 191888,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-gentle.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-gentle.webp",
+    "originalBytes": 482615,
+    "bytes": 17128,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-gentle-alpha.webp",
+    "originalBytes": 485868,
+    "bytes": 186438,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-laugh.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-laugh.webp",
+    "originalBytes": 498049,
+    "bytes": 17568,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/mai-kyudo-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/mai-kyudo-laugh-alpha.webp",
+    "originalBytes": 501924,
+    "bytes": 188546,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/mai-kyudo-standing.png",
+    "battle": "assets/battle-images/characters/standing/mai-kyudo-standing.webp",
+    "originalBytes": 2580985,
+    "bytes": 35630,
+    "width": 512,
+    "height": 768
+  },
+  {
+    "original": "assets/images/characters/standing/mai-kyudo-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/mai-kyudo-standing-alpha.webp",
+    "originalBytes": 2593378,
+    "bytes": 409026,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/story/backgrounds/kyudo-dojo-afternoon.png",
+    "battle": "assets/battle-images/story/backgrounds/kyudo-dojo-afternoon.webp",
+    "originalBytes": 4985989,
+    "bytes": 373964,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/kyudo-rest-area.png",
+    "battle": "assets/battle-images/story/backgrounds/kyudo-rest-area.webp",
+    "originalBytes": 5456240,
+    "bytes": 449122,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/school-gate-evening-sakuraba.png",
+    "battle": "assets/battle-images/story/backgrounds/school-gate-evening-sakuraba.webp",
+    "originalBytes": 5293775,
+    "bytes": 347296,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/battle-mode-icons/yuzuki-battle-mode-icon.png",
+    "battle": "assets/battle-images/battle-mode-icons/yuzuki-battle-mode-icon.webp",
+    "originalBytes": 1833619,
+    "bytes": 71050,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/skill-cutins/yuzuki-skill-cutin.png",
+    "battle": "assets/battle-images/skill-cutins/yuzuki-skill-cutin.webp",
+    "originalBytes": 3826758,
+    "bytes": 237458,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/battle-mode-cutins/yuzuki-battle-mode-cutin.png",
+    "battle": "assets/battle-images/battle-mode-cutins/yuzuki-battle-mode-cutin.webp",
+    "originalBytes": 3905885,
+    "bytes": 256110,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/story/expressions/ryuta-expressions.png",
+    "battle": "assets/battle-images/story/expressions/ryuta-expressions.webp",
+    "originalBytes": 2134878,
+    "bytes": 79358,
+    "width": 768,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-normal.png",
+    "battle": "assets/battle-images/story/icons/ryuta-normal.webp",
+    "originalBytes": 451583,
+    "bytes": 16378,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-normal-alpha.png",
+    "battle": "assets/battle-images/story/icons/ryuta-normal-alpha.webp",
+    "originalBytes": 481103,
+    "bytes": 181640,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-smile.png",
+    "battle": "assets/battle-images/story/icons/ryuta-smile.webp",
+    "originalBytes": 454722,
+    "bytes": 16370,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-smile-alpha.png",
+    "battle": "assets/battle-images/story/icons/ryuta-smile-alpha.webp",
+    "originalBytes": 483583,
+    "bytes": 181966,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-troubled.png",
+    "battle": "assets/battle-images/story/icons/ryuta-troubled.webp",
+    "originalBytes": 454432,
+    "bytes": 16540,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-troubled-alpha.png",
+    "battle": "assets/battle-images/story/icons/ryuta-troubled-alpha.webp",
+    "originalBytes": 483452,
+    "bytes": 181610,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-surprised.png",
+    "battle": "assets/battle-images/story/icons/ryuta-surprised.webp",
+    "originalBytes": 454305,
+    "bytes": 16660,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-surprised-alpha.png",
+    "battle": "assets/battle-images/story/icons/ryuta-surprised-alpha.webp",
+    "originalBytes": 483847,
+    "bytes": 182178,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-gentle.png",
+    "battle": "assets/battle-images/story/icons/ryuta-gentle.webp",
+    "originalBytes": 452010,
+    "bytes": 16256,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-gentle-alpha.png",
+    "battle": "assets/battle-images/story/icons/ryuta-gentle-alpha.webp",
+    "originalBytes": 481144,
+    "bytes": 179220,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-laugh.png",
+    "battle": "assets/battle-images/story/icons/ryuta-laugh.webp",
+    "originalBytes": 454033,
+    "bytes": 16348,
+    "width": 256,
+    "height": 256
+  },
+  {
+    "original": "assets/images/story/icons/ryuta-laugh-alpha.png",
+    "battle": "assets/battle-images/story/icons/ryuta-laugh-alpha.webp",
+    "originalBytes": 483191,
+    "bytes": 180754,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/characters/standing/ryuta-standing.png",
+    "battle": "assets/battle-images/characters/standing/ryuta-standing.webp",
+    "originalBytes": 2638091,
+    "bytes": 22572,
+    "width": 512,
+    "height": 768
+  },
+  {
+    "original": "assets/images/characters/standing/ryuta-standing-alpha.png",
+    "battle": "assets/battle-images/characters/standing/ryuta-standing-alpha.webp",
+    "originalBytes": 2662739,
+    "bytes": 396358,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "original": "assets/images/battle-mode-icons/ryuta-chef-mode-icon.png",
+    "battle": "assets/battle-images/battle-mode-icons/ryuta-chef-mode-icon.webp",
+    "originalBytes": 1431551,
+    "bytes": 54414,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/battle-mode-icons/ryuta-battle-mode-icon.png",
+    "battle": "assets/battle-images/battle-mode-icons/ryuta-battle-mode-icon.webp",
+    "originalBytes": 1549443,
+    "bytes": 54394,
+    "width": 512,
+    "height": 512
+  },
+  {
+    "original": "assets/images/skill-cutins/ryuta-skill-cutin.png",
+    "battle": "assets/battle-images/skill-cutins/ryuta-skill-cutin.webp",
+    "originalBytes": 2765268,
+    "bytes": 231382,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/battle-mode-cutins/ryuta-battle-mode-cutin.png",
+    "battle": "assets/battle-images/battle-mode-cutins/ryuta-battle-mode-cutin.webp",
+    "originalBytes": 2776907,
+    "bytes": 233166,
+    "width": 1024,
+    "height": 683
+  },
+  {
+    "original": "assets/images/story/backgrounds/big-park-evening.png",
+    "battle": "assets/battle-images/story/backgrounds/big-park-evening.webp",
+    "originalBytes": 5439725,
+    "bytes": 389746,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "original": "assets/images/story/backgrounds/big-park-bench-evening.png",
+    "battle": "assets/battle-images/story/backgrounds/big-park-bench-evening.webp",
+    "originalBytes": 5471749,
+    "bytes": 429012,
+    "width": 1920,
+    "height": 1080
   }
 ]

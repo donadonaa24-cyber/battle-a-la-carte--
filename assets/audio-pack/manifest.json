@@ -6,6 +6,11 @@
       "originalByteSize": 5426248,
       "sha256": "835104adcd7f276074ca422aa6e274115d66ac0c8c8c2bd21980af1672ce5f0a"
     },
+    "bgm": {
+      "file": "bgm.balc",
+      "originalByteSize": 15183360,
+      "sha256": "14365431c5b6af3b56b1ca8c5ce7c8d442a7ceab8b1880d2020830f9cad80c07"
+    },
     "bgm-code241-2": {
       "file": "bgm-code241-2.balc",
       "originalByteSize": 2801978,
@@ -21,11 +26,6 @@
       "originalByteSize": 6223505,
       "sha256": "d41d6f669bb20d9d1957065f24d10841716c8d4d6875d6bb40fe028c63d0aeef"
     },
-    "bgm": {
-      "file": "bgm.balc",
-      "originalByteSize": 15183360,
-      "sha256": "14365431c5b6af3b56b1ca8c5ce7c8d442a7ceab8b1880d2020830f9cad80c07"
-    },
     "cook": {
       "file": "cook.balc",
       "originalByteSize": 42804,
@@ -35,6 +35,11 @@
       "file": "match-result.balc",
       "originalByteSize": 5808256,
       "sha256": "5bff0e1da2621381968f022be38f21ad72a5795083b8c1c4a4e36ae7fd1bc9cb"
+    },
+    "seasonal-halloween": {
+      "file": "seasonal-halloween.balc",
+      "originalByteSize": 2367383,
+      "sha256": "34571c73e30df8e3a655024d2025ccb6fb37aef27f5059195651a8b55c615b84"
     },
     "story-dialogue": {
       "file": "story-dialogue.balc",

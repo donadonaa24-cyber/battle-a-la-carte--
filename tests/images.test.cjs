@@ -4,6 +4,35 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
+test('costume identifiers are generic; transparent icon/standing budgets and normal 40KiB/256px stay strict', () => {
+    const actual = JSON.parse(fs.readFileSync(path.join(root,'assets/battle-images/manifest.json')));
+    function check(battle, bytes, width, height, standing = false) {
+        const original = actual.find(x => x.battle.endsWith(standing ? 'kanna-halloween-standing-alpha.webp' : 'kanna-halloween-normal-alpha.webp'));
+        const entry = {...original, battle, bytes, width, height}, checks = new Map(), portable = Object.create(fs);
+        portable.readFileSync = (file,...args) => file===path.join(root,'assets/battle-images/manifest.json') ? JSON.stringify([entry])
+            : file===path.join(root,battle) ? fs.readFileSync(path.join(root,original.battle),...args) : fs.readFileSync(file,...args);
+        portable.statSync = file => file===path.join(root,battle) ? {size:bytes} : fs.statSync(file);
+        portable.readdirSync = (dir,...args) => dir===path.dirname(path.join(root,entry.original))
+            ? fs.readdirSync(dir,...args).filter(x=>x.name===path.basename(entry.original)) : fs.readdirSync(dir,...args);
+        vm.runInNewContext(fs.readFileSync(__filename,'utf8'),{__dirname,require(name){if(name==='node:test')return(name,fn)=>checks.set(name,fn);if(name==='node:fs')return portable;return require(name);}});
+        checks.get('battle WebP assets are small and all original PNGs are retained')();
+    }
+    for (const costume of ['summer','halloween','winter-party-2']) {
+        const icon=`assets/battle-images/story/icons/kanna-${costume}-normal-alpha.webp`;
+        assert.doesNotThrow(()=>check(icon,256*1024,512,512));
+        assert.throws(()=>check(icon,256*1024+1,512,512),/exceeds/);
+        assert.throws(()=>check(icon,1000,256,256),/512/);
+        const standing=`assets/battle-images/characters/standing/kanna-${costume}-standing-alpha.webp`;
+        assert.doesNotThrow(()=>check(standing,768*1024,1024,1536,true));
+        assert.throws(()=>check(standing,768*1024+1,1024,1536,true),/exceeds/);
+    }
+    for (const icon of ['kanna-normal.webp','kanna-halloween-normal.webp']) {
+        const file='assets/battle-images/story/icons/'+icon;
+        assert.doesNotThrow(()=>check(file,40*1024,256,256));
+        assert.throws(()=>check(file,40*1024+1,256,256),/exceeds/);
+        assert.throws(()=>check(file,1000,512,512),/256/);
+    }
+});
 test('battle WebP assets are small and all original PNGs are retained', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'assets/battle-images/manifest.json')));
     assert.ok(manifest.length > 0);
@@ -40,8 +69,8 @@ test('battle WebP assets are small and all original PNGs are retained', () => {
         if (x.original === 'assets/images/recipes/onigiri.png') assert.deepEqual([...png.subarray(0, 3)], [255,216,255]);
         else assert.deepEqual([...png.subarray(0, 8)], [137,80,78,71,13,10,26,10], x.original);
         assert.ok(x.width > 0 && x.height > 0 && x.bytes > 0);
-        const alphaIcon = /\/story\/icons\/[a-z]+-[a-z]+-alpha\.webp$/.test(x.battle);
-        const alphaStanding = /\/characters\/standing\/[a-z]+-standing-alpha\.webp$/.test(x.battle);
+        const alphaIcon = /\/story\/icons\/[a-z]+-(?:[a-z0-9]+-)*[a-z]+-alpha\.webp$/.test(x.battle);
+        const alphaStanding = /\/characters\/standing\/[a-z]+-(?:[a-z0-9]+-)*standing-alpha\.webp$/.test(x.battle);
         const budget = alphaIcon ? 256 * 1024 : alphaStanding ? 768 * 1024 : x.battle.includes('/story/icons/') ? 40 * 1024 : x.battle.includes('/story/backgrounds/') ? 450 * 1024
             : x.battle.includes('/story/portraits/') ? 250 * 1024
             : /\/(?:battle-mode-cutins|skill-cutins)\//.test(x.battle) ? 350 * 1024 : 150 * 1024;

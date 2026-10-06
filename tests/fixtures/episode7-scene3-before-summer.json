@@ -1,0 +1,237 @@
+[
+  {
+    "id": "scene3-001",
+    "speaker": "narration",
+    "text": "",
+    "direction": "料理を待つ暁と剛。"
+  },
+  {
+    "id": "scene3-002",
+    "speaker": "narration",
+    "text": "",
+    "direction": "剛が机に置かれていたBattle à la carteのカードを見る。"
+  },
+  {
+    "id": "scene3-003",
+    "speaker": "tsuyoshi",
+    "position": "left",
+    "expression": "normal",
+    "direction": "【左：剛】",
+    "text": "なんやこれ？",
+    "mark": "?"
+  },
+  {
+    "id": "scene3-004",
+    "speaker": "chizuru",
+    "position": "right",
+    "expression": "normal",
+    "direction": "【右：千鶴】",
+    "text": "Battle à la carte"
+  },
+  {
+    "id": "scene3-005",
+    "speaker": "tsuyoshi",
+    "position": "left",
+    "expression": "normal",
+    "direction": "【剛】",
+    "text": "カードゲーム？"
+  },
+  {
+    "id": "scene3-006",
+    "speaker": "chizuru",
+    "position": "right",
+    "expression": "normal",
+    "direction": "【千鶴】",
+    "text": "うん"
+  },
+  {
+    "id": "scene3-007",
+    "speaker": "chizuru",
+    "position": "right",
+    "expression": "happy",
+    "direction": "【千鶴／少し嬉しそう】",
+    "pose": "cheer",
+    "text": "料理を作って勝負するゲーム！",
+    "mark": "sparkle"
+  },
+  {
+    "id": "scene3-008",
+    "speaker": "akatsuki",
+    "position": "left",
+    "expression": "normal",
+    "direction": "【左：暁】",
+    "text": "料理の店で料理のカードゲームやるんや"
+  },
+  {
+    "id": "scene3-009",
+    "speaker": "chizuru",
+    "position": "right",
+    "expression": "happy",
+    "direction": "【千鶴】",
+    "text": "いいでしょ！",
+    "mark": "!"
+  },
+  {
+    "id": "scene3-010",
+    "speaker": "akatsuki",
+    "position": "left",
+    "expression": "normal",
+    "direction": "【暁】",
+    "text": "別に悪いとは言うてへん"
+  },
+  {
+    "id": "scene3-011",
+    "speaker": "tsuyoshi",
+    "position": "left",
+    "expression": "normal",
+    "direction": "【剛／カードを手に取る】",
+    "text": "これ勝負できるん？"
+  },
+  {
+    "id": "scene3-012",
+    "speaker": "chizuru",
+    "position": "right",
+    "expression": "happy",
+    "direction": "【千鶴】",
+    "text": "できるよ！",
+    "mark": "!"
+  },
+  {
+    "id": "scene3-013",
+    "speaker": "tsuyoshi",
+    "position": "left",
+    "expression": "happy",
+    "direction": "【剛】",
+    "text": "ほなやろうや！"
+  },
+  {
+    "id": "scene3-014",
+    "speaker": "akatsuki",
+    "position": "left",
+    "expression": "exasperated",
+    "direction": "【暁】",
+    "text": "お前ルール知らんやろ"
+  },
+  {
+    "id": "scene3-015",
+    "speaker": "tsuyoshi",
+    "position": "left",
+    "expression": "happy",
+    "direction": "【剛】",
+    "text": "今から覚えたらええ！",
+    "mark": "!"
+  },
+  {
+    "id": "scene3-016",
+    "speaker": "akatsuki",
+    "position": "left",
+    "expression": "exasperated",
+    "direction": "【暁】",
+    "text": "注文した飯冷めるわ"
+  },
+  {
+    "id": "scene3-017",
+    "speaker": "tsuyoshi",
+    "position": "left",
+    "expression": "happy",
+    "direction": "【剛】",
+    "text": "じゃあ暁やれや！",
+    "mark": "!"
+  },
+  {
+    "id": "scene3-018",
+    "speaker": "akatsuki",
+    "position": "left",
+    "expression": "exasperated",
+    "direction": "【暁】",
+    "text": "なんで俺やねん"
+  },
+  {
+    "id": "scene3-019",
+    "speaker": "tsuyoshi",
+    "position": "left",
+    "expression": "happy",
+    "direction": "【剛】",
+    "text": "なんとなく"
+  },
+  {
+    "id": "scene3-020",
+    "speaker": "akatsuki",
+    "position": "left",
+    "expression": "exasperated",
+    "direction": "【暁】",
+    "text": "理由弱すぎるやろ"
+  },
+  {
+    "id": "scene3-021",
+    "speaker": "chizuru",
+    "position": "right",
+    "expression": "happy",
+    "direction": "【右：千鶴／暁を見る】",
+    "text": "やらない？"
+  },
+  {
+    "id": "scene3-022",
+    "speaker": "akatsuki",
+    "position": "left",
+    "expression": "exasperated",
+    "direction": "【暁】",
+    "text": "俺？"
+  },
+  {
+    "id": "scene3-023",
+    "speaker": "chizuru",
+    "position": "right",
+    "expression": "happy",
+    "direction": "【千鶴】",
+    "text": "うん"
+  },
+  {
+    "id": "scene3-024",
+    "speaker": "chizuru",
+    "position": "right",
+    "expression": "smile",
+    "direction": "【千鶴／笑顔】",
+    "text": "暇でしょ？"
+  },
+  {
+    "id": "scene3-025",
+    "speaker": "akatsuki",
+    "position": "left",
+    "expression": "laugh",
+    "direction": "【暁／少し笑う】",
+    "text": "客に向かって暇でしょって言う店員初めて見たわ"
+  },
+  {
+    "id": "scene3-026",
+    "speaker": "chizuru",
+    "position": "right",
+    "expression": "smile",
+    "direction": "【千鶴】",
+    "text": "違うの？"
+  },
+  {
+    "id": "scene3-027",
+    "speaker": "akatsuki",
+    "position": "left",
+    "expression": "laugh",
+    "direction": "【暁】",
+    "text": "……まあ暇やけど"
+  },
+  {
+    "id": "scene3-028",
+    "speaker": "tsuyoshi",
+    "position": "left",
+    "expression": "happy",
+    "direction": "【剛】",
+    "text": "決まりやな！"
+  },
+  {
+    "id": "scene3-029",
+    "speaker": "akatsuki",
+    "position": "left",
+    "expression": "laugh",
+    "direction": "【暁】",
+    "text": "お前が決めんな"
+  }
+]

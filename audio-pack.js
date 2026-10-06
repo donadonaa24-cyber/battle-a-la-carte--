@@ -1,6 +1,6 @@
 (function (root) {
     'use strict';
-    const VERSION = '20261004-audio-pack1';
+    const VERSION = '20261006-halloween101b';
     const baseUrl = new URL('assets/audio-pack/', document.currentScript.src);
     const cache = new Map(), records = new Map(), blocked = new Map();
     let manifestPromise = null, warned = false;

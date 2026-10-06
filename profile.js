@@ -1,5 +1,67 @@
 const USER_PROFILE_STORAGE_KEY = 'battle-a-la-carte:user-profile:v1';
 
+// Unlocks remain in the existing story save; the wardrobe stores only local choices.
+const CHARACTER_COSTUMES = Object.freeze(Object.fromEntries(
+    ['chizuru', 'mai', 'takumi', 'akatsuki', 'tsuyoshi', 'kanna', 'yuzuki', 'ryuta'].map(id => [id, Object.freeze([
+        Object.freeze({ key: 'default', name: '通常衣装' }),
+        ...(['akatsuki', 'tsuyoshi'].includes(id)
+            ? [Object.freeze({ key: 'summer', name: 'サマービーチ', episode: 'special-summer' })] : []),
+        ...(['kanna', 'chizuru'].includes(id)
+            ? [Object.freeze({ key: 'halloween', name: id === 'kanna' ? 'ハロウィン・ウィッチ' : 'ハロウィン・ブラックキャット', episode: 'special-halloween' })] : []),
+        ...(['yuzuki', 'takumi', 'mai'].includes(id)
+            ? [Object.freeze({ key: 'kyudo', name: '弓道着', episode: 'special-kyudo' })] : [])
+    ])])
+));
+const TSUYOSHI_UNLOCK_NOTICE = '特別編『夏だ！海だ！ポロリだー！』クリアで解放';
+const CHARACTER_UNLOCK_EPISODES = Object.freeze({ tsuyoshi: 'special-summer', kanna: 'special-halloween', yuzuki: 'special-kyudo', ryuta: 'special-osananajimi-2' });
+function getCharacterUnlockNotice(id) {
+    if (id === 'ryuta') return '幼馴染編 後編『負けられない男』クリアで解放';
+    if (id === 'yuzuki') return '特別編『恋の的はひとつ？』クリアで解放';
+    return id === 'kanna' ? '特別編『Trick or Treat？』クリアで解放' : TSUYOSHI_UNLOCK_NOTICE;
+}
+
+function isProfileViewer() {
+    return !!window.StoryViewer?.active || /(?:^|[?&])viewer(?:[=&]|$)/.test(window.location?.search || '');
+}
+
+function loadCharacterUnlockProgress() {
+    if (isProfileViewer()) return {};
+    if (window.BattleStoryProgress?.load) return window.BattleStoryProgress.load();
+    try { return JSON.parse(localStorage.getItem('battleAlaCarteStoryProgressV1') || '{}') || {}; }
+    catch (_) { return {}; }
+}
+
+function isPlayableCharacterUnlocked(id) {
+    return ['chizuru', 'mai', 'takumi', 'akatsuki'].includes(id)
+        || (Object.hasOwn(CHARACTER_UNLOCK_EPISODES, id) && loadCharacterUnlockProgress()[CHARACTER_UNLOCK_EPISODES[id]] === true);
+}
+
+function getCharacterCostumeOptions(id) {
+    const progress = loadCharacterUnlockProgress();
+    return (CHARACTER_COSTUMES[id] || []).filter(item => !item.episode || progress[item.episode] === true);
+}
+
+function normalizeCharacterCostumes(raw) {
+    return Object.fromEntries(Object.keys(CHARACTER_COSTUMES).map(id => [id,
+        getCharacterCostumeOptions(id).some(item => item.key === raw?.[id]) ? raw[id] : 'default']));
+}
+
+function getSelectedCharacterCostume(id) {
+    if (isProfileViewer()) return 'default';
+    const selected = getUserProfile().costumes?.[id];
+    return getCharacterCostumeOptions(id).some(item => item.key === selected) ? selected : 'default';
+}
+
+function selectCharacterCostume(id, costume) {
+    if (isProfileViewer() || !isPlayableCharacterUnlocked(id)
+        || !getCharacterCostumeOptions(id).some(item => item.key === costume)) return false;
+    mutateUserProfile(profile => {
+        profile.costumes = { ...profile.costumes, [id]: costume };
+        return profile;
+    });
+    return true;
+}
+
 const USER_COIN_RULES = Object.freeze({
     perDishCook: 1,
     perMatch: 2,
@@ -66,6 +128,7 @@ function createDefaultUserProfile() {
         name: 'Player',
         favoriteCharacterId: 'chizuru',
         favoriteSkillKey: 'lastOrder',
+        costumes: normalizeCharacterCostumes(null),
         coins: 0,
         unlockedBackgroundDesignKeys: [DEFAULT_BACKGROUND_DESIGN_KEY],
         selectedBackgroundDesignKey: DEFAULT_BACKGROUND_DESIGN_KEY,
@@ -86,8 +149,7 @@ function sanitizeName(name) {
 }
 
 function sanitizeCharacterId(characterId) {
-    const valid = ['chizuru', 'mai', 'takumi', 'akatsuki'];
-    return valid.includes(characterId) ? characterId : 'chizuru';
+    return isPlayableCharacterUnlocked(characterId) ? characterId : 'chizuru';
 }
 
 function sanitizeSkillKey(skillKey) {
@@ -176,6 +238,7 @@ function normalizeUserProfile(raw) {
         name: sanitizeName(source.name),
         favoriteCharacterId: sanitizeCharacterId(source.favoriteCharacterId),
         favoriteSkillKey: sanitizeSkillKey(source.favoriteSkillKey),
+        costumes: normalizeCharacterCostumes(source.costumes),
         coins: sanitizeNumber(source.coins, 0),
         unlockedBackgroundDesignKeys,
         selectedBackgroundDesignKey,
@@ -257,6 +320,7 @@ function confirmUserProfileReset() {
         erased: [
             'ユーザー名（Playerに戻ります）',
             '推しキャラ・推しスキル（千鶴・ラストオーダーに戻ります）',
+            '対戦用の着せ替え選択（通常衣装に戻ります）',
             'この端末のローカルコイン（0になります）',
             '対戦回数・勝利数・料理作成回数（0になります）',
             '最近作った料理の履歴・「よく作る料理」の表示',
@@ -265,6 +329,7 @@ function confirmUserProfileReset() {
         ],
         kept: [
             'ストーリーのクリア進捗・ADVの途中から再開する位置',
+            'ストーリークリアで解放した剛・栞那・結月・龍太・衣装の所持',
             '実績・称号・枠、ミッションのクリア記録',
             '獲得済みスリーブ・盤面背景と、その選択',
             '保存した対戦の再開データ',

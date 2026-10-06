@@ -222,12 +222,12 @@ test('setup retains favourite preselection, registration, back/next navigation a
 
 test('PC/mobile share setup logic, overlay markup and CSS and load the updated files', () => {
     assert.equal(read('main.js'), read('mobile/main-sp.js').replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
-    assert.equal(read('style.css').split(sharedMarker)[1], read('mobile/style-sp.css').split(sharedMarker)[1]);
+    assert.equal(read('style.css').split(sharedMarker)[1], read('mobile/style-sp.css').split(sharedMarker)[1].replaceAll('../assets/', 'assets/'));
     const overlay = html => html.slice(html.indexOf('    <div id="start-overlay"'), html.indexOf('\n</div>\n\n<script', html.indexOf('    <div id="start-overlay"')));
     assert.equal(overlay(read('web.html')), overlay(read('mobile/mobile.html')));
     for (const [html, style, main] of [['web.html', 'style.css', 'main.js'], ['mobile/mobile.html', 'style-sp.css', 'main-sp.js']]) {
-        const version = '20261004-menu-back1';
+        const version = '20261007-osananajimi105a';
         assert.ok(read(html).includes(`${style}?v=${version}`));
-        assert.ok(read(html).includes(`${main}?v=20261006-icons99c`));
+        assert.ok(read(html).includes(`${main}?v=20261007-osananajimi105a`));
     }
 });

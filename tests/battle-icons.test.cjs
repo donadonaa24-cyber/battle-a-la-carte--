@@ -51,7 +51,7 @@ function imageCell(node, id, cell, mobile = false) {
     const image = node.children.find(child => child.getAttribute('src')?.includes('/story/icons/'));
     assert.ok(image, id + ': image is mounted');
     const file = image.getAttribute('src');
-    assert.equal(file, `${mobile ? '../' : ''}assets/battle-images/story/icons/${id}-${cell}-alpha.webp?v=20261006-icons99c`);
+    assert.equal(file, `${mobile ? '../' : ''}assets/battle-images/story/icons/${id}-${cell}-alpha.webp?v=20261007-osananajimi105a`);
     assert.ok(fs.existsSync(path.resolve(root, mobile ? 'mobile' : '.', file.split('?')[0])));
     assert.equal(image.style.objectFit, 'contain'); assert.equal(image.style.height, 'auto');
     assert.ok(parseFloat(image.style.width) >= 100); assert.equal(node.style.backgroundColor, '#142441'); assert.equal(node.style.overflow, 'hidden');
@@ -155,9 +155,10 @@ test('both HTML entry points bump only the four changed scripts and retain chara
     for (const [file, prefix, suffix] of [['web.html', '', ''], ['mobile/mobile.html', '../', '-sp']]) {
         const html = read(file);
         for (const script of ['battle-images.js', 'dish-effects.js', `main${suffix}.js`, `render${suffix}.js`]) {
-            assert.ok(html.includes(`${['battle-images.js', 'dish-effects.js'].includes(script) ? prefix : ''}${script}?v=20261006-icons99c`));
+            const version = script === 'battle-images.js' ? '20261007-osananajimi105a' : script === 'dish-effects.js' ? '20261006-icons99c' : '20261007-osananajimi105a';
+            assert.ok(html.includes(`${['battle-images.js', 'dish-effects.js'].includes(script) ? prefix : ''}${script}?v=${version}`));
         }
-        assert.ok(html.includes('network.js?v=20261004-selection-ui1'));
+        assert.ok(html.includes('network.js?v=20261007-osananajimi105a'));
     }
     for (const file of ['main.js', 'mobile/main-sp.js']) assert.match(read(file), /BattleImages\.standingPath/);
     for (const id of ids) assert.ok(fs.existsSync(path.join(root, `assets/battle-images/character-icons/${id}-icons.webp`)));

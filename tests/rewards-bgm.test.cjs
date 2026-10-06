@@ -7,7 +7,18 @@ const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const plain = value => JSON.parse(JSON.stringify(value));
 const TRACK_KEY = 'battle-a-la-carte:bgm-track:v1';
-const tracks = { chizuru: 'theme-chizuru', mai: 'theme-mai', akatsuki: 'theme-akatsuki', takumi: 'theme-takumi', kanna: 'theme-kanna', tsuyoshi: 'theme-tsuyoshi' };
+const tracks = { chizuru: 'theme-chizuru', mai: 'theme-mai', akatsuki: 'theme-akatsuki', takumi: 'theme-takumi', kanna: 'theme-kanna', tsuyoshi: 'theme-tsuyoshi', yuzuki: 'bgm-miracle', ryuta: 'bgm-sky-high-refrain' };
+for(const mobile of [false,true]) test(`101b ${mobile?'phone':'PC'}: seasonal ADV respects saved battle BGM, volume/mute, normal battle/Mode/result and fallback`,()=>{
+    const r=runtime(mobile),{c}=r;c.setBgmTrack('skyHigh',{save:true});c.setBgmVolume(.25);
+    c.playStoryBGM('kanna','seasonal-halloween');assert.equal(r.active(),'story:seasonal-halloween');
+    const player=r.player('story:seasonal-halloween');assert.equal(player.__audioPackName,'seasonal-halloween');assert.equal(player.volume,.4*.25);
+    assert.equal(c.getCurrentBgmTrack(),'skyHigh');assert.equal(r.storage.get(TRACK_KEY),'skyHigh');
+    c.unlockAudio();c.setBgmEnabled(false);const plays=player.plays;c.playStoryBGM('kanna','seasonal-halloween');assert.equal(player.plays,plays);assert.ok(r.audios.every(a=>a.paused));
+    c.setBgmEnabled(true);assert.equal(r.active(),'story:seasonal-halloween');c.setBgmVolume(0);assert.equal(player.volume,0);c.setBgmVolume(.6);assert.equal(player.volume,.4*.6);
+    c.playBGM();assert.equal(r.active(),'battle:skyHigh');c.setBgmTrack('characterTheme');c.GameState.characterIds.player='kanna';c.playBGM();assert.equal(r.active(),'battle:theme-kanna');
+    c.playBattleModeBGM();assert.equal(r.active(),'battleMode');c.playResultBGM();assert.equal(r.active(),'result');c.playStoryBGM('kanna','seasonal-halloween');assert.equal(r.active(),'story:seasonal-halloween');
+    c.playStoryBGM('kanna','future-unknown');assert.equal(r.active(),'theme:theme-kanna');c.playStoryBGM('kanna',false);assert.equal(r.active(),'theme:theme-kanna');
+});
 
 function runtime(mobile = false, storage = new Map()) {
     const elements = new Map(), audios = [], timers = new Map();
@@ -175,4 +186,13 @@ test('both HTML pages load one shared mapping before state/audio; all reward ass
     assert.match(read('achievements.css'), /\.mobile-field-ui[\s\S]*background-color: #04122ee8/);
     assert.doesNotMatch(read('battle-protocol.js'), /selectedBoard|board-char|selectedSleeve/);
     assert.equal(read('audio.js').replaceAll('../assets/', 'assets/'), read('mobile/audio-sp.js').replaceAll('../assets/', 'assets/'));
+});
+
+for(const mobile of [false,true])test(`102b ${mobile?'phone':'PC'}: provisional 結月 theme uses existing bgm-miracle pack in ADV, battle and gallery; saved battle choice stays intact`,()=>{
+    const r=runtime(mobile),{c}=r;
+    assert.equal(c.CharacterThemes.trackFor('yuzuki'),'bgm-miracle');assert.match(read('character-themes.js'),/仮：結月のイメージ曲は後で差し替え/);
+    c.setBgmTrack('skyHigh',{save:true});c.playStoryBGM('yuzuki');assert.equal(r.active(),'theme:bgm-miracle');assert.equal(r.player(r.active()).__audioPackName,'bgm-miracle');assert.equal(c.getCurrentBgmTrack(),'skyHigh');
+    c.previewCharacterTheme('yuzuki');assert.equal(r.active(),'theme:bgm-miracle');
+    c.GameState.characterIds.player='yuzuki';c.setBgmTrack('characterTheme',{save:true});c.playBGM();assert.equal(r.active(),'battle:bgm-miracle');assert.equal(r.player(r.active()).__audioPackName,'bgm-miracle');
+    c.playBattleModeBGM();assert.equal(r.active(),'battleMode');c.playResultBGM();assert.equal(r.active(),'result');
 });

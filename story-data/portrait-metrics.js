@@ -28,7 +28,7 @@ window.BattleStoryPortraitMetrics = {
         "width": 768,
         "height": 1152
       },
-      "heightRank": 3,
+      "heightRank": 4,
       "headTopOffset": 0.05,
       "poses": {
         "default": {
@@ -56,7 +56,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 3,
+          "heightRank": 4,
           "headTopOffset": 0.05
         }
       }
@@ -86,7 +86,7 @@ window.BattleStoryPortraitMetrics = {
         "width": 768,
         "height": 1152
       },
-      "heightRank": 5,
+      "heightRank": 6,
       "headTopOffset": 0.116,
       "poses": {
         "default": {
@@ -114,7 +114,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 5,
+          "heightRank": 6,
           "headTopOffset": 0.116
         },
         "behind": {
@@ -142,7 +142,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 5,
+          "heightRank": 6,
           "headTopOffset": 0.116
         },
         "cheer": {
@@ -170,7 +170,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 5,
+          "heightRank": 6,
           "headTopOffset": 0.116
         }
       }
@@ -200,7 +200,7 @@ window.BattleStoryPortraitMetrics = {
         "width": 768,
         "height": 1152
       },
-      "heightRank": 5,
+      "heightRank": 6,
       "headTopOffset": 0.116,
       "poses": {
         "default": {
@@ -228,7 +228,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 5,
+          "heightRank": 6,
           "headTopOffset": 0.116
         }
       }
@@ -258,7 +258,7 @@ window.BattleStoryPortraitMetrics = {
         "width": 768,
         "height": 1152
       },
-      "heightRank": 5,
+      "heightRank": 6,
       "headTopOffset": 0.116,
       "poses": {
         "default": {
@@ -286,7 +286,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 5,
+          "heightRank": 6,
           "headTopOffset": 0.116
         }
       }
@@ -316,7 +316,7 @@ window.BattleStoryPortraitMetrics = {
         "width": 768,
         "height": 1152
       },
-      "heightRank": 4,
+      "heightRank": 5,
       "headTopOffset": 0.075,
       "poses": {
         "default": {
@@ -344,7 +344,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 4,
+          "heightRank": 5,
           "headTopOffset": 0.075
         },
         "pocket": {
@@ -372,7 +372,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 4,
+          "heightRank": 5,
           "headTopOffset": 0.075
         }
       }
@@ -402,7 +402,7 @@ window.BattleStoryPortraitMetrics = {
         "width": 768,
         "height": 1152
       },
-      "heightRank": 6,
+      "heightRank": 7,
       "headTopOffset": 0.141,
       "poses": {
         "default": {
@@ -430,7 +430,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 6,
+          "heightRank": 7,
           "headTopOffset": 0.141
         },
         "cheer": {
@@ -458,7 +458,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 6,
+          "heightRank": 7,
           "headTopOffset": 0.141
         },
         "behind": {
@@ -486,8 +486,76 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 6,
+          "heightRank": 7,
           "headTopOffset": 0.141
+        }
+      }
+    },
+    "ryuta": {
+      "source": "assets/images/characters/standing/ryuta-standing-alpha.png",
+      "sha256": "de008cf2c68da9e59a79ed450289343fc34581259c4a546e2deb494aa21ec1dc",
+      "canvas": {
+        "width": 1024,
+        "height": 1536
+      },
+      "figure": {
+        "top": 76,
+        "bottom": 1475
+      },
+      "head": {
+        "top": 76,
+        "chin": 266,
+        "eyeLine": 197,
+        "left": 390,
+        "right": 602,
+        "width": 213,
+        "height": 190,
+        "centerX": 538.5
+      },
+      "renderCanvas": {
+        "width": 512,
+        "height": 768
+      },
+      "heightRank": 2,
+      "headTopOffset": 0.0125,
+      "reviewedLandmarks": {
+        "eyeLine": 197,
+        "centerX": 538.5,
+        "chin": 266
+      },
+      "poses": {
+        "default": {
+          "source": "assets/images/characters/standing/ryuta-standing-alpha.png",
+          "sha256": "de008cf2c68da9e59a79ed450289343fc34581259c4a546e2deb494aa21ec1dc",
+          "canvas": {
+            "width": 1024,
+            "height": 1536
+          },
+          "figure": {
+            "top": 76,
+            "bottom": 1475
+          },
+          "head": {
+            "top": 76,
+            "chin": 266,
+            "eyeLine": 197,
+            "left": 390,
+            "right": 602,
+            "width": 213,
+            "height": 190,
+            "centerX": 538.5
+          },
+          "renderCanvas": {
+            "width": 512,
+            "height": 768
+          },
+          "heightRank": 2,
+          "headTopOffset": 0.0125,
+          "reviewedLandmarks": {
+            "eyeLine": 197,
+            "centerX": 538.5,
+            "chin": 266
+          }
         }
       }
     },
@@ -516,7 +584,7 @@ window.BattleStoryPortraitMetrics = {
         "width": 768,
         "height": 1152
       },
-      "heightRank": 2,
+      "heightRank": 3,
       "headTopOffset": 0.025,
       "poses": {
         "default": {
@@ -544,7 +612,7 @@ window.BattleStoryPortraitMetrics = {
             "width": 768,
             "height": 1152
           },
-          "heightRank": 2,
+          "heightRank": 3,
           "headTopOffset": 0.025
         }
       }
@@ -604,6 +672,64 @@ window.BattleStoryPortraitMetrics = {
           },
           "heightRank": 1,
           "headTopOffset": 0
+        }
+      }
+    },
+    "yuzuki": {
+      "source": "assets/images/characters/standing/yuzuki-standing-alpha.png",
+      "sha256": "78179296e4117fa86c818a4179f90adc3874f7d5a7a79959f58a68157924c80a",
+      "canvas": {
+        "width": 1024,
+        "height": 1536
+      },
+      "figure": {
+        "top": 265,
+        "bottom": 1475
+      },
+      "head": {
+        "top": 265,
+        "chin": 486,
+        "eyeLine": 385.057,
+        "left": 345,
+        "right": 676,
+        "width": 332,
+        "height": 221,
+        "centerX": 527.317
+      },
+      "renderCanvas": {
+        "width": 512,
+        "height": 768
+      },
+      "heightRank": 8,
+      "headTopOffset": 0.166,
+      "poses": {
+        "default": {
+          "source": "assets/images/characters/standing/yuzuki-standing-alpha.png",
+          "sha256": "78179296e4117fa86c818a4179f90adc3874f7d5a7a79959f58a68157924c80a",
+          "canvas": {
+            "width": 1024,
+            "height": 1536
+          },
+          "figure": {
+            "top": 265,
+            "bottom": 1475
+          },
+          "head": {
+            "top": 265,
+            "chin": 486,
+            "eyeLine": 385.057,
+            "left": 345,
+            "right": 676,
+            "width": 332,
+            "height": 221,
+            "centerX": 527.317
+          },
+          "renderCanvas": {
+            "width": 512,
+            "height": 768
+          },
+          "heightRank": 8,
+          "headTopOffset": 0.166
         }
       }
     }

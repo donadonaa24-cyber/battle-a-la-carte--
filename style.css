@@ -1562,7 +1562,7 @@ button.selection-choice:focus-visible {
     background: linear-gradient(180deg, #eefbff 0%, #d7f3ff 100%);
 }
 
-/* 栞那 is a story CPU only. Sprite geometry follows the existing three-face sheets. */
+/* 栞那: retain the existing three-face fallback geometry. */
 .character-icon.char-kanna {
     background-image: url("assets/battle-images/character-icons/kanna-icons.webp");
     background-size: 380% auto;
@@ -3545,6 +3545,43 @@ body:has(.pc-field-ui) #online-bar { z-index: 300; }
 #start-skill-message { margin-top: 4px; line-height: 1.4; }
 #app-stage[data-stage-width="1440"] #start-panel .start-char-select { grid-template-columns: repeat(4, minmax(112px, 132px)); }
 
+/* 100c: unlockable fifth character and local wardrobe. */
+.character-icon.char-tsuyoshi,
+.start-char-portrait.char-tsuyoshi {
+    background-image: url("assets/battle-images/story/icons/tsuyoshi-normal-alpha.webp?v=20261006-tsuyoshi100c");
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #142441;
+    border-color: #e3ac5d;
+}
+.character-icon.battle-mode-chef.char-tsuyoshi {
+    background-image: url("assets/battle-images/battle-mode-icons/tsuyoshi-battle-mode-icon.webp?v=20261006-tsuyoshi100c");
+}
+#start-panel .start-standing-card[data-character-id="tsuyoshi"],
+#start-panel .start-standing-card[data-opponent-id="tsuyoshi"] { border-color: #e3ac5d; }
+#start-panel .start-standing-card[data-character-id="tsuyoshi"] .start-char-name,
+#start-panel .start-standing-card[data-opponent-id="tsuyoshi"] .start-char-name { color: #ffd99f; }
+#start-panel .start-standing-grid:has(> :nth-child(5)) {
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+#app-stage[data-stage-width="1440"] #start-panel .start-standing-grid:has(> :nth-child(5)) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+}
+#start-panel .start-costume-picker {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    color: #ffe0a3;
+    font-size: 14px;
+}
+#start-panel .start-costume-picker select { flex: 1 1 auto; min-width: 0; min-height: 40px; padding: 6px 10px; }
+#start-panel .start-costume-help { margin: 4px 0; font-size: 13px; }
+.gallery-costume-art { width: 100%; height: 100%; object-fit: contain; }
+
 /* Standing art is confined to CPU and mission setup. */
 #start-panel #start-character-step,
 #start-panel #start-mission-opponent-wrap {
@@ -3736,3 +3773,45 @@ body:has(.pc-field-ui) #online-bar { z-index: 300; }
 #app-stage[data-stage-width="432"] .destructive-prompt-panel { width: 100%; padding: 14px; font-size: 16px; }
 #app-stage[data-stage-width="432"] .destructive-prompt-panel h2 { font-size: 20px; }
 #app-stage[data-stage-width="432"] .destructive-prompt-panel .stage-prompt-actions button { font-size: 16px; }
+
+/* 101b: sixth unlockable character; preserve the phone's two-column layout. */
+.character-icon.char-kanna,
+.start-char-portrait.char-kanna {
+    background-image: url("assets/battle-images/story/icons/kanna-normal-alpha.webp?v=20261006-halloween101b");
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #142441;
+    border-color: #9b8cdb;
+}
+#start-panel .start-standing-card[data-character-id="kanna"],
+#start-panel .start-standing-card[data-opponent-id="kanna"] { border-color: #9b8cdb; }
+#start-panel .start-standing-card[data-character-id="kanna"] .start-char-name,
+#start-panel .start-standing-card[data-opponent-id="kanna"] .start-char-name { color: #d8cdf8; }
+#app-stage[data-stage-width="1440"] #start-panel .start-standing-grid:has(> :nth-child(6)) {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+/* 102b: 結月。PCは既存6列を維持して折り返し、スマホは既存2列。 */
+.character-icon.char-yuzuki, .start-char-portrait.char-yuzuki {
+    background-image: url("assets/battle-images/story/icons/yuzuki-normal-alpha.webp?v=20261006-kyudo102b");
+    background-size: contain; background-position: center; background-repeat: no-repeat;
+    background-color: #142441; border-color: #ed9b70;
+}
+.character-icon.battle-mode-chef.char-yuzuki { background-image: url("assets/battle-images/battle-mode-icons/yuzuki-battle-mode-icon.webp?v=20261006-kyudo102b"); }
+#start-panel .start-standing-card[data-character-id="yuzuki"],
+#start-panel .start-standing-card[data-opponent-id="yuzuki"] { border-color: #ed9b70; }
+#start-panel .start-standing-card[data-character-id="yuzuki"] .start-char-name,
+#start-panel .start-standing-card[data-opponent-id="yuzuki"] .start-char-name { color: #ffc1ba; }
+
+/* 105a: 龍太。既存PC／スマホのカード列と枠寸法を維持。 */
+.character-icon.char-ryuta, .start-char-portrait.char-ryuta {
+    background-image: url("assets/battle-images/story/icons/ryuta-normal-alpha.webp?v=20261007-osananajimi105a");
+    background-size: contain; background-position: center; background-repeat: no-repeat;
+    background-color: #171717; border-color: #d3ac42;
+}
+.character-icon.battle-mode-chef.char-ryuta { background-image: url("assets/battle-images/battle-mode-icons/ryuta-battle-mode-icon.webp?v=20261007-osananajimi105a"); }
+#start-panel .start-standing-card[data-character-id="ryuta"],
+#start-panel .start-standing-card[data-opponent-id="ryuta"] { border-color: #d3ac42; }
+#start-panel .start-standing-card[data-character-id="ryuta"] .start-char-name,
+#start-panel .start-standing-card[data-opponent-id="ryuta"] .start-char-name { color: #f4d384; }

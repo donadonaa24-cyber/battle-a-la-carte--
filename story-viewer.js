@@ -44,10 +44,11 @@
                 heading.textContent = root.BattleStoryData.arcs[arc]; list.appendChild(heading);
             }
             const card = document.createElement('article'); card.className = 'story-episode-card';
-            for (const [cls, text] of [['story-episode-title', `第${episode.number}話「${episode.title}」`],
+            for (const [cls, text] of [['story-episode-title', root.BattleStoryData.episodeTitle(episode)],
                 ['story-episode-summary', episode.summary || '']]) {
                 const item = document.createElement('div'); item.className = cls; item.textContent = text; card.appendChild(item);
             }
+            if (episode.arcLabel) { const label = document.createElement('small'); label.className = 'story-special-label'; label.textContent = episode.arcLabel; card.appendChild(label); }
             const button = document.createElement('button'); button.type = 'button'; button.className = 'story-episode-start';
             button.textContent = '会話を読む'; button.setAttribute('data-story-episode-id', episode.id);
             button.onclick = () => root.StoryAdv.start(episode.id);
@@ -62,7 +63,7 @@
         const stage = byId('start-story-stage'); stage?.classList.add('story-viewer-list');
         stage?.classList.remove('mission-view');
         document.body.classList.add('story-viewer-mode');
-        byId('story-stage-subtitle').textContent = 'ストーリービューア — 全10話の会話を確認';
+        byId('story-stage-subtitle').textContent = 'ストーリービューア — 本編10話・特別編の会話を確認';
         byId('story-stage-message').textContent = '対戦をせずに読めます。進行・報酬・再開位置は保存されません。';
         const list = byId('story-episode-list'); list.replaceChildren(); list.classList.remove('hidden'); appendCards(list);
         ['story-dialogue-panel', 'story-battle-guide', 'story-primary-button', 'story-secondary-button',

@@ -9,13 +9,13 @@ const root = path.resolve(__dirname, '..');
 const optionalSource = (t, sourceRoot, files) => require('./helpers/optional-source.cjs')(t, sourceRoot, files, fs);
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const codec = require('../audio-pack-codec.js');
-const { buildAudioPack } = require('../tools/build-audio-pack.cjs');
+const { buildAudioPack, externalSources } = require('../tools/build-audio-pack.cjs');
 const manifest = JSON.parse(read('assets/audio-pack/manifest.json'));
 const flush = async () => { for (let i = 0; i < 60; i++) await Promise.resolve(); };
 const sha256 = bytes => crypto.createHash('sha256').update(Buffer.from(bytes)).digest('hex');
 
 test('all sources build deterministically, round-trip exactly and have non-audio headers and hashes', async t => {
-    assert.equal(Object.keys(manifest.tracks).length, 16);
+    assert.equal(Object.keys(manifest.tracks).length, 17);
     for (const [name, track] of Object.entries(manifest.tracks)) {
         const encoded = fs.readFileSync(path.join(root, 'assets/audio-pack', track.file));
         const decoded = Buffer.from(codec.decode(encoded, name));
@@ -27,13 +27,13 @@ test('all sources build deterministically, round-trip exactly and have non-audio
         assert.notEqual(encoded.subarray(0, 3).toString(), 'ID3');
         assert.ok(!(encoded[0] === 255 && (encoded[1] & 224) === 224), name + ': no MPEG sync');
         await t.test(name + ': exact original comparison', t => {
-            const file = 'assets/audio/' + name + '.mp3';
+            const file = externalSources[name] ? path.relative(root, externalSources[name]) : 'assets/audio/' + name + '.mp3';
             if (!optionalSource(t, root, [file])) return;
             assert.deepEqual(decoded, fs.readFileSync(path.join(root, file)), name + ': exact round-trip');
         });
     }
     await t.test('complete source rebuild matches the shipped manifest and packs', t => {
-    if (!optionalSource(t, root, Object.keys(manifest.tracks).map(name => 'assets/audio/' + name + '.mp3'))) return;
+    if (!optionalSource(t, root, Object.keys(manifest.tracks).map(name => externalSources[name] ? path.relative(root, externalSources[name]) : 'assets/audio/' + name + '.mp3'))) return;
     const tmpRoot = path.join(root, 'tmp');
     fs.mkdirSync(tmpRoot, { recursive: true });
     const outputDir = fs.mkdtempSync(path.join(tmpRoot, 'audio-pack-test-'));
@@ -42,10 +42,10 @@ test('all sources build deterministically, round-trip exactly and have non-audio
         assert.deepEqual(rebuilt, manifest);
         assert.equal(fs.readFileSync(path.join(outputDir, 'manifest.json'), 'utf8'), read('assets/audio-pack/manifest.json'));
         const sources = fs.readdirSync(path.join(root, 'assets/audio')).filter(file => file.endsWith('.mp3')).sort();
-        assert.deepEqual(Object.keys(manifest.tracks), sources.map(file => file.slice(0, -4)));
+        assert.deepEqual(Object.keys(manifest.tracks), [...sources.map(file => file.slice(0, -4)), ...Object.keys(externalSources)].sort());
         assert.equal(sources.length, 16);
         for (const [name, track] of Object.entries(manifest.tracks)) {
-            const original = fs.readFileSync(path.join(root, 'assets/audio', name + '.mp3'));
+            const original = fs.readFileSync(externalSources[name] || path.join(root, 'assets/audio', name + '.mp3'));
             const encoded = fs.readFileSync(path.join(root, 'assets/audio-pack', track.file));
             assert.deepEqual(encoded, fs.readFileSync(path.join(outputDir, track.file)), name + ': deterministic');
             assert.deepEqual(Buffer.from(codec.decode(encoded, name)), original, name + ': exact round-trip');
@@ -76,7 +76,7 @@ test('codec rejects wrong name, bad header, length, checksum and invalid names',
     assert.notDeepEqual(codec.encode([1, 2, 3], 'cook').slice(16), codec.encode([1, 2, 3], 'bgm').slice(16));
 });
 
-test('six owner tracks match copied sources; unassigned mansion is absent', async t => {
+test('six owner themes and seasonal mansion match originals; seasonal MP3 stays outside Web', async t => {
     const sourceDir = path.resolve(root, '../battle-a-la-carte - ギットハブ版 -ユニティ改/新bgm');
     for (const [id, source] of Object.entries({ chizuru: 'chiduru', mai: 'mai', takumi: 'takumi', akatsuki: 'akatsuki', kanna: 'kanna', tsuyoshi: 'tsuyoshi' })) {
         const track = manifest.tracks['theme-' + id];
@@ -88,6 +88,14 @@ test('six owner tracks match copied sources; unassigned mansion is absent', asyn
     }
     assert.ok(!fs.existsSync(path.join(root, 'assets/audio/不気味な洋館.mp3')));
     assert.ok(!Object.keys(manifest.tracks).some(name => name.includes('洋館')));
+    assert.ok(!fs.existsSync(path.join(root, 'assets/audio/seasonal-halloween.mp3')));
+    const track = manifest.tracks['seasonal-halloween']; assert.ok(track);
+    await t.test('seasonal mansion: owner source comparison', t => {
+        if (!optionalSource(t, sourceDir, ['不気味な洋館.mp3'])) return;
+        const original = fs.readFileSync(path.join(sourceDir, '不気味な洋館.mp3'));
+        assert.equal(track.sha256, sha256(original));
+        assert.deepEqual(Buffer.from(codec.decode(fs.readFileSync(path.join(root, 'assets/audio-pack', track.file)), 'seasonal-halloween')), original);
+    });
 });
 
 test('production HTML/JS have no raw audio references and load codec/loader before players', () => {
@@ -100,10 +108,10 @@ test('production HTML/JS have no raw audio references and load codec/loader befo
     for (const [file, prefix, audio] of [['web.html', '', 'audio.js'], ['mobile/mobile.html', '../', 'audio-sp.js']]) {
         const html = read(file), version = '?v=20261004-audio-pack1';
         const codecIndex = html.indexOf(prefix + 'audio-pack-codec.js' + version);
-        const loaderIndex = html.indexOf(prefix + 'audio-pack.js' + version);
-        const audioIndex = html.indexOf(audio + '?v=20261004-adv-menu1');
+        const loaderIndex = html.indexOf(prefix + 'audio-pack.js?v=20261006-halloween101b');
+        const audioIndex = html.indexOf(audio + '?v=20261007-osananajimi105a');
         assert.ok(codecIndex >= 0 && loaderIndex > codecIndex && audioIndex > loaderIndex);
-        assert.ok(html.includes(prefix + 'character-themes.js' + version));
+        assert.ok(html.includes(prefix + 'character-themes.js?v=20261007-osananajimi105a'));
     }
 });
 
@@ -168,7 +176,7 @@ test('pack loader shares fetch/blob URL by name, releases last owner and recreat
     assert.notEqual(replacement.src, old);
     assert.equal(r.requests.length, 2);
     r.c.AudioPack.disposeAll(); assert.equal(r.blobs.size, 0);
-    for (const url of r.requests) assert.equal(new URL(url).searchParams.get('v'), '20261004-audio-pack1');
+    for (const url of r.requests) assert.equal(new URL(url).searchParams.get('v'), '20261006-halloween101b');
 });
 
 for (const failure of ['fetch', 'corrupt', 'size', 'manifest']) {

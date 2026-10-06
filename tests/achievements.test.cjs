@@ -434,10 +434,10 @@ test('shared mirrors, UI containment, cache versions and account hooks remain wi
     for (const name of ['state', 'rules', 'player', 'main']) assert.equal(read(name + '.js').replaceAll('../assets/', 'assets/'), read('mobile/' + name + '-sp.js').replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
     for (const [file, prefix, suffix] of [['web.html', '', ''], ['mobile/mobile.html', '../', '-sp']]) {
         const html = read(file);
-        for (const module of ['achievements.js', 'network.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'network.js' ? '20261004-selection-ui1' : '20261004-story-viewer1'}`), file + ': ' + module);
+        for (const module of ['achievements.js', 'network.js']) assert.ok(html.includes(`${prefix}${module}?v=${'20261007-osananajimi105a'}`), file + ': ' + module);
         for (const module of ['missions.js', 'battle-protocol.js', 'story-mode.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'battle-protocol.js' ? '20261002-ach1' : module === 'story-mode.js' ? '20261006-icons99e' : '20261004-story-viewer1'}`), file + ': ' + module);
         for (const module of ['state', 'rules', 'player', 'main', 'render']) {
-            const version = ['main', 'render'].includes(module) ? '20261006-icons99c' : module === 'state' ? '20261003-rewards-bgm1' : '20261002-ach1';
+            const version = ['main', 'render'].includes(module) ? '20261007-osananajimi105a' : module === 'state' ? '20261003-rewards-bgm1' : '20261002-ach1';
             assert.ok(html.includes(`${module}${suffix}.js?v=${version}`));
         }
         const panel = html.slice(html.indexOf('<div id="start-achievements-stage"'), html.indexOf('<div id="start-user-stage"'));
@@ -514,9 +514,9 @@ for (const mobile of [false, true]) {
         c.GameState.gameEnded = true; c.Achievements.observeMatch(c.GameState);
         assert.equal(c.Achievements.readLocal().counters.characterUses.chizuru, 1);
         assert.equal(c.Achievements.readLocal().counters.characterUses.takumi, 0);
-        c.initGame(); c.GameState.characterIds.player = 'kanna'; c.GameState.gameEnded = true;
+        c.initGame(); c.GameState.characterIds.player = 'classmate1'; c.GameState.gameEnded = true;
         c.Achievements.observeMatch(c.GameState);
-        assert.equal(c.Achievements.readLocal().counters.characterUses.kanna, undefined);
+        assert.equal(c.Achievements.readLocal().counters.characterUses.classmate1, undefined);
     });
     test(`${mobile ? 'phone' : 'PC'}: festival requires all seven clears, migrates for existing users, unlocks both cosmetics and gold`, () => {
         const story = Object.fromEntries([4, 5, 6, 7, 8, 9].map(n => ['episode' + n, true]));
@@ -552,7 +552,7 @@ test('usage migration counts only confirmed retained characters, once; never inf
     const storage = new Map([['balc_achievements_v1', JSON.stringify({ migratedFromProfileAt: '2026-10-01T00:00:00Z', counters: { matchRecords: records } })],
         ['battle-a-la-carte:user-profile:v1', JSON.stringify({ favoriteCharacterId: 'takumi', stats: { matches: 500, characterUses: { chizuru: 5, mai: 20, takumi: -1 } } })]]);
     const { c } = runtime(false, storage); has(c, 'charChizuru5', 'charMai5', 'charMai20');
-    assert.deepEqual(plain(c.Achievements.readLocal().counters.characterUses), { chizuru: 5, mai: 20, takumi: 0, akatsuki: 0 });
+    assert.deepEqual(plain(c.Achievements.readLocal().counters.characterUses), { chizuru: 5, mai: 20, takumi: 0, akatsuki: 0, tsuyoshi: 0, kanna: 0, yuzuki: 0, ryuta: 0 });
     const again = runtime(false, storage).c;
     assert.deepEqual(plain(again.Achievements.readLocal().counters.characterUses), plain(c.Achievements.readLocal().counters.characterUses));
     const noCharacters = runtime(false, new Map([['battle-a-la-carte:user-profile:v1', JSON.stringify({ favoriteCharacterId: 'takumi', stats: { matches: 500 } })]])).c;
@@ -603,4 +603,30 @@ test('new ID rejection remains silent, keeps local rewards, and does not block s
     assert.doesNotMatch(elements.get('achievement-list').text, /INVALID|エラー|alien/);
     assert.ok(!ids(c).includes('alien')); has(c, 'charMai20', 'storyFestival');
     assert.equal(c.Missions.selectBoard('board-festival-classroom'), true);
+});
+
+for (const mobile of [false, true]) test(`105a ${mobile ? 'phone' : 'PC'}: 剛/栞那/結月/龍太 usage is local and counted once without replacing an original character or adding rewards`, () => {
+    const {c, storage} = runtime(mobile);
+    const definitions = plain(c.Achievements.definitions), missions = plain(c.Missions.definitions);
+    for (const character of ['chizuru', 'mai', 'takumi', 'tsuyoshi', 'kanna', 'yuzuki', 'ryuta']) {
+        c.initGame(); c.GameState.characterIds.player = character;
+        c.GameState.gameEnded = true; c.GameState.winner = 'player';
+        c.Achievements.observeMatch(c.GameState); c.Achievements.observeMatch(c.GameState);
+    }
+    assert.equal(c.Achievements.readLocal().counters.characterUses.tsuyoshi, 1);
+    assert.equal(c.Achievements.readLocal().counters.characterUses.kanna, 1);
+    assert.equal(c.Achievements.readLocal().counters.characterUses.yuzuki, 1);
+    assert.equal(c.Achievements.readLocal().counters.characterUses.ryuta, 1);
+    assert.deepEqual(plain(c.Achievements.readLocal().sets.charactersWon).sort(), ['chizuru', 'mai', 'takumi']);
+    assert.ok(!ids(c).includes('allCharacters'));
+    c.initGame(); c.GameState.characterIds.player = 'akatsuki'; c.GameState.gameEnded = true; c.GameState.winner = 'player';
+    c.Achievements.observeMatch(c.GameState); has(c, 'allCharacters');
+    const reloaded = runtime(mobile, storage).c;
+    assert.equal(reloaded.Achievements.readLocal().counters.characterUses.tsuyoshi, 1);
+    assert.equal(reloaded.Achievements.readLocal().counters.characterUses.kanna, 1);
+    assert.equal(reloaded.Achievements.readLocal().counters.characterUses.yuzuki, 1);
+    assert.equal(reloaded.Achievements.readLocal().counters.characterUses.ryuta, 1);
+    assert.deepEqual(plain(c.Achievements.definitions), definitions);
+    assert.deepEqual(plain(c.Missions.definitions), missions);
+    assert.ok(!c.Achievements.definitions.some(def => /tsuyoshi|kanna|yuzuki|ryuta/i.test(def.id)));
 });

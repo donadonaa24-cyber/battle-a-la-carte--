@@ -31,7 +31,10 @@ const SKILL_CUTIN_IMAGE_PATHS = {
     mai: 'assets/images/skill-cutins/mai-skill-cutin.png',
     takumi: 'assets/images/skill-cutins/takumi-skill-cutin.png',
     kanna: 'assets/images/skill-cutins/kanna-skill-cutin.png',
-    akatsuki: 'assets/images/skill-cutins/akatsuki-skill-cutin.png'
+    akatsuki: 'assets/images/skill-cutins/akatsuki-skill-cutin.png',
+    tsuyoshi: 'assets/images/skill-cutins/tsuyoshi-skill-cutin.png',
+    yuzuki: 'assets/images/skill-cutins/yuzuki-skill-cutin.png',
+    ryuta: 'assets/images/skill-cutins/ryuta-skill-cutin.png'
 };
 
 const BATTLE_MODE_CUTIN_IMAGE_PATHS = {
@@ -39,7 +42,10 @@ const BATTLE_MODE_CUTIN_IMAGE_PATHS = {
     mai: 'assets/images/battle-mode-cutins/mai-battle-mode-cutin.png',
     takumi: 'assets/images/battle-mode-cutins/takumi-battle-mode-cutin.png',
     kanna: 'assets/images/battle-mode-cutins/kanna-battle-mode-cutin.png',
-    akatsuki: 'assets/images/battle-mode-cutins/akatsuki-battle-mode-cutin.png'
+    akatsuki: 'assets/images/battle-mode-cutins/akatsuki-battle-mode-cutin.png',
+    tsuyoshi: 'assets/images/battle-mode-cutins/tsuyoshi-battle-mode-cutin.png',
+    yuzuki: 'assets/images/battle-mode-cutins/yuzuki-battle-mode-cutin.png',
+    ryuta: 'assets/images/battle-mode-cutins/ryuta-battle-mode-cutin.png'
 };
 const STARTUP_IMAGE_CACHE_NOTICE = '\u521d\u56de\u8d77\u52d5\u6642\u306f\u753b\u50cf\u306e\u8aad\u307f\u8fbc\u307f\u306b\u6642\u9593\u304c\u304b\u304b\u308a\u3001\u8868\u793a\u304c\u9045\u308c\u308b\u5834\u5408\u304c\u3042\u308a\u307e\u3059\u3002\u5c11\u3057\u5f85\u3064\u3068\u30ad\u30e3\u30c3\u30b7\u30e5\u304c\u52b9\u3044\u3066\u8868\u793a\u3055\u308c\u308b\u3088\u3046\u306b\u306a\u308a\u307e\u3059\u3002';
 
@@ -47,14 +53,22 @@ const START_CHARACTER_OPTIONS = [
     { id: 'chizuru', name: '千鶴' },
     { id: 'mai', name: '舞依' },
     { id: 'takumi', name: '拓海' },
-    { id: 'akatsuki', name: '暁' }
+    { id: 'akatsuki', name: '暁' },
+    { id: 'tsuyoshi', name: '剛' },
+    { id: 'kanna', name: '栞那' },
+    { id: 'yuzuki', name: '結月' },
+    { id: 'ryuta', name: '龍太' }
 ];
 
 const START_GALLERY_CHARACTER_OPTIONS = [
     { id: 'chizuru', name: '千鶴', className: 'char-chizuru' },
     { id: 'mai', name: '舞依', className: 'char-mai' },
     { id: 'takumi', name: '拓海', className: 'char-takumi' },
-    { id: 'akatsuki', name: '暁', className: 'char-akatsuki' }
+    { id: 'akatsuki', name: '暁', className: 'char-akatsuki' },
+    { id: 'tsuyoshi', name: '剛', className: 'char-tsuyoshi' },
+    { id: 'kanna', name: '栞那', className: 'char-kanna' },
+    { id: 'yuzuki', name: '結月', className: 'char-yuzuki' },
+    { id: 'ryuta', name: '龍太', className: 'char-ryuta' }
 ];
 
 const START_STAGE_IDS = [
@@ -358,7 +372,21 @@ function setupMatchExitGuardOnce() {
 }
 
 function getStartCharacterOptionById(id) {
-    return START_CHARACTER_OPTIONS.find(option => option.id === id) || null;
+    return START_CHARACTER_OPTIONS.find(option => option.id === id && isStartCharacterUnlocked(id)) || null;
+}
+
+function isStartCharacterUnlocked(id) {
+    return typeof isPlayableCharacterUnlocked === 'function' ? isPlayableCharacterUnlocked(id) : !['tsuyoshi', 'kanna', 'yuzuki', 'ryuta'].includes(id);
+}
+
+function renderStartCostumePicker() {
+    const wrap = document.getElementById('start-costume-wrap');
+    const picker = document.getElementById('start-costume-select');
+    if (!wrap || !picker) return;
+    const options = window.getCharacterCostumeOptions?.(selectedStartCharacter) || [];
+    wrap.classList.toggle('hidden', options.length < 2);
+    picker.innerHTML = options.map(item => `<option value="${item.key}">${escapeHtmlText(item.name)}</option>`).join('');
+    picker.value = window.getSelectedCharacterCostume?.(selectedStartCharacter) || 'default';
 }
 
 function getPreferredStartCharacterId() {
@@ -477,6 +505,14 @@ function getFriendSetupHintMessage() {
     return 'あにあに共通アカウントでログインし、部屋を作成または参加してください。';
 }
 
+function resetUnsupportedOnlineCharacter() {
+    if (window.FriendBattle?.isActive?.()) return;
+    const selection = document.getElementById('online-character');
+    if (selection && (['tsuyoshi', 'kanna', 'yuzuki', 'ryuta'].includes(selection.value) || ['tsuyoshi', 'kanna', 'yuzuki', 'ryuta'].includes(window.getUserProfile?.().favoriteCharacterId))) {
+        selection.value = 'chizuru';
+    }
+}
+
 function setUserStageMessage(text) {
     const messageEl = document.getElementById('user-stage-message');
     if (!messageEl) return;
@@ -530,7 +566,13 @@ function renderUserStageProfile() {
     const dishesEl = document.getElementById('user-dishes-value');
 
     if (nameInput) nameInput.value = profile.name || 'プレイヤー';
-    if (favoriteCharacterSelect) favoriteCharacterSelect.value = profile.favoriteCharacterId || 'chizuru';
+    if (favoriteCharacterSelect) {
+        favoriteCharacterSelect.innerHTML = START_CHARACTER_OPTIONS.map(item => {
+            const unlocked = isStartCharacterUnlocked(item.id);
+            return `<option value="${item.id}"${unlocked ? '' : ' disabled'}>${item.name}${unlocked ? '' : '：' + getCharacterUnlockNotice(item.id)}</option>`;
+        }).join('');
+        favoriteCharacterSelect.value = getStartCharacterOptionById(profile.favoriteCharacterId)?.id || 'chizuru';
+    }
     if (favoriteSkillSelect) {
         const defs = getSkillDefinitionsSafe();
         favoriteSkillSelect.innerHTML = defs
@@ -778,12 +820,16 @@ function escapeHtmlText(text) {
 
 function getGalleryItemsByType(type) {
     if (type === 'characters') {
-        return START_GALLERY_CHARACTER_OPTIONS.map(item => ({
+        return START_GALLERY_CHARACTER_OPTIONS.filter(item => isStartCharacterUnlocked(item.id)).flatMap(item => [{
             title: item.name,
             meta: 'キャラクター',
             characterClass: item.className,
             characterId: item.id
-        }));
+        }, ...(window.getCharacterCostumeOptions?.(item.id) || []).filter(costume => costume.key !== 'default').map(costume => ({
+            title: `${item.name}『${costume.name}』`, meta: '解放済み衣装', characterId: item.id,
+            imagePath: (window.location?.pathname?.includes('/mobile/') ? '../' : '') + BattleImages.standingPath(item.id, costume.key),
+            costume: true
+        }))]);
     }
 
     if (type === 'ingredients') {
@@ -844,6 +890,7 @@ function renderStartGallery(type) {
             : 'start-gallery-art start-gallery-card-art';
         const artHtml = item.characterClass
             ? `<div class="start-gallery-art character-art"><span class="start-char-portrait ${escapeHtmlText(item.characterClass)}"></span></div>`
+            : item.costume ? `<div class="start-gallery-art character-art"><img class="gallery-costume-art" src="${escapeHtmlText(item.imagePath)}" alt="" loading="lazy"></div>`
             : `<div class="${staticArtClass}" style="background-image:url('${escapeHtmlText(item.imagePath || 'assets/battle-images/card-back.webp')}')"></div>`;
 
         return `
@@ -1142,6 +1189,7 @@ function setCharacterChoice(choice) {
         button.classList.toggle('active', charId === selectedStartCharacter);
         button.setAttribute('aria-pressed', String(charId === selectedStartCharacter));
     });
+    renderStartCostumePicker();
 }
 
 function renderStartCharacterCards(containerId, selectedId, opponent = false) {
@@ -1151,11 +1199,12 @@ function renderStartCharacterCards(containerId, selectedId, opponent = false) {
     const personality = getCpuPersonalityOptionsSafe().find(item => item.key === selectedCpuPersonality);
     const strategy = opponent ? `CPU性格：${personality?.label || '標準'}` : `スキル：${skill?.name || '次へで選択'}`;
     const prefix = window.location?.pathname?.includes('/mobile/') ? '../' : '';
-    container.innerHTML = START_CHARACTER_OPTIONS.map(option => {
+    container.innerHTML = START_CHARACTER_OPTIONS.filter(option => isStartCharacterUnlocked(option.id)).map(option => {
         const selected = option.id === selectedId;
         const attribute = opponent ? 'data-opponent-id' : 'data-character-id';
+        const costume = opponent ? 'default' : window.getSelectedCharacterCostume?.(option.id) || 'default';
         return `<button type="button" class="start-char-button start-standing-card${selected ? ' active' : ''}" ${attribute}="${option.id}" aria-pressed="${selected}">
-            <img class="start-standing-art" src="${prefix}${BattleImages.standingPath(option.id)}" width="512" height="768" alt="" draggable="false">
+            <img class="start-standing-art" src="${prefix}${BattleImages.standingPath(option.id, costume)}" width="512" height="768" alt="" draggable="false">
             <span class="start-standing-plate"><span class="start-char-name">${option.name}</span><span class="start-char-strategy">${escapeHtmlText(strategy)}</span></span>
         </button>`;
     }).join('');
@@ -1170,7 +1219,7 @@ function applyCharacterChoice() {
     }
 
     const playerOption = getStartCharacterOptionById(selectedStartCharacter) || START_CHARACTER_OPTIONS[0];
-    const cpuCandidates = START_CHARACTER_OPTIONS.filter(option => option.id !== playerOption.id);
+    const cpuCandidates = START_CHARACTER_OPTIONS.filter(option => option.id !== playerOption.id && isStartCharacterUnlocked(option.id));
     const missionOpponentId = GameState.activeMissionId ? document.getElementById('start-mission-opponent')?.value : null;
     const cpuOption = getStartCharacterOptionById(missionOpponentId)
         || cpuCandidates[Math.floor(Math.random() * cpuCandidates.length)] || START_CHARACTER_OPTIONS[1];
@@ -1216,7 +1265,7 @@ function beginMatchByRole(role, storySetup = null) {
         GameState.settings.cpuPersonality = episode.battle.cpuPersonality;
         setPlayerSelectedSkill(GameState.players.player, skillKey);
         setPlayerSelectedSkill(GameState.players.cpu, pickCpuSkillByPersonality(episode.battle.cpuPersonality));
-        addLog('ストーリーモード開始: 第' + episode.number + '話「' + episode.title + '」');
+        addLog('ストーリーモード開始: ' + window.BattleStoryData.episodeTitle(episode));
     } else {
         applyCharacterChoice();
         applyBattleSkillSetup();
@@ -1416,7 +1465,7 @@ function setupStartOverlay() {
     let storySkillChoice = null;
     const renderCpuSetupStep = () => {
         const title = document.getElementById('start-cpu-setup-title');
-        if (title) title.textContent = storySkillChoice ? `第${storySkillChoice.episode.number}話 対戦準備` : 'CPU戦セットアップ';
+        if (title) title.textContent = storySkillChoice ? window.BattleStoryData.episodeLabel(storySkillChoice.episode) + ' 対戦準備' : 'CPU戦セットアップ';
         startCpuPersonalitySelect?.closest?.('.start-cpu-personality-row')?.classList.toggle('hidden', !!storySkillChoice);
         if (startCharacterStep) startCharacterStep.classList.toggle('hidden', startCpuSetupStep !== 1 || choosingMissionOpponent);
         if (missionOpponentWrap) missionOpponentWrap.classList.toggle('hidden', startCpuSetupStep !== 1 || !pendingMissionId || !choosingMissionOpponent);
@@ -1457,6 +1506,7 @@ function setupStartOverlay() {
         }
         if (startCpuSetupStep === 1) {
             renderStartCharacterCards('start-character-cards', selectedStartCharacter);
+            renderStartCostumePicker();
             if (pendingMissionId) renderStartCharacterCards('start-opponent-cards', missionOpponentSelect?.value, true);
         }
     };
@@ -1601,9 +1651,14 @@ function setupStartOverlay() {
 
     characterCards?.addEventListener('click', event => {
             const button = event.target.closest('button[data-character-id]');
-            if (!button) return;
+            if (!button || !getStartCharacterOptionById(button.getAttribute('data-character-id'))) return;
             const charId = button.getAttribute('data-character-id');
             setCharacterChoice(charId || 'chizuru');
+    });
+    document.getElementById('start-costume-select')?.addEventListener('change', event => {
+        if (!window.selectCharacterCostume?.(selectedStartCharacter, event.target.value)) return;
+        renderStartCharacterCards('start-character-cards', selectedStartCharacter);
+        renderStartCostumePicker();
     });
     opponentCards?.addEventListener('click', event => {
         const button = event.target.closest('button[data-opponent-id]');
@@ -1699,7 +1754,9 @@ function setupStartOverlay() {
             resetTurnStage();
             setCharacterChoice(getPreferredStartCharacterId());
             if (missionOpponentSelect && pendingMissionId) {
-                missionOpponentSelect.value = START_CHARACTER_OPTIONS.find(item => item.id !== selectedStartCharacter)?.id || 'mai';
+                missionOpponentSelect.innerHTML = START_CHARACTER_OPTIONS.filter(item => isStartCharacterUnlocked(item.id))
+                    .map(item => `<option value="${item.id}">${item.name}</option>`).join('');
+                missionOpponentSelect.value = START_CHARACTER_OPTIONS.find(item => item.id !== selectedStartCharacter && isStartCharacterUnlocked(item.id))?.id || 'mai';
             }
             selectedStartSkillKey = getPreferredStartSkillKey();
             selectedCpuPersonality = normalizeStartCpuPersonality(GameState?.settings?.cpuPersonality || selectedCpuPersonality);
@@ -1735,6 +1792,7 @@ function setupStartOverlay() {
         menuFriendButton.addEventListener('click', () => {
             if (typeof unlockAudio === 'function') unlockAudio();
             setStartMenuMessage('');
+            resetUnsupportedOnlineCharacter();
             window.FriendBattle.refreshLogin();
             showStartStage('start-friend-stage');
         });
@@ -1742,6 +1800,7 @@ function setupStartOverlay() {
 
     if (menuOnlineButton) {
         menuOnlineButton.addEventListener('click', () => {
+            resetUnsupportedOnlineCharacter();
             showStartStage('start-friend-stage');
             window.FriendBattle.refreshLogin();
         });
@@ -2089,7 +2148,7 @@ function renderMatchResultSummary() {
     playerIdentity.className = 'result-player-identity';
     const playerIcon = document.createElement('div');
     playerIcon.className = `character-icon char-${model.me.characterId || 'chizuru'} face-normal`;
-    window.BattleImages?.applyExpression?.(playerIcon, model.me.characterId, model.winner === 'me' ? 'gentle' : model.winner === 'opponent' ? 'troubled' : 'normal', 'assets/');
+    window.BattleImages?.applyExpression?.(playerIcon, model.me.characterId, model.winner === 'me' ? 'gentle' : model.winner === 'opponent' ? 'troubled' : 'normal', 'assets/', 'player');
     window.Achievements?.applyFrame(playerIcon, model.online ? model.me : undefined);
     playerIdentity.appendChild(playerIcon);
     const playerName = document.createElement('span');
@@ -2258,13 +2317,13 @@ function getCharacterNameForSide(side) {
 
 function getSkillCutinImagePathForSide(side) {
     const characterId = getCharacterIdForSide(side);
-    if (BattleImages.expressionPath) return BattleImages.expressionPath(characterId, 'smile', 'assets/');
+    if (BattleImages.expressionPath) return BattleImages.expressionPath(characterId, 'smile', 'assets/', side);
     return BattleImages.lightPath(SKILL_CUTIN_IMAGE_PATHS[characterId] || SKILL_CUTIN_IMAGE_PATHS.chizuru);
 }
 
 function getBattleModeCutinImagePathForSide(side) {
     const characterId = getCharacterIdForSide(side);
-    if (BattleImages.expressionPath) return BattleImages.expressionPath(characterId, 'laugh', 'assets/');
+    if (BattleImages.expressionPath) return BattleImages.expressionPath(characterId, 'laugh', 'assets/', side);
     return BattleImages.lightPath(BATTLE_MODE_CUTIN_IMAGE_PATHS[characterId] || BATTLE_MODE_CUTIN_IMAGE_PATHS.chizuru);
 }
 

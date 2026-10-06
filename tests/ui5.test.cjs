@@ -90,7 +90,7 @@ test('mobile local HTML, CSS and menu/gallery/cutin asset paths resolve to exist
         assert.ok(fs.existsSync(path.resolve(root, 'mobile', target)), target);
     }
     for (const match of read('mobile/style-sp.css').matchAll(/url\(["']?([^"')]+)["']?\)/g)) {
-        assert.ok(fs.existsSync(path.resolve(root, 'mobile', match[1])), match[1]);
+        assert.ok(fs.existsSync(path.resolve(root, 'mobile', match[1].split('?')[0])), match[1]);
     }
     for (const match of read('mobile/main-sp.js').matchAll(/['"]((?:\.\.\/)?assets\/[^'"]+)['"]/g)) {
         assert.ok(match[1].startsWith('../'), `mobile asset prefix: ${match[1]}`);
@@ -272,10 +272,10 @@ test('PC/mobile shared render code, added CSS and cache versions agree', () => {
     }
     const marker = '/* Card selection can be paused';
     assert.equal(read('style.css').slice(read('style.css').indexOf(marker)).trim(),
-        read('mobile/style-sp.css').slice(read('mobile/style-sp.css').indexOf(marker)).split('/* Fit the same three')[0].trim());
+        read('mobile/style-sp.css').slice(read('mobile/style-sp.css').indexOf(marker)).split('/* Fit the same three')[0].trim().replaceAll('../assets/', 'assets/'));
     for (const [html, names] of [['web.html', ['style.css', 'render.js']],
         ['mobile/mobile.html', ['style-sp.css', 'render-sp.js', 'main-sp.js']]]) {
-        for (const name of names) assert.ok(read(html).includes(`${name}?v=${name.startsWith('style') ? '20261004-menu-back1' : '20261006-icons99c'}`), name);
+        for (const name of names) assert.ok(read(html).includes(`${name}?v=${name.startsWith('style') ? '20261007-osananajimi105a' : '20261007-osananajimi105a'}`), name);
         assert.match(read(html), /id="selection-field-view-button"[^>]*aria-label="盤面と手札を見る"/);
         assert.match(read(html), /id="selection-return-button"[^>]*>カード選択へ戻る/);
     }

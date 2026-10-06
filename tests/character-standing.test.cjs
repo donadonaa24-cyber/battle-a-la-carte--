@@ -67,13 +67,14 @@ function element(attrs = {}) {
     return node;
 }
 
-function setup(mobile) {
+function setup(mobile, summerUnlocked = false) {
     const nodes = Object.fromEntries(['start-overlay', 'start-cpu-setup-stage', 'start-character-step',
         'start-character-cards', 'start-opponent-cards', 'start-mission-opponent', 'start-mission-opponent-wrap',
         'start-skill-step', 'start-skill-footer', 'start-skill-list', 'start-skill-detail', 'start-skill-message',
         'start-setup-button', 'start-back-menu-button', 'start-cpu-setup-subtitle', 'start-cpu-personality',
-        'start-turn-stage', 'menu-cpu-button'].map(id => [id, element()]));
+        'start-turn-stage', 'menu-cpu-button', 'start-costume-wrap', 'start-costume-select'].map(id => [id, element()]));
     const storage = new Map();
+    if (summerUnlocked) storage.set('battleAlaCarteStoryProgressV1', JSON.stringify({'special-summer': true}));
     const c = vm.createContext({ console, location: { pathname: mobile ? '/mobile/mobile.html' : '/web.html' },
         addEventListener() {}, setTimeout: () => 1, clearTimeout() {},
         localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value) },
@@ -88,7 +89,7 @@ function setup(mobile) {
     c.Missions = { isUnlocked: () => true, getDefinition: id => id === 'noItems' ? { id } : null };
     c.updateUserBasicSettings({ favoriteCharacterId: 'mai', favoriteSkillKey: 'aceProcurement' });
     c.setupStartOverlay();
-    return { c, nodes };
+    return { c, nodes, storage };
 }
 
 function checkCards(node, mobile, selected, opponent) {
@@ -149,6 +150,23 @@ function declarations(css, selector) {
     return result;
 }
 
+for (const mobile of [false, true]) test(`100c ${mobile ? 'phone' : 'PC'}: picker changes both saved wardrobe and standing art through the real setup handlers`, () => {
+    const {c, nodes, storage} = setup(mobile, true);
+    nodes['menu-cpu-button'].listeners.click();
+    const button = nodes['start-character-cards'].buttons.find(node => node.getAttribute('data-character-id') === 'tsuyoshi');
+    assert.ok(button);
+    nodes['start-character-cards'].listeners.click({target: {closest: () => button}});
+    assert.equal(nodes['start-costume-wrap'].classList.contains('hidden'), false);
+    nodes['start-costume-select'].listeners.change({target: {value: 'summer'}});
+    assert.equal(JSON.parse(storage.get('battle-a-la-carte:user-profile:v1')).costumes.tsuyoshi, 'summer');
+    assert.match(nodes['start-character-cards'].innerHTML, /tsuyoshi-summer-standing.webp/);
+    nodes['start-costume-select'].listeners.change({target: {value: 'default'}});
+    assert.doesNotMatch(nodes['start-character-cards'].innerHTML, /tsuyoshi-summer-standing/);
+    nodes['start-setup-button'].listeners.click();
+    nodes['start-back-menu-button'].listeners.click();
+    assert.equal(nodes['start-costume-select'].value, 'default');
+});
+
 for (const [htmlFile, cssFile] of [['web.html', 'style.css'], ['mobile/mobile.html', 'mobile/style-sp.css']]) {
     test(`${htmlFile}: standing grid fills the setup body while back/next stay outside its scroll area`, () => {
         const html = read(htmlFile), css = read(cssFile);
@@ -183,7 +201,7 @@ test('standing art stays in setup, field/profile icons and both entry-page cache
     for (const file of ['style.css', 'mobile/style-sp.css']) assert.ok(read(file).includes('assets/battle-images/character-icons/' + icon));
     for (const [file, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
         for (const asset of [`style${suffix}.css`, `render${suffix}.js`, `main${suffix}.js`, 'battle-images.js']) {
-            const version = asset.startsWith('style') ? '20261004-menu-back1' : '20261006-icons99c';
+            const version = asset === 'battle-images.js' ? '20261007-osananajimi105a' : '20261007-osananajimi105a';
             assert.ok(read(file).includes(`${asset}?v=${version}`), `${file}: ${asset}`);
         }
         assert.doesNotMatch(read(file), /standing-src|standing\.png/);

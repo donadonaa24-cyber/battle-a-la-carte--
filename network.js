@@ -275,6 +275,7 @@
             skill: options.favoriteSkillKey || $('online-skill')?.value || profile.favoriteSkillKey || 'lastOrder',
             ...window.Achievements?.selectedCosmetics()
         };
+        if (['tsuyoshi', 'kanna', 'yuzuki', 'ryuta'].includes(info.character)) info.character = 'chizuru';
         if (!['chizuru', 'mai', 'takumi', 'akatsuki'].includes(info.character) ||
             !window.getSkillDefinitionByKey?.(info.skill)) throw new Error('INVALID_SELECTION');
         return info;
@@ -811,7 +812,7 @@
         const selection = document.createElement('div');
         selection.className = 'online-account-box';
         selection.id = 'online-selection';
-        selection.innerHTML = '<label>対戦キャラクター<select id="online-character"><option value="chizuru">千鶴</option><option value="mai">舞依</option><option value="takumi">拓海</option><option value="akatsuki">暁</option></select></label><label>対戦スキル<select id="online-skill" aria-describedby="online-skill-details"></select></label><p class="skill-recommendation">★はおすすめ度（多いほど扱いやすい）</p><div id="online-skill-details" class="online-skill-details" aria-live="polite"></div>';
+        selection.innerHTML = '<label>対戦キャラクター<select id="online-character"><option value="chizuru">千鶴</option><option value="mai">舞依</option><option value="takumi">拓海</option><option value="akatsuki">暁</option><option value="tsuyoshi" disabled>剛：オンライン対戦は今後対応予定</option><option value="kanna" disabled>栞那：オンライン対戦は今後対応予定</option><option value="yuzuki" disabled>結月：オンライン対戦は今後対応予定</option><option value="ryuta" disabled>龍太：オンライン対戦は今後対応予定</option></select></label><label>対戦スキル<select id="online-skill" aria-describedby="online-skill-details"></select></label><p class="skill-recommendation">★はおすすめ度（多いほど扱いやすい）</p><p>着せ替えは自分の画面だけに反映されます。相手には通常衣装で表示されます。</p><div id="online-skill-details" class="online-skill-details" aria-live="polite"></div>';
         lobby.insertBefore(selection, lobby.querySelector('.start-user-form'));
         const hint = document.createElement('p'); hint.id = 'online-selection-hint';
         selection.appendChild(hint);

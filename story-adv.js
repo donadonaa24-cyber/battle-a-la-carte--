@@ -7,7 +7,8 @@
         battleActive: false, pending: null, actors: new Map(), backlog: [], token: 0,
         busy: false, loading: false, typing: false, text: '', chars: [], typed: 0, logOpen: false,
         fastForward: false, ctrlHeld: false, paused: false, skipOpen: false, continuedAsWin: false,
-        conversation: null, poses: new Map(), poseSceneId: null, entranceSeen: new Set(), entrances: [], intro: null };
+        conversation: null, poses: new Map(), poseSceneId: null, entranceSeen: new Set(), entrances: [], intro: null,
+        skippedScenes: new Set() };
     let layer, typeTimer, autoTimer;
     let introTouchClick = false;
     const waits = new Map();
@@ -67,9 +68,11 @@
         const shown = new Set();
         const background = key => { if (assets.backgrounds[key]) files.add(assets.backgrounds[key]); };
         const icon = (episode.portraitStyle || 'icon') === 'icon';
-        const portrait = (id, expression, pose) => {
-            (icon ? assets.iconCandidates(id, expression) : assets.portraitCandidates(id, expression, pose)).forEach(file => files.add(file));
-            if (root.BattleStoryCharacterIntros?.[id] && assets.characters[id]?.introStanding) files.add(assets.characters[id].introStanding);
+        const portrait = (id, expression, pose, costume) => {
+            (icon ? assets.iconCandidates(id, expression, costume || episode.costumes?.[id]) : assets.portraitCandidates(id, expression, pose)).forEach(file => files.add(file));
+            const character = assets.characters[id];
+            if (root.BattleStoryCharacterIntros?.[id] && character?.introStanding)
+                files.add(character.costumes?.[costume || episode.costumes?.[id]]?.introStanding || character.introStanding);
         };
         episode.scenes.forEach(scene => {
             const poses = new Map();
@@ -91,11 +94,11 @@
                         if (actor.pose !== undefined) poses.set(actor.id, actor.pose);
                         shown.add(actor.id);
                     }
-                    portrait(actor.id, actor.expression, poses.get(actor.id));
+                    portrait(actor.id, actor.expression, poses.get(actor.id), actor.costume);
                 });
                 if (speaking) {
                     if (item.pose !== undefined) poses.set(item.speaker, item.pose);
-                    shown.add(item.speaker); portrait(item.speaker, item.expression, poses.get(item.speaker));
+                    shown.add(item.speaker); portrait(item.speaker, item.expression, poses.get(item.speaker), item.costume);
                 }
                 if (item.speaker === 'announce') shown.clear();
             });
@@ -179,6 +182,7 @@
         saved.resume = { episodeId: S.episode.id, sceneId: S.sceneId, lineIndex: S.lineIndex,
             stage: S.stage, savedAt: Date.now() };
         if (S.continuedAsWin) saved.resume.continuedAsWin = true;
+        if (S.skippedScenes.size) saved.resume.skippedScenes = [...S.skippedScenes];
         writeSave();
     }
     function scene() { return S.episode?.scenes.find(item => item.id === S.sceneId); }
@@ -481,11 +485,11 @@
             if (actor.onlyIfShown) {
                 const current = S.actors.get(actor.id);
                 if (current) S.actors.set(actor.id, { ...current, expression: actor.expression || current.expression,
-                    pose: actorPose(actor.id, actor.pose) });
+                    pose: actorPose(actor.id, actor.pose), costume: actor.costume || current.costume });
             } else S.actors.set(actor.id, { ...actor, pose: actorPose(actor.id, actor.pose) });
         });
         if (speaking) S.actors.set(item.speaker, { id: item.speaker, position: item.position,
-            expression: item.expression || 'normal', pose: actorPose(item.speaker, item.pose) });
+            expression: item.expression || 'normal', pose: actorPose(item.speaker, item.pose), costume: item.costume });
         if (item.speaker === 'announce') S.actors.clear();
         S.actors.forEach(actor => {
             const data = root.BattleStoryCharacterIntros?.[actor.id];
@@ -495,7 +499,7 @@
             const override = shown?.intro !== undefined ? shown.intro : actor.id === item.speaker || shown ? item.intro : undefined;
             const introScene = S.episode.scenes.find(value => value.id === sceneId)?.introScene || sceneId;
             const at = data.introAt;
-            const scheduled = at?.episode === S.episode.number && at.scene === introScene && at.line === lineIndex + 1;
+            const scheduled = at?.episode === (S.episode.number ?? S.episode.id) && at.scene === introScene && at.line === lineIndex + 1;
             const forced = override === true || (override && typeof override === 'object');
             const key = `${S.episode.id}/${introScene}/${lineIndex + 1}/${actor.id}`;
             if (S.entranceSeen.has(key) || (!scheduled && !forced)) return;
@@ -503,7 +507,7 @@
             if (item.intro !== false && override !== false) S.entrances.push({ ...actor, intro: override });
         });
     }
-    const introAccent = { chizuru: '#ec8e45', mai: '#dc5e74', takumi: '#63bf9a', akatsuki: '#76a3dd', kanna: '#b49ad9', tsuyoshi: '#e3ac5d' };
+    const introAccent = { chizuru: '#ec8e45', mai: '#dc5e74', takumi: '#63bf9a', akatsuki: '#76a3dd', kanna: '#b49ad9', tsuyoshi: '#e3ac5d', yuzuki: '#f39b80', ryuta: '#e5be59' };
     const introVisible = () => byId('adv-character-intro')?.hidden === false;
     function discardIntro() {
         const intro = S.intro, element = byId('adv-character-intro');
@@ -532,7 +536,8 @@
         element.classList.remove('adv-intro-closing');
         const data = { ...root.BattleStoryCharacterIntros[actor.id], ...(actor.intro && typeof actor.intro === 'object' ? actor.intro : {}) };
         const img = document.createElement('img'); img.className = 'adv-intro-art'; img.alt = ''; img.draggable = false;
-        img.src = assets.url(assets.characters[actor.id].introStanding); element.appendChild(img);
+        const character = assets.characters[actor.id];
+        img.src = assets.url(character.costumes?.[actor.costume || S.episode.costumes?.[actor.id]]?.introStanding || character.introStanding); element.appendChild(img);
         const copy = document.createElement('div'); copy.className = 'adv-intro-copy';
         for (const field of ['title', 'name', 'subtitle', 'text']) {
             const text = typeof data[field] === 'string' ? data[field].trim() : '';
@@ -671,7 +676,7 @@
         layer.dataset.iconSpeaker = actor ? speaker : 'none';
         if (!actor) { element.dataset.actor = ''; element.dataset.request = ''; crop.replaceChildren(); return; }
         element.dataset.actor = speaker;
-        const candidates = assets.iconCandidates(actor.id, actor.expression), request = candidates.join('|');
+        const candidates = assets.iconCandidates(actor.id, actor.expression, actor.costume || S.episode.costumes?.[actor.id]), request = candidates.join('|');
         if (element.dataset.request === request) return;
         element.dataset.request = request;
         let index = -1, painted = '';
@@ -685,7 +690,7 @@
             if (!sheet) applyIconMetrics(crop, actor.id, 'default');
             else {
                 const cell = file.match(/-([a-z]+)-alpha\.webp$/)?.[1] || 'normal';
-                root.BattleStoryIconMetrics?.apply(img, actor.id, cell);
+                root.BattleStoryIconMetrics?.apply(img, actor.id, cell, actor.costume || S.episode.costumes?.[actor.id]);
             }
             crop.replaceChildren(img);
             // Expressions and poses swap immediately; only a different speaker fades in.
@@ -773,6 +778,18 @@
             if (token === S.token) layer.classList.remove('adv-shake');
         }
     }
+    function renderStoryCard(item) {
+        const element = byId('adv-effect');
+        layer.classList.toggle('adv-story-card', item?.card === true);
+        if (!item?.card) {
+            if (element.classList.contains('story-card')) { element.className = 'adv-effect'; element.replaceChildren(); }
+            return;
+        }
+        element.className = 'adv-effect story-card'; element.replaceChildren();
+        const title = document.createElement('strong'); title.textContent = item.text; element.appendChild(title);
+        if (item.caption) { const caption = document.createElement('p'); caption.textContent = item.caption; element.appendChild(caption); }
+        const hint = document.createElement('small'); hint.textContent = 'タップ／Enterで続ける'; element.appendChild(hint);
+    }
     async function renderCurrent() {
         cancelTimers(); const token = ++S.token;
         const item = line();
@@ -781,7 +798,7 @@
         savePosition(); S.busy = true; S.typing = false; byId('adv-next').hidden = true;
         layer.classList.toggle('adv-battle-intro', scene()?.battleIntro === true);
         layer.classList.toggle('adv-monologue', scene()?.lines.slice(0, S.lineIndex + 1).findLast(item => item.text)?.monologue === true);
-        stageLine(item); renderActors(item.speaker);
+        stageLine(item); renderActors(item.speaker); renderStoryCard(item);
         setBackground(item.background !== undefined ? item.background : currentBackground());
         if (S.entrances.length && !fast() && !S.skipOpen) await showIntroductions(token);
         if (token !== S.token || !S.active) return;
@@ -791,6 +808,7 @@
         if (item.effect) await effect(item.effect, token, item);
         else if (!item.wait && ['chime', 'crowd', 'notify'].includes(item.se)) await wait(item.se === 'chime' ? 850 : item.se === 'notify' ? 350 : 650);
         if (token !== S.token || !S.active) return;
+        if (item.explanationChoice) { S.busy = false; return showExplanationChoices(item.explanationChoice); }
         if (item.battle) { S.busy = false; return chooseBattle(); }
         if (item.wait) await wait(Math.max(0, Number(item.wait) || 0));
         if (token !== S.token || !S.active) return;
@@ -822,10 +840,14 @@
         if (S.stage === 'pre' && line()?.id && line().id === S.episode.battle?.after) return chooseBattle();
         S.lineIndex++; renderCurrent();
     }
+    function playSceneBgm() {
+        const bgm = scene()?.bgm ?? S.episode?.bgm ?? 'story';
+        if (bgm !== false) root.playStoryBGM?.(S.episode.protagonist, bgm);
+    }
     function enterScene(id, stage) {
         S.sceneId = id; S.lineIndex = 0; S.stage = stage;
         resetPoseScene(id);
-        if (scene()?.bgm !== false) root.playStoryBGM?.(S.episode.protagonist);
+        playSceneBgm();
         renderCurrent();
     }
     function endScene() {
@@ -903,7 +925,7 @@
         S.sceneId = pending.sceneId; S.lineIndex = 0; S.stage = pending.stage;
         resetPoseScene(S.sceneId);
         activate();
-        if (scene()?.bgm !== false) root.playStoryBGM?.(S.episode.protagonist);
+        playSceneBgm();
         beginPlayback(); return true;
     }
     function abandonBattle() {
@@ -919,11 +941,11 @@
         byId('adv-face-icon').hidden = true; byId('adv-face-icon').dataset.actor = ''; byId('adv-face-icon').dataset.request = '';
         byId('adv-icon-crop').replaceChildren();
         byId('adv-pause-panel').hidden = true; byId('adv-skip-panel').hidden = true;
-        layer.classList.remove('adv-cleared', 'adv-frozen', 'adv-shake', 'adv-panel-open', 'adv-monologue', 'adv-arc-cleared');
+        layer.classList.remove('adv-cleared', 'adv-frozen', 'adv-shake', 'adv-panel-open', 'adv-monologue', 'adv-arc-cleared', 'adv-story-card');
         byId('adv-portraits').replaceChildren(); byId('adv-background').style.backgroundImage = '';
         byId('adv-text').textContent = ''; byId('adv-name').textContent = ''; byId('adv-next').hidden = true;
         byId('adv-effect').className = 'adv-effect'; byId('adv-effect').replaceChildren();
-        byId('adv-episode-label').textContent = `${root.BattleStoryData.arcs[S.episode.arc]}　第${S.episode.number}話「${S.episode.title}」`;
+        byId('adv-episode-label').textContent = (S.episode.number == null ? '' : root.BattleStoryData.arcs[S.episode.arc] + '　') + root.BattleStoryData.episodeTitle(S.episode);
         byId('adv-viewer-badge').hidden = !viewer();
         byId('adv-pause-exit').textContent = viewer() ? 'ビューア一覧へ戻る' : 'ストーリー選択へ戻る';
         updateAutoButton(); updateFastButton();
@@ -936,7 +958,7 @@
         if (S.conversation) return [scene()];
         const post = outcomeScenes(S.episode.afterBattle.win);
         const lose = outcomeScenes(S.episode.afterBattle.lose);
-        const initial = S.episode.scenes.filter(item => ![...post, ...lose].includes(item));
+        const initial = S.episode.scenes.filter(item => ![...post, ...lose].includes(item) && !S.skippedScenes.has(item.id));
         return ['post', 'clear'].includes(S.stage) ? [...initial, ...(S.continuedAsWin ? lose : []), ...post] :
             S.stage === 'lose' ? [...initial, ...lose] : initial;
     }
@@ -1010,6 +1032,7 @@
     }
     function start(id, resume = false, replacementConfirmed = false) {
         const episode = viewer() ? root.StoryViewer.get(id) : root.BattleStoryData.get(id); if (!episode) return;
+        if (!viewer() && episode.arc === 'special' && !root.BattleStoryData.isUnlocked(episode, root.BattleStoryProgress?.load())) return;
         if (root.CharacterNotice && !root.CharacterNotice.beforeStory(() => start(id, resume))) return;
         if (!viewer() && saved.resume && (!resume || saved.resume.episodeId !== id) && !replacementConfirmed) {
             return Promise.resolve(root.StageLayout?.confirmDestructive?.({
@@ -1022,21 +1045,23 @@
         }
         stop(); S.episode = episode; S.pending = null;
         const position = !viewer() && resume && saved.resume?.episodeId === id ? saved.resume : null;
+        const optionalScenes = new Set(episode.scenes.flatMap(scene => scene.lines.map(line => line.explanationChoice?.read).filter(Boolean)));
+        S.skippedScenes = new Set((Array.isArray(position?.skippedScenes) ? position.skippedScenes : []).filter(id => optionalScenes.has(id)));
         S.continuedAsWin = position?.continuedAsWin === true;
         S.sceneId = position?.sceneId || episode.scenes[0].id;
-        S.stage = ['pre', 'battle', 'post', 'lose'].includes(position?.stage) ? position.stage : 'pre';
-        if (!scene()) { S.sceneId = episode.scenes[0].id; S.stage = 'pre'; }
+        S.stage = episode.conversationOnly ? 'post' : ['pre', 'battle', 'post', 'lose'].includes(position?.stage) ? position.stage : 'pre';
+        if (!scene()) { S.sceneId = episode.scenes[0].id; S.stage = episode.conversationOnly ? 'post' : 'pre'; }
         S.lineIndex = Math.max(0, Math.min(Math.floor(Number(position?.lineIndex) || 0), scene().lines.length));
         if (S.stage === 'battle') Object.assign(S, battlePosition(episode));
         // A saved post/lose position is the receipt of a completed battle.
-        if (S.stage === 'post' && !outcomeScenes(episode.afterBattle.win).some(item => item.id === S.sceneId)) { S.sceneId = episode.afterBattle.win; S.lineIndex = 0; }
+        if (episode.battle && S.stage === 'post' && !outcomeScenes(episode.afterBattle.win).some(item => item.id === S.sceneId)) { S.sceneId = episode.afterBattle.win; S.lineIndex = 0; }
         if (S.stage === 'lose' && S.sceneId !== episode.afterBattle.lose) { S.sceneId = episode.afterBattle.lose; S.lineIndex = 0; }
         rebuildBeforePosition(); activate();
         const previous = S.backlog[S.backlog.length - 1];
         S.text = previous?.text || '';
         byId('adv-text').textContent = S.text;
         byId('adv-name').textContent = previous?.name || '';
-        root.playStoryBGM?.(S.episode.protagonist); return beginPlayback();
+        playSceneBgm(); return beginPlayback();
     }
     function endingButton(text, action) {
         const button = document.createElement('button'); button.type = 'button'; button.textContent = text; button.onclick = action;
@@ -1060,8 +1085,23 @@
         S.sceneId = options.phase; S.stage = options.phase; S.lineIndex = 0;
         S.battleActive = false; S.pending = null; S.continuedAsWin = false;
         rebuildBeforePosition(); activate();
-        root.playStoryBGM?.(S.episode.protagonist);
+        playSceneBgm();
         return beginPlayback();
+    }
+    function showExplanationChoices(choice) {
+        stopFastForward(); cancelTimer(autoTimer);
+        ['adv-fast', 'adv-skip', 'adv-pause'].forEach(id => { byId(id).disabled = true; });
+        const ending = byId('adv-ending'); ending.replaceChildren(); ending.hidden = false;
+        for (const [text, id] of [['ルール説明を読む', choice.read], ['ルール説明をとばす', choice.skip]]) {
+            endingButton(text, () => {
+                if (id === choice.skip) S.skippedScenes.add(choice.read);
+                else S.skippedScenes.delete(choice.read);
+                ending.hidden = true;
+                ['adv-fast', 'adv-skip', 'adv-pause'].forEach(id => { byId(id).disabled = false; });
+                enterScene(id, S.stage);
+            });
+        }
+        ending.children[0]?.focus();
     }
     function showConversationChoices() {
         S.busy = false; stopFastForward(); cancelTimer(autoTimer);
@@ -1084,7 +1124,7 @@
         endingButton('勝ったことにして進める', () => {
             S.continuedAsWin = true; S.sceneId = S.episode.afterBattle.win; S.lineIndex = 0; S.stage = 'post';
             savePosition(); rebuildBeforePosition(); activate();
-            if (scene()?.bgm !== false) root.playStoryBGM?.(S.episode.protagonist);
+            playSceneBgm();
             renderCurrent(); byId('adv-dialogue').focus();
         });
         endingButton('ストーリー選択へ戻る', returnToSelection);
@@ -1101,14 +1141,39 @@
         S.busy = false;
         ['adv-fast', 'adv-skip', 'adv-pause'].forEach(id => { byId(id).disabled = true; });
         layer.classList.add('adv-cleared');
-        layer.classList.remove('adv-monologue', 'adv-battle-intro');
+        layer.classList.remove('adv-monologue', 'adv-battle-intro', 'adv-story-card');
         byId('adv-effect').className = 'adv-effect';
         byId('adv-effect').replaceChildren();
         setBackground(currentBackground());
         const ending = byId('adv-ending'); ending.replaceChildren(); ending.hidden = false;
-        const heading = document.createElement('h2'); heading.textContent = `第${S.episode.number}話 CLEAR`;
+        const heading = document.createElement('h2'); heading.textContent = S.episode.clear.heading || root.BattleStoryData.episodeLabel(S.episode) + ' CLEAR';
         const title = document.createElement('p'); title.className = 'adv-clear-title'; title.textContent = S.episode.clear.title;
-        ending.append(heading, title);
+        ending.appendChild(heading); if (S.episode.clear.title) ending.appendChild(title);
+        const rewards = S.episode.clear.rewards;
+        if (rewards?.unlockCharacter) {
+            const name = assets.characters[rewards.unlockCharacter]?.name;
+            const message = document.createElement('p'); message.className = 'adv-clear-title';
+            message.textContent = `NEW CHARACTER ${name} — プレイアブルキャラクターとして${name}が使用可能になりました`;
+            ending.appendChild(message);
+        }
+        if (rewards?.storyCharacter) {
+            const name = assets.characters[rewards.storyCharacter]?.name;
+            const message = document.createElement('p'); message.className = 'adv-clear-title';
+            message.textContent = `STORY CHARACTER — ${name}がキャラクター一覧に追加されました`;
+            ending.appendChild(message);
+        }
+        if (rewards?.costumes?.length) {
+            const message = document.createElement('p'); message.className = 'adv-clear-title';
+            message.textContent = 'COSTUME COLLECTION ' + (rewards.costumeLabel || rewards.costumes.map(key => {
+                const [id, costume] = key.split(':');
+                return `${assets.characters[id]?.name}『${assets.characters[id]?.costumes?.[costume]?.name}』`;
+            }).join('／'));
+            ending.appendChild(message);
+        }
+        if (S.episode.clear.storyClear) {
+            const message = document.createElement('p'); message.className = 'adv-clear-title';
+            message.textContent = S.episode.clear.storyClear; ending.appendChild(message);
+        }
         if (S.episode.clear.next) {
             const next = document.createElement('p'); next.className = 'adv-teaser';
             next.textContent = `NEXT 第${S.episode.clear.next.number}話「${S.episode.clear.next.title}」`;
@@ -1160,14 +1225,15 @@
                 heading.textContent = root.BattleStoryData.arcs[currentArc]; list.appendChild(heading);
             }
             const card = document.createElement('article'); card.className = 'story-episode-card';
-            const unlocked = !episode.unlockRequires || !!progress[episode.unlockRequires];
+            const unlocked = root.BattleStoryData.isUnlocked(episode, progress);
             for (const [className, text] of [
-                ['story-episode-title', '第' + episode.number + '話「' + episode.title + '」'],
+                ['story-episode-title', root.BattleStoryData.episodeTitle(episode)],
                 ['story-episode-summary', episode.summary || ''],
-                ['story-episode-meta', progress[episode.id] ? 'クリア済み' : unlocked ? 'プレイ可能' : '未解放']
+                ['story-episode-meta', progress[episode.id] ? 'クリア済み' : unlocked ? 'プレイ可能' : episode.arc === 'special' ? episode.unlockNotice || '文化祭編クリアで解放' : '未解放']
             ]) {
                 const element = document.createElement('div'); element.className = className; element.textContent = text; card.appendChild(element);
             }
+            if (episode.arcLabel) { const label = document.createElement('small'); label.className = 'story-special-label'; label.textContent = episode.arcLabel; card.appendChild(label); }
             const addButton = (text, resume) => {
                 const button = document.createElement('button'); button.className = 'story-episode-start';
                 button.textContent = text; button.disabled = !unlocked;

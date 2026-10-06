@@ -3,9 +3,13 @@
     const episodes = new Map(), warned = new Set();
     const positions = ['left', 'right', 'center', 'farLeft', 'farRight'];
     const assets = root.BattleStoryAssets;
-    const arcs = Object.freeze({ reunion: '再会編', festival: '出会い・文化祭編' });
+    const arcs = Object.freeze({ reunion: '再会編', festival: '出会い・文化祭編', special: '特別編' });
+    const episodeLabel = episode => episode.number == null ? arcs[episode.arc] : `第${episode.number}話`;
+    const episodeTitle = episode => `${episodeLabel(episode)}「${episode.title}」`;
+    const isUnlocked = (episode, progress = {}) => !episode.unlockRequires ||
+        (Array.isArray(episode.unlockRequires) ? episode.unlockRequires.every(id => progress[id] === true) : !!progress[episode.unlockRequires]);
     const presentation = Object.freeze({
-        cues: Object.freeze(['chime', 'notify', 'crowd', 'pop', 'shock', 'laugh', 'idea', 'thud', 'sparkle', 'swish']),
+        cues: Object.freeze(['chime', 'notify', 'crowd', 'pop', 'shock', 'laugh', 'idea', 'thud', 'impact', 'sparkle', 'swish']),
         motions: Object.freeze(['hop', 'shake', 'zoom', 'tremble', 'slideIn']),
         marks: Object.freeze(['!', '?', '!?', 'sweat', 'anger', 'note', 'sparkle', '…']),
         screens: Object.freeze(['flash', 'screenShake', 'speedLines']),
@@ -37,7 +41,9 @@
             if (result.position != null) warn(`unknown position: ${result.position}`);
             result.position = 'center';
         }
-        if (result.expression && !character?.portraits[result.expression] && result.expression !== 'normal') {
+        if (result.expression && !character?.portraits[result.expression] &&
+            !character?.icons?.[assets.iconExpressions[result.expression]] &&
+            !character?.costumes?.[result.costume]?.icons[assets.iconExpressions[result.expression]] && result.expression !== 'normal') {
             warn(`unknown expression: ${result.id}/${result.expression}`);
             result.expression = 'normal';
         }
@@ -52,19 +58,20 @@
             lines: (Array.isArray(scene.lines) ? scene.lines : []).map(line => {
                 const result = validatePresentation({ ...line });
                 if (!['narration', 'announce'].includes(line.speaker)) {
-                    const speaker = actor({ id: line.speaker, position: line.position || episode.defaultPositions?.[line.speaker], expression: line.expression, pose: line.pose });
+                    const speaker = actor({ id: line.speaker, position: line.position || episode.defaultPositions?.[line.speaker], expression: line.expression, pose: line.pose,
+                        costume: line.costume || episode.costumes?.[line.speaker] });
                     result.position = speaker.position;
                     result.expression = speaker.expression || 'normal';
                     if (line.pose !== undefined) result.pose = speaker.pose;
                 }
                 if (line.background !== undefined) result.background = background(line.background);
-                if (Array.isArray(line.show)) result.show = line.show.map(actor);
+                if (Array.isArray(line.show)) result.show = line.show.map(value => actor({ ...value, ...(value.costume || episode.costumes?.[value.id] ? { costume: value.costume || episode.costumes[value.id] } : {}) }));
                 return result;
             }) })) };
     }
     root.BattleStoryData = Object.freeze({
         register(episode) { const value = validate(episode); if (value) episodes.set(value.id, value); return value; },
         get: id => episodes.get(id) || null,
-        all: () => [...episodes.values()], arcs, presentation, validate
+        all: () => [...episodes.values()], arcs, presentation, validate, episodeLabel, episodeTitle, isUnlocked
     });
 })(window);

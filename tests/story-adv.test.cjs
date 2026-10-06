@@ -13,15 +13,39 @@ const clone = value => JSON.parse(JSON.stringify(value));
 const ADV_KEY = 'battleAlaCarteStoryAdvV1', PROGRESS_KEY = 'battleAlaCarteStoryProgressV1';
 const { storyEpisodes, firstAppearances, declaredIntros } = require('../tools/measure-story-intros.cjs');
 
+// Retain the historical 81b fingerprint outside the owner's explicitly replaced scene.
+function historicalEpisode(episode) {
+    const value = clone(episode);
+    if (value.id === 'episode7') value.scenes.find(scene => scene.id === 'scene3').lines = JSON.parse(read('tests/fixtures/episode7-scene3-before-summer.json'));
+    return value;
+}
+function summerReplacementSpeech() {
+    const names = { 剛: 'tsuyoshi', 暁: 'akatsuki', 千鶴: 'chizuru' }, positions = {}, result = [];
+    let direction = '';
+    for (const raw of read('docs/story/episode7-fix-summer.md').split(/\r?\n/)) {
+        const line = raw.trim();
+        if (line.startsWith('【')) { direction = line; continue; }
+        const speech = line.match(/^\*\*(剛|暁|千鶴)\*\*「(.*)」$/);
+        if (!speech) continue;
+        const speaker = names[speech[1]], position = direction.match(/^【(左|右)：/);
+        if (position) positions[speaker] = position[1] === '左' ? 'left' : 'right';
+        result.push({ speaker, text: speech[2].replace(/。$/, ''), direction, position: positions[speaker] || 'left' });
+        direction = '';
+    }
+    return result;
+}
+
 test('99e declared story-wide introductions match the first on-screen appearances in episode order', () => {
     const data = declaredIntros(), episodes = storyEpisodes();
     const expected = firstAppearances(episodes, Object.keys(data));
-    assert.equal(episodes.length, 10);
+    assert.equal(episodes.length, 15);
     assert.deepEqual(Object.fromEntries(Object.entries(data).map(([id, intro]) => [id, intro.introAt])), expected);
     assert.deepEqual(expected, {
         mai: { episode: 1, scene: 'pre', line: 1 }, takumi: { episode: 1, scene: 'pre', line: 2 },
         akatsuki: { episode: 3, scene: 'pre', line: 1 }, chizuru: { episode: 3, scene: 'pre', line: 2 },
-        tsuyoshi: { episode: 3, scene: 'pre', line: 5 }, kanna: { episode: 3, scene: 'pre', line: 8 }
+        tsuyoshi: { episode: 3, scene: 'pre', line: 5 }, kanna: { episode: 3, scene: 'pre', line: 8 },
+        yuzuki: { episode: 'special-kyudo', scene: 'scene1', line: 1 },
+        ryuta: { episode: 'special-osananajimi-1', scene: 'scene1', line: 23 }
     });
 });
 test('99e intro computation sorts episodes and ignores offscreen, monologue, inactive onlyIfShown and classmates', () => {
@@ -58,6 +82,7 @@ function storyReview() {
 }
 function reviewedLines(number, scene, lines) {
     const review = storyReview();
+    if (number === 7 && scene === 'scene3' && lines.length === 35) return clone(lines); // Owner's 100b replacement supersedes the old scene3 review.
     return clone(lines).map((line, i) => {
         const key = number + '/' + scene + ':' + (i + 1), edit = review.changes.get(key), fx = review.effects.get(key);
         if (line.pose !== undefined) {
@@ -428,7 +453,7 @@ for (const mobile of [false, true]) for (const viewer of [false, true]) {
         const intro = elements.get('adv-character-intro'), copy = intro.querySelector('.adv-intro-copy');
         assert.equal(intro.hidden, false); assert.equal(intro.dataset.actor,'takumi');
         assert.equal(t.S.busy,true); assert.equal(t.S.lineIndex,0); assert.equal(t.S.backlog.length,0);
-        assert.ok(intro.querySelector('.adv-intro-art').src.includes('takumi-standing-alpha.webp?v=20261006-icons99e'));
+        assert.ok(intro.querySelector('.adv-intro-art').src.includes('takumi-standing-alpha.webp?v=20261007-osananajimi105a'));
         assert.equal(copy.querySelector('.adv-intro-name').textContent,'拓海');
         assert.equal(copy.querySelector('.adv-intro-text').textContent,'確認用紹介文');
         assert.equal(copy.querySelector('.adv-intro-title'),null); assert.equal(copy.querySelector('.adv-intro-subtitle'),null);
@@ -510,8 +535,8 @@ for (const mobile of [false, true]) for (const viewer of [false, true]) test(`99
     const r = viewer ? viewerRuntime({ mobile, intros: true }) : runtime({ mobile, intros: true });
     const { c, elements, tick } = r, t = c.__advTest;
     await c.StoryAdv.start('episode4'); await tick(0); c.StoryAdv.stop();
-    const introCounts = Object.fromEntries(Object.keys(c.BattleStoryCharacterIntros).map(id => [id, 0]));
-    const all = storyEpisodes().sort((a,b) => a.number-b.number);
+    const introCounts = Object.fromEntries(Object.keys(c.BattleStoryCharacterIntros).filter(id => !['yuzuki', 'ryuta'].includes(id)).map(id => [id, 0]));
+    const all = storyEpisodes().filter(ep => Number.isFinite(ep.number)).sort((a,b) => a.number-b.number);
     for (let replay = 0; replay < 2; replay++) {
         const counts = { ...introCounts };
         for (const source of all) {
@@ -976,9 +1001,9 @@ test('90b late images retain the old decoded portrait and stale completions cann
     await r.tick(150); assert.equal(r.portrait().children.length,1);
 });
 
-test('90b/92b every assigned and inherited pose/expression has its exact image, and all 125 explicit assignments are recorded',async t=>{
+test('90b/92b historical assignments retain their exact images and records; scene3 is superseded by summer100b',async t=>{
     const {c}=runtime(), a=c.BattleStoryAssets;
-    const episodes=[...c.__legacyTest.EPISODES.map((e,i)=>({number:i+1,scenes:['pre','postWin','postLose'].map(id=>({id,lines:e[id]||[]}))})),...c.BattleStoryData.all()];
+    const episodes=[...c.__legacyTest.EPISODES.map((e,i)=>({number:i+1,scenes:['pre','postWin','postLose'].map(id=>({id,lines:e[id]||[]}))})),...c.BattleStoryData.all().map(historicalEpisode)];
     let assigned=0, covered=0, restores=0; const rows=[];
     for(const e of episodes)for(const s of e.scenes){
         const poses=new Map();
@@ -1930,17 +1955,21 @@ test('episodes1–3 mechanics, tutorial setup, HUD, objectives and guards are un
     assert.match(read('achievements.js'), /if \(state\.achievementStory \|\| state\.storyEpisodeId\) return \[\]/);
 });
 
-test('kanna, tsuyoshi and classmates are absent from selectable, gallery, favourite, achievement and online lists', async () => {
+test('101b adds unlockable 剛 and 栞那 while classmates stay outside selection and all stay outside online protocol', async () => {
     for (const file of ['main.js', 'mobile/main-sp.js']) {
         const source = read(file);
         for (const name of ['START_CHARACTER_OPTIONS', 'START_GALLERY_CHARACTER_OPTIONS']) {
             const value = source.match(new RegExp('const ' + name + ' = \\[([^]*?)\\];'))[1];
-            assert.doesNotMatch(value, /kanna|tsuyoshi|classmate/);
+            assert.doesNotMatch(value, /classmate/);
+            assert.match(value, /kanna/);
+            assert.match(value, /tsuyoshi/);
         }
     }
-    for (const file of ['profile.js', 'achievements.js', 'network.js', 'battle-engine-worker.js']) assert.doesNotMatch(read(file), /kanna|tsuyoshi|classmate/, file);
+    for (const file of ['profile.js', 'achievements.js', 'network.js']) assert.doesNotMatch(read(file), /classmate/, file);
+    assert.doesNotMatch(read('battle-engine-worker.js'), /kanna|tsuyoshi|classmate/);
+    assert.match(read('network.js'), /value="tsuyoshi" disabled/);
     const imageContext = { window: {} }; vm.runInNewContext(read('battle-images.js'), imageContext);
-    assert.deepEqual(Object.keys(imageContext.window.BattleImages.standingPaths), ['chizuru', 'mai', 'takumi', 'akatsuki']);
+    assert.deepEqual(Object.keys(imageContext.window.BattleImages.standingPaths), ['chizuru', 'mai', 'takumi', 'akatsuki', 'tsuyoshi', 'kanna', 'yuzuki', 'ryuta']);
     for (const file of ['web.html', 'mobile/mobile.html']) assert.doesNotMatch(read(file), /value="(?:kanna|tsuyoshi|classmate1|classmate2)"/);
 });
 
@@ -1948,10 +1977,10 @@ test('both pages load ADV data locally in order with the current cache key', asy
     for (const file of ['web.html', 'mobile/mobile.html']) {
         const source = read(file); let last = -1;
         for (const module of ['story-data/portrait-metrics.js', 'story-data/characters.js', 'story-data/registry.js', 'story-data/episode4.js', 'story-data/episode5.js', 'story-data/episode6.js', 'story-data/episode7.js', 'story-data/episode8.js', 'story-data/episode9.js', 'story-data/episode10.js', 'story-adv.js', 'story-mode.js']) {
-            const version = module === 'story-adv.js' ? '20261006-icons99e' : ['story-mode.js', 'story-data/characters.js', 'story-data/registry.js', 'story-data/icon-metrics.js', 'story-data/character-intros.js'].includes(module) ? '20261006-icons99e' : module === 'story-data/characters.js' ? '20261005-face95b' : module === 'story-data/portrait-metrics.js' ? '20261005-outline94b' : ['story-data/episode5.js', 'story-data/episode6.js', 'story-data/episode7.js', 'story-data/episode9.js', 'story-data/episode10.js'].includes(module) ? '20261005-story-poses92b' : '20261004-story-poses90b';
+            const version = ['story-adv.js', 'story-data/characters.js', 'story-data/registry.js', 'story-data/icon-metrics.js', 'story-data/character-intros.js', 'story-data/portrait-metrics.js'].includes(module) ? '20261007-osananajimi105a' : ['story-data/registry.js', 'story-data/episode7.js'].includes(module) ? '20261006-summer100b' : module === 'story-adv.js' ? '20261006-icons99e' : ['story-mode.js', 'story-data/characters.js', 'story-data/registry.js', 'story-data/icon-metrics.js', 'story-data/character-intros.js'].includes(module) ? '20261006-icons99e' : module === 'story-data/characters.js' ? '20261005-face95b' : module === 'story-data/portrait-metrics.js' ? '20261005-outline94b' : ['story-data/episode5.js', 'story-data/episode6.js', 'story-data/episode7.js', 'story-data/episode9.js', 'story-data/episode10.js'].includes(module) ? '20261005-story-poses92b' : '20261004-story-poses90b';
             const position = source.indexOf(module + '?v=' + version); assert.ok(position > last, file + ': ' + module); last = position;
         }
-        assert.ok(source.includes('story-adv.css?v=20261006-icons99e'));
+        assert.ok(source.includes('story-adv.css?v=20261007-osananajimi105a'));
     }
     assert.doesNotMatch(read('story-adv.js'), /\bfetch\s*\(/);
     assert.match(read('story-adv.css'), /\.adv-portraits \{ position: absolute; inset: 0; z-index: 1/);
@@ -2011,7 +2040,7 @@ const STORY_NAMES = { '千鶴': 'chizuru', '栞那': 'kanna', '舞依': 'mai', '
 const NEW_EPISODES = [
     [5, 'mai', 'chizuru', 94, 'いい匂いのする方へ', 'もう少し、ここにいたい', '文化祭に来た舞依と拓海。いい匂いに誘われて入った教室で、舞依は千鶴と出会う。'],
     [6, 'mai', 'kanna', 166, 'もう少し、ここにいたい', 'うるさい二人が来た', 'カレーを食べながら、舞依は栞那に千鶴のことを聞いてみる。もう少しだけ、ここにいたくて――。'],
-    [7, 'chizuru', 'akatsuki', 185, 'うるさい二人が来た', 'なんか気になる', '廊下から聞こえてくる、うるさい二人の声。注文を聞きに行った千鶴は、さっそくいじられて……。'],
+    [7, 'chizuru', 'akatsuki', 191, 'うるさい二人が来た', 'なんか気になる', '廊下から聞こえてくる、うるさい二人の声。注文を聞きに行った千鶴は、さっそくいじられて……。'],
     [8, 'akatsuki', 'kanna', 144, 'なんか気になる', '六人でやれば', '食事を終えても、なぜか席を立たない暁。千鶴をいじる理由は「おもろいから」――本当にそれだけ？'],
     [9, 'chizuru', 'mai', 178, '六人でやれば', 'また会おう', '昼を過ぎて大忙しの教室。人手が足りなくなった千鶴を、六人みんなで支えることに――。'],
     [10, 'akatsuki', 'chizuru', 156, 'また会おう', null, '文化祭もいよいよおしまい。片付けの合間に、千鶴は暁にもう一度勝負を申し込む。']
@@ -2085,7 +2114,13 @@ for (const [number, player, cpu, speechCount, title, nextTitle, summary] of NEW_
             const source = applyStoryFixes(read(file), number);
             const actual = clone(spoken.map(({ speaker, text, direction, position }) =>
                 speaker === 'narration' ? { speaker, text, direction } : { speaker, text, direction, position }));
-            assert.deepEqual(actual, scenarioSpeech(source, player));
+            const expected = scenarioSpeech(source, player);
+            if (number === 7) {
+                const start = expected.findIndex(line => line.text === 'なんやこれ？');
+                const end = expected.findIndex((line, index) => index >= start && line.text === 'お前が決めんな');
+                expected.splice(start, end - start + 1, ...summerReplacementSpeech());
+            }
+            assert.deepEqual(actual, expected);
             if (number >= 8) {
                 const body = source.split(/^# 第\d+話 CLEAR/m)[0]
                     .replace(/^# (BATTLE START|FINAL BATTLE)[^]*?^# BATTLE CLEAR/m, '$1\n# BATTLE CLEAR');
@@ -2151,7 +2186,7 @@ test('portrait expressions are exactly the approved registrations, including kit
         for (const expression of Object.keys(character.portraits)) {
             assert.equal(character.poses.default[expression], `assets/battle-images/story/portraits/${id}-${expression}.webp`);
         }
-        assert.equal(a.portraitPath(id, 'unlisted'), character.portraits.normal);
+        assert.equal(a.portraitPath(id, 'unlisted'), character.portraits.normal || character.standing);
     }
     assert.equal(a.backgrounds['festival-kitchen'], 'assets/battle-images/story/backgrounds/festival-kitchen.webp');
 });
@@ -2397,8 +2432,8 @@ for (const mobile of [false, true]) {
             assert.ok(['makanaiSupply', 'aceProcurement'].includes(c.GameState.players.cpu.selectedSkillKey));
             assert.equal(c.GameState.settings.cpuPersonality, 'default'); assert.equal(c.shouldAutosaveCurrentMatch(), false);
             for (const [side, id] of [['player', player], ['cpu', cpu]]) {
-                assert.ok(c.getSkillCutinImagePathForSide(side).endsWith(`/story/icons/${id}-smile-alpha.webp?v=20261006-icons99c`));
-                assert.ok(c.getBattleModeCutinImagePathForSide(side).endsWith(`/story/icons/${id}-laugh-alpha.webp?v=20261006-icons99c`));
+                assert.ok(c.getSkillCutinImagePathForSide(side).endsWith(`/story/icons/${id}-smile-alpha.webp?v=20261007-osananajimi105a`));
+                assert.ok(c.getBattleModeCutinImagePathForSide(side).endsWith(`/story/icons/${id}-laugh-alpha.webp?v=20261007-osananajimi105a`));
             }
             load(mobile ? 'mobile/render-sp.js' : 'render.js');
             const playerIcon = new Element(), cpuIcon = new Element(); playerIcon.className = 'char-chizuru'; cpuIcon.className = 'char-mai';
@@ -2981,7 +3016,7 @@ test('ADV WebAudio can freeze/resume cues and fast-forward shortens both notes w
 
 test('review table permits exactly the documented punctuation and presentation additions across all ten episodes', async t => {
     const { c } = runtime(), review = storyReview();
-    const episodes = [...c.__legacyTest.EPISODES.map((e, i) => ({ number: i + 1, scenes: ['pre', 'postWin', 'postLose'].filter(k => e[k]).map(k => ({ id: k, lines: e[k] })) })), ...c.BattleStoryData.all()];
+    const episodes = [...c.__legacyTest.EPISODES.map((e, i) => ({ number: i + 1, scenes: ['pre', 'postWin', 'postLose'].filter(k => e[k]).map(k => ({ id: k, lines: e[k] })) })), ...c.BattleStoryData.all().map(historicalEpisode)];
     let changes = 0, effects = 0, spoken = 0; const used = { motions: new Set(), marks: new Set(), screens: new Set(), cues: new Set() };
     for (const ep of episodes) for (const scene of ep.scenes) scene.lines.forEach((line, index) => {
         const key = ep.number + '/' + scene.id + ':' + (index + 1), edit = review.changes.get(key), fx = review.effects.get(key);
@@ -3032,7 +3067,7 @@ test('the entire original episode data stays unchanged after reversing only the 
     // This shipped-data fingerprint remains enforceable when authoring docs are absent.
     const shipped = [
         ...c.__legacyTest.EPISODES.map((e, i) => ({ number: i + 1, scenes: ['pre', 'postWin', 'postLose'].filter(k => e[k]).map(k => ({ id: k, lines: clone(e[k]) })) })),
-        ...c.BattleStoryData.all().map(clone)
+        ...c.BattleStoryData.all().map(historicalEpisode)
     ];
     for (const ep of shipped) delete ep.portraitStyle; // Owner's 99a presentation change; scenario fingerprint stays intact.
     for (const ep of shipped) for (const s of ep.scenes) for (const line of s.lines) delete line.pose;
@@ -3041,7 +3076,7 @@ test('the entire original episode data stays unchanged after reversing only the 
     if (!optionalSource(t, root, [REVIEW_FILE])) return;
     const original = [
         ...c.__legacyTest.EPISODES.map((e, i) => ({ number: i + 1, scenes: ['pre', 'postWin', 'postLose'].filter(k => e[k]).map(k => ({ id: k, lines: reviewedLines(i + 1, k, e[k]) })) })),
-        ...c.BattleStoryData.all().map(e => ({ ...clone(e), scenes: e.scenes.map(s => ({ ...clone(s), lines: reviewedLines(e.number, s.id, s.lines) })) }))
+        ...c.BattleStoryData.all().map(historicalEpisode).map(e => ({ ...clone(e), scenes: e.scenes.map(s => ({ ...clone(s), lines: reviewedLines(e.number, s.id, s.lines) })) }))
     ];
     for (const ep of original) delete ep.portraitStyle;
     assert.equal(crypto.createHash('sha256').update(JSON.stringify(original)).digest('hex'), '056654abad608b7475a9cb75f09bdbab21dd5bddf639754b0b0ce4906471350e');
@@ -3294,3 +3329,607 @@ test('viewer storage membrane blocks set/remove/clear and property writes while 
         normal.c.localStorage.setItem('normal', 'works'); assert.equal(normal.store.get('normal'), 'works');
     }
 });
+
+// 100b special episodes are explicitly loaded here so historical ten-episode contracts stay independently enforceable.
+const SUMMER_FILE = 'story-data/episode-special-summer.js';
+const HALLOWEEN_FILE = 'story-data/episode-special-halloween.js';
+test('101b Halloween: owner speech/directions/narration stay verbatim; five scenes, battle and rewards use 101a assets', async t => {
+    const r = halloweenRuntime(), {c} = r, ep = c.BattleStoryData.get('special-halloween');
+    const lines = ep.scenes.flatMap(s=>s.lines);
+    await t.test('owner source comparison', t => {
+    if (!optionalSource(t, root, ['docs/story/special-halloween-scenario.md'])) return;
+    const expected = [], directions = [], narration = [];
+    let monologue = false;
+    const source = read('docs/story/special-halloween-scenario.md').split('## SCENE 1')[1].split('## 特別編 CLEAR')[0];
+    for (const raw of source.split(/\r?\n/)) {
+        const line = raw.trim(), speech = line.match(/^(【[^】]+】)?(栞那|千鶴)「(.*)」$/);
+        if (line === '栞那モノローグ：') monologue = true;
+        if (speech) {
+            expected.push({speaker: speech[2] === '栞那' ? 'kanna' : 'chizuru', text: speech[3]});
+            if (speech[1]) directions.push(speech[1]);
+        } else if (monologue && /^「.*」$/.test(line)) expected.push({speaker: 'kanna', text: line.slice(1,-1)});
+        if (/^（.*）$/.test(line) && !/少し間/.test(line)) narration.push(line.slice(1,-1));
+    }
+    assert.deepEqual(clone(lines.filter(l=>!['narration','announce'].includes(l.speaker) && !l.authoredBy).map(({speaker,text})=>({speaker,text}))), expected);
+    assert.deepEqual(clone(lines.filter(l=>l.direction?.startsWith('【')).map(l=>l.direction)), directions);
+    assert.deepEqual(clone(lines.filter(l=>l.speaker==='narration' && l.text).map(l=>l.text)), narration);
+    });
+    assert.equal(lines.filter(l=>l.monologue && l.offscreen).length, 5);
+    assert.equal(new Set(lines.map(l=>l.id)).size, lines.length);
+    assert.equal(lines.filter(l=>l.battle).length, 1);
+    assert.deepEqual(clone(ep.scenes.filter(s=>/^scene/.test(s.id)).map(s=>s.background)), ['halloween-cooking-room','halloween-cooking-room','halloween-cooking-room','halloween-cooking-room','halloween-hallway-evening']);
+    assert.ok(ep.scenes.every(s=>s.bgm==='seasonal-halloween')); assert.equal(ep.bgm,'seasonal-halloween');
+    assert.equal(ep.battle.background,'halloween-cooking-room');
+    assert.deepEqual(clone(ep.clear.rewards), {unlockCharacter:'kanna',costumes:['kanna:halloween','chizuru:halloween']});
+    assert.equal(lines.find(l=>l.direction==='SE：カシャ').se,'pop');
+    assert.equal(lines.find(l=>l.direction==='画面暗転').effect,'fadeOut');
+    for (const line of lines.filter(l=>l.direction?.startsWith('【'))) {
+        if (/笑いをこらえる|薄い笑顔|満足そう|意地悪|笑顔|嬉しそう|目を輝かせる|期待|得意げ|表情が変わる/.test(line.direction)) assert.equal(line.expression,'smile');
+        if (/笑う/.test(line.direction)) assert.equal(line.expression,'laugh');
+        if (/疑う|不満|嫌そう|渋々|警戒|恥ずかしそう|折れる/.test(line.direction)) assert.equal(line.expression,'troubled');
+        if (/固まる|驚く|一瞬止まる|意外そう/.test(line.direction)) assert.equal(line.expression,'surprised');
+        if (/じっと見る|少し考える/.test(line.direction)) assert.equal(line.expression,'normal');
+    }
+    assert.deepEqual(clone(ep.scenes.find(s=>s.id==='lose').lines.map(l=>[l.speaker,l.text])), [['chizuru','勝った'],['chizuru','プリン、もらうね'],['kanna','……もう一回'],['chizuru','栞那、負けず嫌い']]);
+    assert.ok(ep.scenes.find(s=>s.id==='lose').lines.every(l=>l.provisional && l.authoredBy==='Claude'));
+    assert.deepEqual(r.warnings, []);
+});
+for (const mobile of [false,true]) {
+    const label = mobile ? 'phone' : 'PC';
+    test(`101b ${label}: each festival clear is required; selection is summer then Halloween; locked starts/resumes do not write`, async () => {
+        for (const missing of Object.keys(festivalProgress)) {
+            const progress = {...festivalProgress}; delete progress[missing];
+            const r=halloweenRuntime({mobile,save:{[PROGRESS_KEY]:JSON.stringify(progress)}});
+            const list=new r.Element(); r.c.StoryAdv.appendEpisodeCards(list);
+            assert.deepEqual(list.children.filter(n=>n.className==='story-episode-card').slice(-2).map(n=>n.children[0].textContent), ['特別編「夏だ！海だ！ポロリだー！」','特別編「Trick or Treat？」']);
+            assert.equal(list.children.at(-1).children.at(-1).disabled,true);
+            await r.c.StoryAdv.start('special-halloween'); await r.c.StoryAdv.start('special-halloween',true);
+            assert.equal(r.c.__advTest.S.active,false); assert.deepEqual(r.persistentWrites,[]);
+        }
+    });
+    test(`101b ${label}: every ADV line uses Halloween faces, no intro, seasonal BGM on all scenes and resumed positions`, async () => {
+        const r=halloweenRuntime({mobile,intros:true}), {c,elements,tick}=r;
+        await c.StoryAdv.start('special-halloween'); const ep=c.__advTest.S.episode,S=c.__advTest.S;
+        for (const scene of ep.scenes) {
+            c.__advTest.enterScene(scene.id,scene.id==='lose'?'lose':scene.id==='win'||['scene4','scene5'].includes(scene.id)?'post':'pre');
+            assert.deepEqual(c.lastStoryBgm,{character:'kanna',bgm:'seasonal-halloween'});
+            for (const [index,line] of scene.lines.entries()) {
+                if(!line.text) continue;
+                S.lineIndex=index; await c.__advTest.renderCurrent(); await tick(0);
+                assert.equal(elements.get('adv-character-intro').hidden,true);
+                if(line.speaker==='narration'||line.monologue) assert.equal(elements.get('adv-face-icon').hidden,true);
+                else assert.ok(elements.get('adv-icon-crop').children[0].src.includes(`${line.speaker}-halloween-${line.expression}-alpha.webp`));
+            }
+        }
+        for (const position of [{sceneId:'scene2',stage:'pre',lineIndex:6},{sceneId:'scene5',stage:'post',lineIndex:2},{sceneId:'lose',stage:'lose',lineIndex:1},{sceneId:'scene3',stage:'battle',lineIndex:0}]) {
+            const resumed=halloweenRuntime({mobile,save:{[ADV_KEY]:JSON.stringify({resume:{episodeId:'special-halloween',...position}})}});
+            await resumed.c.StoryAdv.start('special-halloween',true);
+            assert.deepEqual(resumed.c.lastStoryBgm,{character:'kanna',bgm:'seasonal-halloween'});
+        }
+        assert.ok(c.__advTest.episodeImages(ep).filter(f=>f.includes('/story/icons/')).every(f=>f.includes('-halloween-')));
+    });
+    for (const winner of ['player','cpu']) test(`101b ${label}: real 栞那 vs 千鶴 battle, background/faces, ${winner}, retry/continue, CLEAR unlock and reload`, async () => {
+        const r=halloweenRuntime({mobile,main:true}),{c,elements,tick,Element}=r; r.load('profile.js');
+        assert.equal(c.isPlayableCharacterUnlocked('kanna'),false);
+        await c.StoryAdv.start('special-halloween'); await viewerSkip(r); c.choice.onStart('foodTrap');
+        assert.deepEqual(clone(c.GameState.characterIds),{player:'kanna',cpu:'chizuru'});
+        assert.equal(c.GameState.players.player.selectedSkillKey,'foodTrap'); assert.equal(c.GameState.achievementStory,true);
+        r.load(mobile?'mobile/render-sp.js':'render.js'); c.updateUI=()=>{};
+        const playerIcon=new Element(),cpuIcon=new Element(),board=new Element();elements.set('game-container',board);
+        c.document.querySelector=selector=>selector==='.player-icon'?playerIcon:selector==='.cpu-icon'?cpuIcon:null;
+        c.applyBackgroundDesign('default'); assert.ok(board.style['--bg-design-image'].includes('halloween-cooking-room.webp'));
+        for(const [side,id,icon] of [['player','kanna',playerIcon],['cpu','chizuru',cpuIcon]]) {
+            c.applyCharacterSkins(); c.updateCharacterFaces();
+            assert.match(icon.children[0].getAttribute('src'), /-halloween-normal-alpha.webp/);
+            assert.ok(c.getSkillCutinImagePathForSide(side).includes(`${id}-halloween-smile-`));
+            assert.ok(c.getBattleModeCutinImagePathForSide(side).includes(`${id}-halloween-laugh-`));
+        }
+        c.endGame(winner); assert.equal(c.StoryAdv.finishBattleReturn(),true);await tick(0);
+        assert.deepEqual(c.lastStoryBgm,{character:'kanna',bgm:'seasonal-halloween'});
+        if(winner==='cpu') {
+            await viewerSkip(r); assert.deepEqual(elements.get('adv-ending').children.map(b=>b.textContent),['もう一度挑戦','勝ったことにして進める','ストーリー選択へ戻る']);
+            elements.get('adv-ending').children[0].onclick();await tick(0);c.choice.onStart('foodTrap');c.endGame('cpu');c.StoryAdv.finishBattleReturn();await tick(0);
+            await viewerSkip(r);elements.get('adv-ending').children[1].onclick();await tick(0);assert.equal(c.__advTest.S.continuedAsWin,true);
+        }
+        await viewerSkip(r);assert.equal(c.__advTest.S.stage,'clear');
+        assert.equal(c.isPlayableCharacterUnlocked('kanna'),true);assert.equal(c.BattleStoryProgress.load()['special-halloween'],true);
+        assert.deepEqual(elements.get('adv-ending').children.slice(0,4).map(n=>n.textContent), ['特別編 CLEAR','Trick or Treat？','NEW CHARACTER 栞那 — プレイアブルキャラクターとして栞那が使用可能になりました','COSTUME COLLECTION 栞那『ハロウィン・ウィッチ』／千鶴『ハロウィン・ブラックキャット』']);
+        c.applyBackgroundDesign('default');assert.equal(board.style['--bg-design-image'],'none');
+        for(const id of ['kanna','chizuru']) assert.equal(c.selectCharacterCostume(id,'halloween'),true);
+        c.updateUserBasicSettings({favoriteCharacterId:'kanna'});
+        const again=halloweenRuntime({mobile,main:true,save:Object.fromEntries(r.store)});again.load('profile.js');
+        assert.equal(again.c.getPreferredStartCharacterId(),'kanna');assert.equal(again.c.getSelectedCharacterCostume('kanna'),'halloween');
+        again.c.setCharacterChoice('kanna');again.c.beginMatchByRole('先攻');assert.equal(again.c.GameState.characterIds.player,'kanna');
+        assert.equal(again.c.GameState.storyEpisodeId,null);assert.match(again.c.getSkillCutinImagePathForSide('player'),/kanna-halloween-smile/);
+    });
+    for(const route of ['win','lose','skip']) test(`101b ${label}: viewer ${route} lists both specials and reads Halloween with no unlock/storage/battle`,async()=>{
+        const r=halloweenRuntime({mobile,viewer:true,main:true}),{c,elements}=r;r.load('profile.js');const before=[...r.store];
+        const cards=elements.get('story-episode-list').children.filter(n=>n.className==='story-episode-card');assert.equal(cards.length,12);
+        assert.deepEqual(cards.slice(-2).map(n=>n.children[0].textContent),['特別編「夏だ！海だ！ポロリだー！」','特別編「Trick or Treat？」']);
+        await c.StoryAdv.start('special-halloween');await viewerSkip(r);
+        elements.get('adv-ending').children[['win','lose','skip'].indexOf(route)].onclick();await r.tick(0);
+        if(route==='lose'){await viewerSkip(r);elements.get('adv-ending').children[0].onclick();await r.tick(0);}
+        await viewerSkip(r);assert.equal(c.__advTest.S.stage,'clear');assert.equal(c.isPlayableCharacterUnlocked('kanna'),false);
+        assert.equal(c.selectCharacterCostume('chizuru','halloween'),false);assertViewerUnchanged(r,before);
+    });
+}
+test('101b entry pages register Halloween after summer with protected audio loader and current keys',()=>{
+    for(const [file,prefix,audio] of [['web.html','','audio.js'],['mobile/mobile.html','../','audio-sp.js']]){
+        const html=read(file), index=html.indexOf(prefix+HALLOWEEN_FILE+'?v=20261007-osananajimi105a');
+        assert.ok(index>html.indexOf(prefix+SUMMER_FILE+'?v='));assert.ok(index<html.indexOf(prefix+'story-adv.js?v='));
+        for(const script of ['audio-pack.js',audio,'profile.js','story-data/characters.js','story-adv.js','battle-images.js']) assert.ok(html.includes(script+'?v='+(script==='battle-images.js'?'20261007-osananajimi105a':script==='audio-pack.js'?'20261006-halloween101b':'20261007-osananajimi105a')));
+    }
+});
+test('101b generic episode BGM falls back to episode key, permits a scene override and respects false',async()=>{
+    const r=halloweenRuntime(),{c}=r;
+    c.BattleStoryData.register({id:'future-seasonal',protagonist:'kanna',bgm:'seasonal-halloween',scenes:[
+        {id:'first',lines:[{speaker:'kanna',text:'季節曲'}]},
+        {id:'theme',bgm:'story',lines:[{speaker:'kanna',text:'テーマ曲'}]},
+        {id:'silent',bgm:false,lines:[{speaker:'kanna',text:'切替なし'}]}
+    ]});
+    await c.StoryAdv.start('future-seasonal');assert.deepEqual(c.lastStoryBgm,{character:'kanna',bgm:'seasonal-halloween'});
+    c.__advTest.enterScene('theme','pre');assert.deepEqual(c.lastStoryBgm,{character:'kanna',bgm:'story'});
+    const count=r.calls.length;c.__advTest.enterScene('silent','pre');assert.equal(r.calls.length,count);
+});
+const festivalProgress = Object.fromEntries(Array.from({ length: 7 }, (_, i) => ['episode' + (i + 4), true]));
+function summerRuntime(options = {}) {
+    const r = runtime({ ...options, save: { [PROGRESS_KEY]: JSON.stringify(festivalProgress), ...options.save } });
+    r.load(SUMMER_FILE);
+    if (options.viewer) {
+        r.c.document.body.innerHTML = read(options.mobile ? 'mobile/mobile.html' : 'web.html');
+        r.c.__legacyTest.init(); r.elements.get('character-notice-confirm').listeners.click();
+    }
+    return r;
+}
+function halloweenRuntime(options = {}) {
+    const r = runtime({ ...options, save: { [PROGRESS_KEY]: JSON.stringify(festivalProgress), ...options.save } });
+    r.load(SUMMER_FILE); r.load(HALLOWEEN_FILE);
+    r.c.playStoryBGM = (character, bgm) => { r.c.lastStoryBgm = {character, bgm}; r.calls.push(['story-bgm', character, bgm]); };
+    if (options.viewer) {
+        r.c.document.body.innerHTML = read(options.mobile ? 'mobile/mobile.html' : 'web.html');
+        r.c.__legacyTest.init(); r.elements.get('character-notice-confirm').listeners.click();
+    }
+    return r;
+}
+test('100b special summer: owner dialogue and parenthetical narration verbatim, unique hooks, expressions, backgrounds and rewards', async t => {
+    const { c, warnings } = summerRuntime(), ep = c.BattleStoryData.get('special-summer');
+    const lines = ep.scenes.flatMap(s => s.lines), owner = lines.filter(l => l.speaker !== 'narration' && l.text && !l.authoredBy);
+    await t.test('owner source comparison', t => {
+    if (!optionalSource(t, root, ['docs/story/special-summer-scenario.md'])) return;
+    const source = read('docs/story/special-summer-scenario.md').split('## 特別編 CLEAR')[0].split('## SCENE 1')[1];
+    const names = { 剛: 'tsuyoshi', 暁: 'akatsuki' }, expected = [], directions = [], narration = [];
+    let monologue = false;
+    for (const raw of source.split(/\r?\n/)) {
+        const line = raw.trim();
+        if (line === '剛モノローグ：') monologue = true;
+        const speech = line.match(/^(【[^】]+】)?(剛|暁)「(.*)」$/);
+        if (speech) { expected.push({ speaker: names[speech[2]], text: speech[3].replace(/。$/, '') }); if (speech[1]) directions.push(speech[1]); }
+        else if (monologue && /^「.*」$/.test(line)) expected.push({ speaker: 'tsuyoshi', text: line.slice(1, -1).replace(/。$/, '') });
+        if (/^（.*）$/.test(line) && !/簡易チュートリアル|間/.test(line)) narration.push(line.slice(1, -1).replace(/。$/, ''));
+    }
+    assert.deepEqual(clone(owner.map(({ speaker, text }) => ({ speaker, text }))), expected);
+    assert.deepEqual(clone(lines.filter(l => l.direction?.startsWith('【')).map(l => l.direction)), directions);
+    assert.deepEqual(clone(lines.filter(l => l.speaker === 'narration' && l.text).map(l => l.text)), narration);
+    });
+    assert.equal(owner.filter(l => l.monologue).length, 11); assert.ok(owner.filter(l => l.monologue).every(l => l.offscreen));
+    assert.equal(new Set(lines.map(l => l.id)).size, lines.length);
+    assert.equal(lines.filter(l => l.battle).length, 1); assert.equal(ep.battle.after, 'battle-start');
+    assert.deepEqual(clone(ep.battle), { after: 'battle-start', player: 'tsuyoshi', cpu: 'akatsuki', playerSkill: 'choose', cpuSkill: 'random', cpuPersonality: 'default' });
+    assert.deepEqual(clone(ep.clear.rewards), { unlockCharacter: 'tsuyoshi', costumes: ['tsuyoshi:summer', 'akatsuki:summer'] });
+    assert.equal(ep.arc, 'special'); assert.equal(c.BattleStoryData.arcs.special, '特別編'); assert.doesNotMatch(ep.summary, /財布/);
+    for (const s of ep.scenes) assert.ok(fs.existsSync(path.join(root, c.BattleStoryAssets.backgrounds[s.background])));
+    assert.deepEqual(clone(ep.scenes.filter(s => /^scene/.test(s.id)).map(s => s.background)), ['summer-station-morning', 'summer-beach-day', 'summer-beach-day', 'summer-beach-sheet', 'summer-beach-sheet', 'summer-beach-house-evening', 'summer-station-gate-evening']);
+    for (const line of owner) {
+        if (/真剣|真顔/.test(line.direction)) assert.equal(line.expression, 'normal');
+        if (/驚く|目を丸く/.test(line.direction)) assert.equal(line.expression, 'surprised');
+        if (/困惑|少し引く|青ざめる|泣きそう|少しムッと/.test(line.direction)) assert.equal(line.expression, 'troubled');
+        if (/大喜び|テンションMAX/.test(line.direction)) assert.equal(line.expression, 'laugh');
+        if (/得意げ/.test(line.direction)) assert.equal(line.expression, 'smile');
+        if (/少し感動/.test(line.direction)) assert.equal(line.expression, 'gentle');
+    }
+    assert.equal(lines.find(l => l.direction === 'SE：ころん').se, 'pop');
+    assert.equal(lines.filter(l => l.direction === '画面暗転' && l.effect === 'fadeOut').length, 2);
+    assert.equal(lines.at(-5).effect, 'fadeOut');
+    assert.deepEqual(clone(lines.filter(l => l.authoredBy === 'Codex').map(l => l.text)), [
+        'まずは手札の材料をセットするんや。料理に要る材料をそろえてな',
+        'そろった材料で料理を作ったら、その料理の点数が入るで',
+        'イベントも使える。自分を助けたり、相手の邪魔したりするカードや',
+        'ターンの終わりには、残った手札を上限まで減らして調整するんや',
+        '先に目標の１０点を取った方が勝ち。ほな、やって覚えよか'
+    ]);
+    assert.deepEqual(clone(ep.scenes.find(s => s.id === 'lose').lines.map(l => l.text)), ['俺の勝ちやな', '今のは練習や！もう一回！', '荷物持つ話はどうなってん', '次勝ったらチャラや！']);
+    assert.equal(warnings.length, 0);
+});
+test('100b episode7: replacement order, preceding staging and subsequent battle hook preserved', async t => {
+    const { c } = summerRuntime(), ep = c.BattleStoryData.get('episode7');
+    const scene = ep.scenes.find(s => s.id === 'scene3');
+    await t.test('owner replacement source comparison', t => {
+        if (!optionalSource(t, root, ['docs/story/episode7-fix-summer.md'])) return;
+        assert.deepEqual(clone(scene.lines.slice(2).map(({ speaker, text, direction, position }) => ({ speaker, text, direction, position }))), summerReplacementSpeech());
+    });
+    assert.deepEqual(clone(scene.lines.slice(0, 2)), JSON.parse(read('tests/fixtures/episode7-scene3-before-summer.json')).slice(0, 2));
+    assert.deepEqual(clone(ep.battle), { after: 'battle-start', player: 'chizuru', cpu: 'akatsuki', playerSkill: 'choose', cpuSkill: 'random', cpuPersonality: 'default' });
+    assert.equal(ep.scenes.find(s => s.id === 'scene4').lines.at(-1).id, 'battle-start');
+    assert.equal(ep.scenes.find(s => s.id === 'win').lines.at(-1).text, 'ルール知らんやつが何言うてんねん');
+});
+for (const mobile of [false, true]) {
+    const label = mobile ? 'phone' : 'PC';
+    test(`100b ${label}: special gating requires every festival episode; locked direct starts have no writes`, async () => {
+        for (const missing of [null, ...Object.keys(festivalProgress)]) {
+            const progress = { ...festivalProgress }; if (missing) delete progress[missing];
+            const r = summerRuntime({ mobile, save: { [PROGRESS_KEY]: JSON.stringify(progress) } }), { c } = r;
+            const list = new r.Element(); c.StoryAdv.appendEpisodeCards(list);
+            assert.deepEqual(list.children.filter(n => n.className === 'story-arc-heading').map(n => n.textContent), ['出会い・文化祭編', '特別編']);
+            const card = list.children.at(-1); assert.equal(card.children.at(-1).disabled, !!missing);
+            assert.equal(card.children[0].textContent, '特別編「夏だ！海だ！ポロリだー！」');
+            await c.StoryAdv.start('special-summer');
+            assert.equal(c.__advTest.S.active, !missing);
+            if (missing) assert.deepEqual(r.persistentWrites, []);
+            else assert.equal(c.lastStoryThemeCharacter, 'tsuyoshi');
+        }
+        const r = summerRuntime({ mobile, save: { [PROGRESS_KEY]: '{"episode10":true}' } });
+        await r.c.StoryAdv.start('special-summer'); assert.equal(r.c.__advTest.S.active, false);
+    });
+    test(`100b ${label}: all special dialogue uses summer cells without an intro; normal episodes and per-line overrides retain normal`, async () => {
+        const r = summerRuntime({ mobile, intros: true }), { c, elements, tick } = r;
+        await c.StoryAdv.start('special-summer');
+        const ep = c.BattleStoryData.get('special-summer'), S = c.__advTest.S;
+        for (const scene of ep.scenes) for (const [index, line] of scene.lines.entries()) {
+            if (!line.text) continue;
+            Object.assign(S, { sceneId: scene.id, lineIndex: index, stage: scene.id === 'lose' ? 'lose' : 'post' });
+            await c.__advTest.renderCurrent(); await tick(0);
+            assert.equal(elements.get('adv-character-intro').hidden, true);
+            if (line.speaker === 'narration' || line.monologue) assert.equal(elements.get('adv-face-icon').hidden, true);
+            else assert.ok(elements.get('adv-icon-crop').children[0].src.includes(`${line.speaker}-summer-${line.expression}-alpha.webp?v=20261007-osananajimi105a`));
+        }
+        const files = c.__advTest.episodeImages(ep);
+        assert.ok(files.filter(f => f.includes('/story/icons/')).every(f => f.includes('-summer-')));
+        for (const id of ['tsuyoshi', 'akatsuki']) {
+            assert.ok(c.BattleStoryAssets.iconPath(id, 'normal').endsWith(`${id}-normal-alpha.webp`));
+            assert.ok(c.BattleStoryAssets.iconPath(id, 'smile', 'summer').endsWith(`${id}-summer-smile-alpha.webp`));
+        }
+        await c.StoryAdv.start('episode7'); c.__advTest.enterScene('scene3', 'pre');
+        Object.assign(S, { lineIndex: 2 }); await c.__advTest.renderCurrent();
+        assert.ok(elements.get('adv-icon-crop').children[0].src.includes('tsuyoshi-normal-alpha.webp'));
+        c.BattleStoryData.register({ id: 'costume-override', costumes: { akatsuki: 'summer' }, scenes: [{ id: 's', lines: [{ speaker: 'akatsuki', costume: 'normal', text: '通常衣装' }] }] });
+        await c.StoryAdv.start('costume-override');
+        assert.ok(elements.get('adv-icon-crop').children[0].src.includes('akatsuki-normal-alpha.webp'));
+        assert.ok(c.__advTest.episodeImages(c.BattleStoryData.get('costume-override')).includes('assets/battle-images/story/icons/akatsuki-normal-alpha.webp'));
+    });
+    for (const winner of ['player', 'cpu']) test(`100b ${label}: actual 剛 vs 暁 battle, summer HUD / skill / mode, ${winner} outcome, retry and rewards`, async () => {
+        const r = summerRuntime({ mobile, main: true }), { c, elements, tick, Element } = r;
+        await c.StoryAdv.start('special-summer'); await viewerSkip(r);
+        assert.equal(c.choice.episode.id, 'special-summer'); c.choice.onStart('foodTrap');
+        assert.deepEqual(clone(c.GameState.characterIds), { player: 'tsuyoshi', cpu: 'akatsuki' });
+        assert.equal(c.GameState.players.player.selectedSkillKey, 'foodTrap'); assert.equal(c.GameState.achievementStory, true);
+        r.load(mobile ? 'mobile/render-sp.js' : 'render.js');
+        const playerIcon = new Element(), cpuIcon = new Element();
+        c.document.querySelector = selector => selector === '.player-icon' ? playerIcon : selector === '.cpu-icon' ? cpuIcon : null;
+        c.applyCharacterSkins(); c.updateCharacterFaces();
+        for (const [side, id, icon] of [['player', 'tsuyoshi', playerIcon], ['cpu', 'akatsuki', cpuIcon]]) {
+            assert.ok(c.getSkillCutinImagePathForSide(side).includes(`${id}-summer-smile-alpha.webp`));
+            assert.ok(c.getBattleModeCutinImagePathForSide(side).includes(`${id}-summer-laugh-alpha.webp`));
+            assert.ok(icon.children[0].getAttribute('src').includes(`${id}-summer-normal-alpha.webp`));
+        }
+        c.endGame(winner); assert.equal(c.__advTest.S.pending.stage, winner === 'player' ? 'post' : 'lose');
+        assert.equal(c.StoryAdv.finishBattleReturn(), true); await tick(0);
+        if (winner === 'cpu') {
+            await viewerSkip(r);
+            assert.deepEqual(elements.get('adv-ending').children.map(b => b.textContent), ['もう一度挑戦', '勝ったことにして進める', 'ストーリー選択へ戻る']);
+            elements.get('adv-ending').children[0].onclick(); await tick(0);
+            assert.equal(c.__advTest.S.stage, 'battle'); c.choice.onStart('foodTrap'); c.endGame('cpu'); c.StoryAdv.finishBattleReturn(); await tick(0);
+            await viewerSkip(r); elements.get('adv-ending').children[1].onclick(); await tick(0);
+            assert.equal(c.__advTest.S.continuedAsWin, true);
+        }
+        await viewerSkip(r);
+        assert.equal(c.__advTest.S.stage, 'clear');
+        assert.equal(c.BattleStoryProgress.load()['special-summer'], true);
+        assert.equal(c.GameState.storyEpisodeId, null);
+        assert.ok(!c.BattleImages.expressionPath('akatsuki', 'normal').includes('-summer-'));
+        assert.deepEqual(elements.get('adv-ending').children.slice(0, 4).map(n => n.textContent), [
+            '特別編 CLEAR', '夏だ！海だ！ポロリだー！',
+            'NEW CHARACTER 剛 — プレイアブルキャラクターとして剛が使用可能になりました',
+            'COSTUME COLLECTION 剛『サマービーチ』／暁『サマービーチ』'
+        ]);
+    });
+    for (const route of ['win', 'lose', 'skip']) test(`100b ${label}: viewer special ${route} route reads all outcomes and rewards with zero storage writes`, async () => {
+        const r = summerRuntime({ mobile, viewer: true }), { c, elements } = r, before = [...r.store];
+        const list = elements.get('story-episode-list');
+        assert.deepEqual(list.children.filter(n => n.className === 'story-arc-heading').map(n => n.textContent), ['再会編', '出会い・文化祭編', '特別編']);
+        assert.equal(list.children.filter(n => n.className === 'story-episode-card').length, 11);
+        await c.StoryAdv.start('special-summer'); await viewerSkip(r);
+        assert.deepEqual(elements.get('adv-ending').children.map(b => b.textContent), viewerChoices);
+        elements.get('adv-ending').children[['win', 'lose', 'skip'].indexOf(route)].onclick(); await r.tick(0);
+        if (route === 'lose') { await viewerSkip(r); elements.get('adv-ending').children[0].onclick(); await r.tick(0); }
+        await viewerSkip(r); assert.equal(c.__advTest.S.stage, 'clear');
+        assert.equal(elements.get('adv-ending').children[0].textContent, '特別編 CLEAR');
+        assertViewerUnchanged(r, before);
+    });
+}
+test('100b entry pages load special after episode10 and bump changed script keys only', () => {
+    for (const [page, prefix, main] of [['web.html', '', 'main.js'], ['mobile/mobile.html', '../', 'main-sp.js']]) {
+        const html = read(page), special = html.indexOf(prefix + SUMMER_FILE + '?v=20261007-osananajimi105a');
+        assert.ok(special > html.indexOf('story-data/episode10.js?v=')); assert.ok(special < html.indexOf('story-adv.js?v='));
+        for (const script of ['story-data/characters.js', 'story-data/registry.js', 'story-data/episode7.js', 'story-viewer.js', 'story-adv.js', 'battle-images.js']) assert.ok(html.includes(prefix + script + '?v=' + (script === 'battle-images.js' ? '20261007-osananajimi105a' : ['story-data/characters.js', 'story-adv.js', 'story-data/registry.js'].includes(script) ? '20261007-osananajimi105a' : script === 'story-data/episode7.js' ? '20261006-summer100b' : '20261007-osananajimi105a')));
+        assert.ok(html.includes(main + '?v=20261007-osananajimi105a'));
+    }
+    const manifest = JSON.parse(read('assets/audio-pack/manifest.json'));
+    assert.ok(manifest.tracks['theme-tsuyoshi']);
+    assert.ok(fs.existsSync(path.join(root, 'assets/audio-pack', manifest.tracks['theme-tsuyoshi'].file)));
+});
+
+for (const mobile of [false, true]) for (const viewer of [false, true]) test(`100c ${mobile ? 'phone' : 'PC'} ${viewer ? 'viewer' : 'normal'}: real special CLEAR unlocks 剛/wardrobe only in normal save`, async () => {
+    const r = summerRuntime({mobile, viewer, main: true}), {c, load} = r;
+    load('profile.js');
+    assert.equal(c.isPlayableCharacterUnlocked('tsuyoshi'), false);
+    assert.equal(c.getCharacterCostumeOptions('akatsuki').length, 1);
+    const before = [...r.store];
+    await c.StoryAdv.start('special-summer');
+    c.__advTest.enterScene('win', 'post'); c.__advTest.clearEpisode();
+    assert.equal(c.__advTest.S.stage, 'clear');
+    assert.equal(c.isPlayableCharacterUnlocked('tsuyoshi'), !viewer);
+    assert.equal(c.getCharacterCostumeOptions('tsuyoshi').length, viewer ? 1 : 2);
+    if (viewer) { assert.equal(c.selectCharacterCostume('tsuyoshi', 'summer'), false); assertViewerUnchanged(r, before); }
+    else {
+        assert.equal(c.BattleStoryProgress.load()['special-summer'], true);
+        assert.equal(c.selectCharacterCostume('tsuyoshi', 'summer'), true);
+        c.updateUserBasicSettings({favoriteCharacterId: 'tsuyoshi'});
+        const again = summerRuntime({mobile, main: true, save: Object.fromEntries(r.store)}); again.load('profile.js');
+        assert.equal(again.c.getPreferredStartCharacterId(), 'tsuyoshi');
+        assert.equal(again.c.getSelectedCharacterCostume('tsuyoshi'), 'summer');
+        again.c.setCharacterChoice('tsuyoshi'); again.c.beginMatchByRole('先攻');
+        assert.equal(again.c.GameState.characterIds.player, 'tsuyoshi');
+        assert.equal(again.c.GameState.storyEpisodeId, null);
+        for (const side of ['player', 'cpu']) {
+            const participant = again.c.GameState.players[side];
+            assert.equal(again.c.getCurrentTotalHandCount(participant), again.c.getTargetTotalHandSize(participant));
+        }
+        assert.match(again.c.getSkillCutinImagePathForSide('player'), /tsuyoshi-summer-smile/);
+        assert.doesNotMatch(again.c.getSkillCutinImagePathForSide('cpu'), /-summer-/);
+    }
+});
+
+const KYUDO_FILE = 'story-data/episode-special-kyudo.js';
+function kyudoRuntime(options = {}) {
+    const r = runtime({...options, save:{[PROGRESS_KEY]:JSON.stringify(festivalProgress),...options.save}});
+    for (const f of [SUMMER_FILE,HALLOWEEN_FILE,KYUDO_FILE]) r.load(f);
+    r.c.playStoryBGM = (character,bgm) => { r.c.lastStoryBgm={character,bgm}; };
+    if (options.viewer) {
+        r.c.document.body.innerHTML=read(options.mobile?'mobile/mobile.html':'web.html');
+        r.c.__legacyTest.init(); r.elements.get('character-notice-confirm').listeners.click();
+    }
+    return r;
+}
+test('102b owner speech, monologue, two provisional addresses and staging stay verbatim; kyudo assets, hit and blackout exist', async t => {
+    const r=kyudoRuntime(),{c,warnings}=r,ep=c.BattleStoryData.get('special-kyudo'),lines=ep.scenes.flatMap(s=>s.lines);
+    await t.test('owner source comparison', t => {
+        if(!optionalSource(t,root,['docs/story/special-kyudo-scenario.md']))return;
+        const expected=[],directions=[];let monologue=false;
+        for(const raw of read('docs/story/special-kyudo-scenario.md').split('## SCENE 1')[1].split('## 特別編 CLEAR')[0].split(/\r?\n/)) {
+            const line=raw.trim(),speech=line.match(/^(（[^）]+）)?(【[^】]+】)?(結月|拓海|舞依)「(.*?)」/);
+            if(line==='結月モノローグ：')monologue=true;
+            if(speech){monologue=false;expected.push({speaker:{結月:'yuzuki',拓海:'takumi',舞依:'mai'}[speech[3]],text:speech[4].replace('結月先輩','結月さん')});if(speech[2])directions.push(speech[2]);}
+            else if(monologue&&/^「.*」$/.test(line))expected.push({speaker:'yuzuki',text:line.slice(1,-1)});
+        }
+        assert.deepEqual(clone(lines.filter(l=>l.speaker!=='narration'&&!l.authoredBy).map(({speaker,text})=>({speaker,text}))),expected);
+        assert.deepEqual(clone(lines.filter(l=>l.direction?.startsWith('【')).map(l=>l.direction)),directions);
+    });
+    assert.equal(ep.title,'恋の的はひとつ？');assert.deepEqual(clone(ep.costumes),{yuzuki:'kyudo',takumi:'kyudo',mai:'kyudo'});
+    assert.equal(lines.filter(l=>l.addressProvisional&&l.text.includes('結月さん')).length,2);
+    assert.equal(lines.filter(l=>l.monologue&&l.speaker==='yuzuki').length,7);
+    assert.equal(lines.find(l=>l.text==='やっぱりはっきりしない！').offscreen,true);
+    assert.equal(lines.filter(l=>l.se==='thud').length,2);assert.ok(lines.some(l=>l.effect==='fadeOut'&&l.hide==='all'));
+    for(const id of ['yuzuki','takumi','mai'])for(const cell of Object.keys(c.BattleStoryAssets.characters[id].icons)){
+        const file=c.BattleStoryAssets.iconPath(id,cell,'kyudo');assert.ok(file.includes('-kyudo-'));assert.ok(fs.existsSync(path.join(root,file)));
+    }
+    assert.deepEqual(warnings,[]);
+    const regular=c.BattleStoryData.register({id:'yuzuki-icon-contract',scenes:[{id:'default',lines:[{speaker:'yuzuki',expression:'smile',text:'icon contract'}]}]});
+    assert.equal(regular.scenes[0].lines[0].expression,'smile');assert.deepEqual(warnings,[]);
+});
+for(const mobile of [false,true]) {
+    const label=mobile?'phone':'PC';
+    test(`102b ${label}: normal unlock requires every festival clear; direct start/resume remain locked, specials order is preserved`,async()=>{
+        for(const missing of Array.from({length:7},(_,i)=>'episode'+(i+4))) {
+            const progress={...festivalProgress};delete progress[missing];const r=kyudoRuntime({mobile,save:{[PROGRESS_KEY]:JSON.stringify(progress)}});
+            const list=new r.Element();r.c.StoryAdv.appendEpisodeCards(list);
+            assert.deepEqual(list.children.filter(n=>n.className==='story-episode-card').slice(-3).map(n=>n.children[0].textContent),['特別編「夏だ！海だ！ポロリだー！」','特別編「Trick or Treat？」','特別編「恋の的はひとつ？」']);
+            assert.equal(list.children.at(-1).children.at(-1).disabled,true);
+            await r.c.StoryAdv.start('special-kyudo');await r.c.StoryAdv.start('special-kyudo',true);assert.equal(r.c.__advTest.S.active,false);assert.deepEqual(r.persistentWrites,[]);
+        }
+    });
+    for(const viewer of [false,true])test(`102b ${label} ${viewer?'viewer':'normal'}: first on-screen 結月 gets one name-only introduction with exact SHORT, including replay`,async()=>{
+        const r=kyudoRuntime({mobile,viewer,intros:true}),{c,elements,tick}=r,t=c.__advTest;
+        for(let replay=0;replay<2;replay++){
+            const pending=c.StoryAdv.start('special-kyudo');await tick(0);
+            const intro=elements.get('adv-character-intro');assert.equal(intro.hidden,false);assert.equal(intro.dataset.actor,'yuzuki');
+            assert.equal(intro.querySelector('.adv-intro-copy').querySelector('.adv-intro-name').textContent,'結月');assert.equal(intro.querySelector('.adv-intro-notice').textContent,c.CharacterNotice.shortText);
+            assert.ok(intro.querySelector('.adv-intro-art').src.includes('yuzuki-kyudo-standing-alpha.webp?v=20261007-osananajimi105a'));
+            t.closeIntro();await tick(100);await pending;
+            t.stageLine(t.S.episode.scenes[0].lines[0],'scene1',0);assert.equal(t.S.entrances.length,0);
+            for(const scene of t.S.episode.scenes)for(const [index,line]of scene.lines.entries()) {t.stageLine(line,scene.id,index);assert.equal(t.S.entrances.length,0);}
+            c.StoryAdv.stop();
+        }
+    });
+    for(const skip of [false,true])test(`102b ${label}: explicit ${skip?'skip':'read'} rule explanation reaches scene6; resume reconstructs the chosen log route`,async()=>{
+        const r=kyudoRuntime({mobile}),{c,elements,tick}=r,t=c.__advTest;await c.StoryAdv.start('special-kyudo');
+        t.S.sceneId='scene5';t.S.lineIndex=t.S.episode.scenes.find(s=>s.id==='scene5').lines.length-1;await t.renderCurrent();
+        assert.deepEqual(elements.get('adv-ending').children.map(n=>n.textContent),['ルール説明を読む','ルール説明をとばす']);
+        elements.get('adv-ending').children[skip?1:0].onclick();await tick(0);
+        assert.equal(elements.get('adv-ending').hidden,true);assert.equal(t.S.sceneId,skip?'scene6':'rule-explanation');
+        if(!skip){for(let i=0;i<5;i++){t.advance();await tick(0);}assert.equal(t.S.sceneId,'scene6');}
+        const again=kyudoRuntime({mobile,save:Object.fromEntries(r.store)});await again.c.StoryAdv.start('special-kyudo',true);
+        const explanation=t.S.episode.scenes.find(s=>s.id==='rule-explanation').lines;
+        assert.deepEqual(clone(explanation.map(l=>l.text)),[
+            'まずは手札の材料をセットして、料理に必要な材料をそろえてください',
+            '材料がそろったら料理を作れます。完成した料理の点数が入ります',
+            'イベントは自分を助けたり、相手の邪魔をしたりするカードです。使いどころを考えてください',
+            'ターンの終わりには、残った手札を上限まで減らして調整します',
+            '先に目標の１０点を取った方が勝ちです。では、実際にやってみましょう'
+        ]);assert.ok(explanation.every(l=>l.speaker==='mai'));
+        assert.equal(again.c.__advTest.S.backlog.some(l=>l.text===explanation[0].text),!skip);
+    });
+    for(const winner of ['player','cpu'])test(`102b ${label}: actual 結月 vs 舞依 CPU initialization, costume faces/cutins, ${winner}, retry and win bypass, CLEAR unlock/save`,async()=>{
+        const r=kyudoRuntime({mobile,main:true}),{c,elements,tick,Element}=r;r.load('profile.js');
+        assert.equal(c.isPlayableCharacterUnlocked('yuzuki'),false);await c.StoryAdv.start('special-kyudo');await viewerSkip(r);c.choice.onStart('foodTrap');
+        assert.deepEqual(clone(c.GameState.characterIds),{player:'yuzuki',cpu:'mai'});assert.equal(c.GameState.players.player.selectedSkillKey,'foodTrap');
+        r.load(mobile?'mobile/render-sp.js':'render.js');c.updateUI=()=>{};
+        const p=new Element(),cpu=new Element(),board=new Element();elements.set('game-container',board);
+        c.document.querySelector=s=>s==='.player-icon'?p:s==='.cpu-icon'?cpu:null;c.applyBackgroundDesign('default');assert.match(board.style['--bg-design-image'],/kyudo-rest-area/);
+        c.applyCharacterSkins();c.updateCharacterFaces();
+        for(const [side,id,icon]of [['player','yuzuki',p],['cpu','mai',cpu]]){assert.match(icon.children[0].getAttribute('src'),new RegExp(id+'-kyudo-normal-alpha'));assert.match(c.getSkillCutinImagePathForSide(side),new RegExp(id+'-kyudo-smile'));assert.match(c.getBattleModeCutinImagePathForSide(side),new RegExp(id+'-kyudo-laugh'));}
+        c.endGame(winner);assert.equal(c.StoryAdv.finishBattleReturn(),true);await tick(0);assert.deepEqual(c.lastStoryBgm,{character:'yuzuki',bgm:'story'});
+        if(winner==='cpu'){
+            await viewerSkip(r);assert.deepEqual(elements.get('adv-ending').children.map(n=>n.textContent),['もう一度挑戦','勝ったことにして進める','ストーリー選択へ戻る']);
+            elements.get('adv-ending').children[0].onclick();await tick(0);c.choice.onStart('foodTrap');c.endGame('cpu');c.StoryAdv.finishBattleReturn();await tick(0);await viewerSkip(r);elements.get('adv-ending').children[1].onclick();await tick(0);assert.equal(c.__advTest.S.continuedAsWin,true);
+        }
+        await viewerSkip(r);assert.equal(c.__advTest.S.stage,'clear');assert.equal(c.isPlayableCharacterUnlocked('yuzuki'),true);
+        assert.deepEqual(elements.get('adv-ending').children.slice(0,5).map(n=>n.textContent),['特別編 CLEAR','恋の的はひとつ？','NEW CHARACTER 結月 — プレイアブルキャラクターとして結月が使用可能になりました','STORY CHARACTER — 結月がキャラクター一覧に追加されました','COSTUME COLLECTION 結月・拓海・舞依『弓道着』']);
+        for(const id of ['yuzuki','takumi','mai'])assert.equal(c.selectCharacterCostume(id,'kyudo'),true);
+        c.updateUserBasicSettings({favoriteCharacterId:'yuzuki'});const again=kyudoRuntime({mobile,main:true,save:Object.fromEntries(r.store)});again.load('profile.js');
+        assert.equal(again.c.getPreferredStartCharacterId(),'yuzuki');assert.equal(again.c.getSelectedCharacterCostume('yuzuki'),'kyudo');
+        again.c.setCharacterChoice('yuzuki');again.c.beginMatchByRole('先攻');assert.equal(again.c.GameState.characterIds.player,'yuzuki');assert.equal(again.c.GameState.storyEpisodeId,null);
+        assert.match(again.c.getSkillCutinImagePathForSide('player'),/yuzuki-kyudo-smile/);assert.doesNotMatch(again.c.getSkillCutinImagePathForSide('cpu'),/-kyudo-/);
+    });
+    for(const route of ['win','lose','skip'])test(`102b ${label}: viewer ${route} includes three specials; reads kyudo without unlock, storage or a battle`,async()=>{
+        const r=kyudoRuntime({mobile,viewer:true,main:true}),{c,elements}=r;r.load('profile.js');const before=[...r.store];
+        const cards=elements.get('story-episode-list').children.filter(n=>n.className==='story-episode-card');assert.equal(cards.length,13);assert.equal(cards.at(-1).children[0].textContent,'特別編「恋の的はひとつ？」');
+        await c.StoryAdv.start('special-kyudo');await viewerSkip(r);elements.get('adv-ending').children[['win','lose','skip'].indexOf(route)].onclick();await r.tick(0);
+        if(route==='lose'){await viewerSkip(r);elements.get('adv-ending').children[0].onclick();await r.tick(0);}
+        await viewerSkip(r);assert.equal(c.__advTest.S.stage,'clear');assert.equal(c.isPlayableCharacterUnlocked('yuzuki'),false);assert.equal(c.selectCharacterCostume('mai','kyudo'),false);assertViewerUnchanged(r,before);
+    });
+}
+test('102b both pages load kyudo after summer/Halloween; changed modules use the requested cache key',()=>{
+    for(const [file,prefix]of [['web.html',''],['mobile/mobile.html','../']]){
+        const html=read(file),index=html.indexOf(prefix+KYUDO_FILE+'?v=20261007-text105b');assert.ok(index>html.indexOf(prefix+HALLOWEEN_FILE+'?v='));assert.ok(index<html.indexOf(prefix+'story-adv.js?v='));
+        for(const script of ['character-themes.js','story-data/characters.js','story-data/character-intros.js','story-data/icon-metrics.js','story-data/portrait-metrics.js','profile.js','story-adv.js'])assert.ok(html.includes(script+'?v=20261007-osananajimi105a'));
+    }
+});
+
+
+const OSANANA_FILES = [1,2].map(n => `story-data/episode-special-osananajimi-${n}.js`);
+const osananaProgress = {...festivalProgress,episode1:true,episode2:true,episode3:true,'special-summer':true,'special-halloween':true,'special-kyudo':true};
+function osananaRuntime(options={}) {
+    const r=runtime({...options,save:{[PROGRESS_KEY]:JSON.stringify(osananaProgress),...options.save}});
+    for(const f of [SUMMER_FILE,HALLOWEEN_FILE,KYUDO_FILE,...OSANANA_FILES])r.load(f);
+    r.c.playStoryBGM=(character,bgm)=>{r.c.lastStoryBgm={character,bgm};};
+    if(options.viewer){r.c.document.body.innerHTML=read(options.mobile?'mobile/mobile.html':'web.html');r.c.__legacyTest.init();r.elements.get('character-notice-confirm').listeners.click();}
+    return r;
+}
+test('105a owner dialogue, directions, narration and monologue remain VERBATIM; no front battle and exact routes/rewards',async t=>{
+    const r=osananaRuntime(),{c,warnings}=r;
+    await t.test('owner original plus agreed continuity comparison',t=>{
+        if(!optionalSource(t,root,['docs/story/special-osananajimi-scenario.md']))return;
+        const source=read('docs/story/special-osananajimi-scenario.md'),names={千鶴:'chizuru',栞那:'kanna',舞依:'mai',拓海:'takumi',暁:'akatsuki',剛:'tsuyoshi',龍太:'ryuta',結月:'yuzuki'};
+        for(const part of [1,2]){
+            const ep=c.BattleStoryData.get('special-osananajimi-'+part),lines=ep.scenes.flatMap(s=>s.lines),body=source.split(part===1?'# 前編「':'# 後編「')[1].split(part===1?'\n---':'## 特別編 CLEAR')[0];
+            const speech=[],directions=[],narration=[];let monologue=false;
+            for(const raw of body.split(/\r?\n/)){
+                const line=raw.trim(),m=line.match(/^(【[^】]+】)?(千鶴|栞那|舞依|拓海|暁|剛|龍太|結月)「(.*?)」$/);
+                if(line==='龍太モノローグ：')monologue=true;
+                if(m){monologue=false;speech.push({speaker:names[m[2]],text:m[3]});if(m[1])directions.push(m[1]);}
+                else if(monologue&&/^「.*」$/.test(line))speech.push({speaker:'ryuta',text:line.slice(1,-1)});
+                if(/^（.*）$/.test(line)&&!line.startsWith('（簡易チュートリアル：')&&!/少し間/.test(line))narration.push(line.slice(1,-1));
+            }
+            assert.deepEqual(clone(lines.filter(l=>l.speaker!=='narration'&&!l.authoredBy).map(({speaker,text})=>({speaker,text}))),speech);
+            assert.deepEqual(clone(lines.filter(l=>l.direction?.startsWith('【')).map(l=>l.direction)),directions);
+            for(const text of narration)assert.ok(lines.some(l=>l.speaker==='narration'&&l.text===text),text);
+        }
+    });
+    const front=c.BattleStoryData.get('special-osananajimi-1'),back=c.BattleStoryData.get('special-osananajimi-2');
+    assert.equal(front.conversationOnly,true);assert.equal(front.battle,undefined);assert.ok(front.scenes.every(s=>s.lines.every(l=>!l.battle)));assert.equal(front.clear.rewards,undefined);
+    assert.deepEqual(clone(front.scenes.map(s=>s.background)),['big-park-evening','big-park-evening','big-park-evening','big-park-bench-evening','big-park-evening','big-park-evening','big-park-evening','big-park-evening']);
+    const ending=front.scenes.at(-1).lines;assert.equal(ending.at(-2).effect,'fadeOut');assert.equal(ending.at(-1).text,'TO BE CONTINUED');assert.equal(ending.at(-1).card,true);
+    const impact=ending.find(l=>l.text==='ドンッ！！');assert.equal(impact.se,'impact');assert.equal(impact.screen,'screenShake');
+    assert.deepEqual(clone(back.battle),{after:'battle-start',background:'big-park-bench-evening',player:'ryuta',cpu:'akatsuki',playerSkill:'choose',cpuSkill:'random',cpuPersonality:'default'});
+    assert.equal(back.scenes.find(s=>s.id==='win').lines[0].caption,'WINNER 龍太');
+    assert.deepEqual(clone(back.scenes.find(s=>s.id==='lose').lines.map(l=>l.text)),['得意分野や言うたやろ','……もう一回だ','何回でもええで','龍太、熱くなってるやん！']);
+    assert.equal(back.scenes.flatMap(s=>s.lines).filter(l=>l.monologue&&l.speaker==='ryuta').length,12);
+    assert.deepEqual(clone(back.clear.rewards),{unlockCharacter:'ryuta'});assert.equal(back.clear.storyClear,'STORY CLEAR 幼馴染編『気に食わねぇ奴』『負けられない男』');assert.deepEqual(warnings,[]);
+});
+for(const mobile of [false,true]){
+    const label=mobile?'phone':'PC';
+    test(`105a ${label}: front needs all 13 clears; back only needs front, direct start/resume and labels stay gated`,async()=>{
+        for(const missing of Object.keys(osananaProgress)){
+            const progress={...osananaProgress};delete progress[missing];const r=osananaRuntime({mobile,save:{[PROGRESS_KEY]:JSON.stringify(progress)}});
+            await r.c.StoryAdv.start('special-osananajimi-1');await r.c.StoryAdv.start('special-osananajimi-1',true);assert.equal(r.c.__advTest.S.active,false);assert.deepEqual(r.persistentWrites,[]);
+            assert.equal(r.c.BattleStoryData.isUnlocked(r.c.BattleStoryData.get('special-osananajimi-1'),progress),false,missing);
+        }
+        const r=osananaRuntime({mobile});await r.c.StoryAdv.start('special-osananajimi-2');assert.equal(r.c.__advTest.S.active,false);
+        const list=new r.Element();r.c.StoryAdv.appendEpisodeCards(list);assert.deepEqual(list.children.filter(n=>n.className==='story-episode-card').slice(-5).map(n=>n.children.find(x=>x.className==='story-special-label').textContent),['夏休み編','ハロウィン編','弓道編','幼馴染編 前編','幼馴染編 後編']);
+        assert.equal(r.c.BattleStoryData.isUnlocked(r.c.BattleStoryData.get('special-osananajimi-2'),{'special-osananajimi-1':true}),true);
+    });
+    for(const viewer of [false,true])test(`105a ${label} ${viewer?'viewer':'normal'}: front reads all lines, black card then front CLEAR, resume and no battle/reward`,async()=>{
+        const r=osananaRuntime({mobile,viewer}),{c,elements,tick,calls}=r,t=c.__advTest;r.load('profile.js');const before=[...r.store];
+        await c.StoryAdv.start('special-osananajimi-1');assert.equal(t.S.stage,'post');
+        let sawCard=false;
+        for(let i=0;i<300&&t.S.stage!=='clear';i++){
+            if(t.S.text==='TO BE CONTINUED'&&!t.S.busy){sawCard=true;assert.equal(elements.get('adv-effect').className,'adv-effect story-card');assert.equal(elements.get('adv-effect').children[0].textContent,'TO BE CONTINUED');
+                if(!viewer){const again=osananaRuntime({mobile,save:Object.fromEntries(r.store)});await again.c.StoryAdv.start('special-osananajimi-1',true);assert.equal(again.c.__advTest.S.text,'TO BE CONTINUED');assert.equal(again.c.__advTest.S.sceneId,'scene8');}
+            }
+            t.advance();await tick(1800);
+        }
+        assert.equal(sawCard,true);assert.equal(t.S.stage,'clear');assert.deepEqual(elements.get('adv-ending').children.map(n=>n.textContent),['前編 CLEAR『気に食わねぇ奴』',viewer?'ビューア一覧へ戻る':'ストーリー選択へ戻る']);
+        assert.equal(c.isPlayableCharacterUnlocked('ryuta'),false);assert.equal(calls.includes('skill-choice'),false);assert.equal(calls.includes('init-normal'),false);
+        if(viewer)assertViewerUnchanged(r,before);else{assert.equal(c.BattleStoryProgress.load()['special-osananajimi-1'],true);assert.equal(c.BattleStoryData.isUnlocked(c.BattleStoryData.get('special-osananajimi-2'),c.BattleStoryProgress.load()),true);}
+    });
+    test(`105a ${label}: front skip ends through blackout and TO BE CONTINUED before clear`,async()=>{
+        const r=osananaRuntime({mobile}),t=r.c.__advTest;await r.c.StoryAdv.start('special-osananajimi-1');await viewerSkip(r);assert.equal(t.S.text,'TO BE CONTINUED');assert.equal(t.S.stage,'post');t.advance();await r.tick(0);assert.equal(t.S.stage,'clear');assert.equal(r.calls.includes('skill-choice'),false);
+    });
+    test(`105a ${label}: stale battle/lose/pre resume cannot send the conversation-only front into a battle`,async()=>{
+        for(const stage of ['pre','battle','lose']){
+            const save={[ADV_KEY]:JSON.stringify({version:1,auto:false,resume:{episodeId:'special-osananajimi-1',sceneId:'scene8',lineIndex:0,stage}})};
+            const r=osananaRuntime({mobile,save}),t=r.c.__advTest;
+            await r.c.StoryAdv.start('special-osananajimi-1',true);assert.equal(t.S.stage,'post');assert.equal(t.S.sceneId,'scene8');
+            await viewerSkip(r);assert.equal(t.S.text,'TO BE CONTINUED');t.advance();await r.tick(0);
+            assert.equal(t.S.stage,'clear');assert.equal(r.calls.includes('skill-choice'),false);assert.equal(r.calls.includes('init-normal'),false);
+        }
+    });
+    for(const viewer of [false,true])test(`105a ${label} ${viewer?'viewer':'normal'}: 龍太 introduction only on first 千鶴 line, name and SHORT, replay and no later introductions`,async()=>{
+        const r=osananaRuntime({mobile,viewer,intros:true}),{c,elements,tick}=r,t=c.__advTest;
+        for(let replay=0;replay<2;replay++){
+            await c.StoryAdv.start('special-osananajimi-1');t.S.lineIndex=22;const pending=t.renderCurrent();await tick(0);
+            const intro=elements.get('adv-character-intro');assert.equal(intro.hidden,false);assert.equal(intro.dataset.actor,'ryuta');assert.equal(intro.querySelector('.adv-intro-copy').querySelector('.adv-intro-name').textContent,'龍太');assert.equal(intro.querySelector('.adv-intro-notice').textContent,c.CharacterNotice.shortText);assert.match(intro.querySelector('.adv-intro-art').src,/ryuta-standing-alpha.webp\?v=20261007-osananajimi105a/);
+            assert.equal(intro.querySelector('.adv-intro-title'),null);t.closeIntro();await tick(100);await pending;assert.equal(t.S.text,'千鶴');
+            for(const ep of [t.S.episode,c.BattleStoryData.get('special-osananajimi-2')])for(const scene of ep.scenes)for(const [index,line]of scene.lines.entries()){t.stageLine(line,scene.id,index);assert.equal(t.S.entrances.length,0);}
+            c.StoryAdv.stop();
+        }
+    });
+    for(const skip of [false,true])test(`105a ${label}: casual 千鶴 and polite 舞依 explanation ${skip?'skip':'read'} keeps route after reload`,async()=>{
+        const r=osananaRuntime({mobile,save:{[PROGRESS_KEY]:JSON.stringify({'special-osananajimi-1':true})}}),{c,elements,tick}=r,t=c.__advTest;await c.StoryAdv.start('special-osananajimi-2');
+        t.S.sceneId='scene4';t.S.lineIndex=t.S.episode.scenes.find(s=>s.id==='scene4').lines.length-1;await t.renderCurrent();assert.deepEqual(elements.get('adv-ending').children.map(n=>n.textContent),['ルール説明を読む','ルール説明をとばす']);elements.get('adv-ending').children[skip?1:0].onclick();await tick(0);
+        if(!skip)for(let i=0;i<5;i++){t.advance();await tick(0);}
+        assert.equal(t.S.sceneId,'scene4-after');const explanation=t.S.episode.scenes.find(s=>s.id==='rule-explanation').lines;assert.deepEqual(clone(explanation.map(l=>l.speaker)),['chizuru','mai','chizuru','mai','chizuru']);
+        assert.deepEqual(clone(explanation.map(l=>l.text)),[
+            '手札の材料をセットして、料理に必要な材料をそろえるんだよ',
+            '材料がそろったら料理を作れます。完成した料理の点数が入ります',
+            'イベントは自分を助けたり、相手の邪魔をしたりできるよ。使うタイミングを考えてね',
+            'ターンの終わりには、残った手札を上限まで減らして調整してください',
+            '先に１０点を取った方が勝ち。じゃあ、やってみよう！'
+        ]);
+        const again=osananaRuntime({mobile,save:Object.fromEntries(r.store)});await again.c.StoryAdv.start('special-osananajimi-2',true);assert.equal(again.c.__advTest.S.backlog.some(l=>l.text===explanation[0].text),!skip);
+    });
+    for(const winner of ['player','cpu'])test(`105a ${label}: real 龍太 vs 暁 CPU, bench background, ${winner}, retry/bypass, WINNER and playable CLEAR`,async()=>{
+        const r=osananaRuntime({mobile,main:true,save:{[PROGRESS_KEY]:JSON.stringify({'special-osananajimi-1':true})}}),{c,elements,tick,Element}=r,t=c.__advTest;r.load('profile.js');await c.StoryAdv.start('special-osananajimi-2');await viewerSkip(r);c.choice.onStart('foodTrap');
+        assert.deepEqual(clone(c.GameState.characterIds),{player:'ryuta',cpu:'akatsuki'});assert.equal(c.GameState.players.player.selectedSkillKey,'foodTrap');r.load(mobile?'mobile/render-sp.js':'render.js');c.updateUI=()=>{};
+        const p=new Element(),cpu=new Element(),board=new Element();elements.set('game-container',board);c.document.querySelector=s=>s==='.player-icon'?p:s==='.cpu-icon'?cpu:null;c.applyBackgroundDesign('default');assert.match(board.style['--bg-design-image'],/big-park-bench-evening/);c.applyCharacterSkins();c.updateCharacterFaces();assert.match(p.children[0].getAttribute('src'),/ryuta-normal-alpha/);assert.match(c.getSkillCutinImagePathForSide('player'),/ryuta-smile-alpha/);assert.match(c.getBattleModeCutinImagePathForSide('player'),/ryuta-laugh-alpha/);
+        c.endGame(winner);assert.equal(c.StoryAdv.finishBattleReturn(),true);await tick(0);
+        if(winner==='cpu'){await viewerSkip(r);assert.deepEqual(elements.get('adv-ending').children.map(n=>n.textContent),['もう一度挑戦','勝ったことにして進める','ストーリー選択へ戻る']);elements.get('adv-ending').children[0].onclick();await tick(0);c.choice.onStart('foodTrap');c.endGame('cpu');c.StoryAdv.finishBattleReturn();await tick(0);await viewerSkip(r);elements.get('adv-ending').children[1].onclick();await tick(0);assert.equal(t.S.continuedAsWin,true);}
+        assert.equal(t.S.sceneId,'win');assert.equal(elements.get('adv-effect').children[1].textContent,'WINNER 龍太');t.advance();await tick(0);assert.equal(elements.get('adv-effect').className,'adv-effect');await viewerSkip(r);assert.equal(t.S.stage,'clear');assert.equal(c.isPlayableCharacterUnlocked('ryuta'),true);
+        assert.deepEqual(elements.get('adv-ending').children.slice(0,4).map(n=>n.textContent),['特別編 CLEAR','負けられない男','NEW CHARACTER 龍太 — プレイアブルキャラクターとして龍太が使用可能になりました','STORY CLEAR 幼馴染編『気に食わねぇ奴』『負けられない男』']);assert.equal(c.BattleStoryProgress.load()['special-osananajimi-2'],true);
+    });
+    for(const route of ['win','lose','skip'])test(`105a ${label}: viewer back ${route}, all 15 stories, no progress or character unlock`,async()=>{
+        const r=osananaRuntime({mobile,viewer:true,main:true}),{c,elements,tick}=r;r.load('profile.js');const before=[...r.store];const cards=elements.get('story-episode-list').children.filter(n=>n.className==='story-episode-card');assert.equal(cards.length,15);assert.equal(cards.at(-1).children[0].textContent,'特別編「負けられない男」');
+        await c.StoryAdv.start('special-osananajimi-2');await viewerSkip(r);elements.get('adv-ending').children[['win','lose','skip'].indexOf(route)].onclick();await tick(0);if(route==='lose'){await viewerSkip(r);elements.get('adv-ending').children[0].onclick();await tick(0);}await viewerSkip(r);assert.equal(c.__advTest.S.stage,'clear');assert.equal(c.isPlayableCharacterUnlocked('ryuta'),false);assert.equal(c.selectCharacterCostume('ryuta','default'),false);assertViewerUnchanged(r,before);
+    });
+}
+test('105a both pages register front/back after kyudo; all changed assets use the requested cache key',()=>{
+    for(const [page,prefix]of [['web.html',''],['mobile/mobile.html','../']]){const html=read(page);assert.ok(html.indexOf(OSANANA_FILES[0])>html.indexOf(KYUDO_FILE));assert.ok(html.indexOf(OSANANA_FILES[1])>html.indexOf(OSANANA_FILES[0]));assert.ok(html.indexOf(OSANANA_FILES[1])<html.indexOf(prefix+'story-adv.js'));
+        for(const script of [...OSANANA_FILES,'story-data/characters.js','story-data/icon-metrics.js','story-data/character-intros.js','story-data/portrait-metrics.js','character-themes.js','profile.js','story-adv.js','story-adv.css','story-viewer.js']){
+            const version=script===OSANANA_FILES[1]?'20261007-text105b':'20261007-osananajimi105a';
+            assert.ok(html.includes(script+'?v='+version),page+': '+script);
+        }
+    }
+    const metrics=JSON.parse(read('story-data/portrait-metrics.json'));for(const [i,id]of ['tsuyoshi','ryuta','takumi','akatsuki','kanna','chizuru','mai','yuzuki'].entries())assert.equal(metrics.characters[id].heightRank,i+1);
+    assert.match(read('character-themes.js'),/ryuta: 'bgm-sky-high-refrain', \/\/ 仮：龍太のイメージ曲は後で差し替え/);
+});
+

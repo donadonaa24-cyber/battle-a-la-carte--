@@ -289,7 +289,9 @@ function applyBackgroundDesign(designKey) {
 
     const catalog = getBackgroundDesignCatalogSafe();
     const target = getBackgroundDesignByKeySafe(designKey, catalog);
-    const imagePath = target && target.eventName ? getEventImagePath(target.eventName) : null;
+    const storyBackground = window.BattleStoryData?.get(GameState.storyEpisodeId)?.battle?.background;
+    const imagePath = window.BattleStoryAssets?.url(window.BattleStoryAssets.backgrounds[storyBackground])
+        || (target && target.eventName ? getEventImagePath(target.eventName) : null);
 
     if (imagePath) {
         container.style.setProperty('--bg-design-image', `url("${imagePath}")`);
@@ -1059,8 +1061,8 @@ function updateCharacterFaces() {
     cf = reacting('cpu', model.opponent, cf);
     p.classList.add(pf);
     c.classList.add(cf);
-    window.BattleImages?.applyExpression?.(p, model.me.characterId, pf.slice(5), 'assets/');
-    window.BattleImages?.applyExpression?.(c, model.opponent.characterId || 'mai', cf.slice(5), 'assets/');
+    window.BattleImages?.applyExpression?.(p, model.me.characterId, pf.slice(5), 'assets/', 'player');
+    window.BattleImages?.applyExpression?.(c, model.opponent.characterId || 'mai', cf.slice(5), 'assets/', 'cpu');
 }
 
 function applyCharacterSkins() {
@@ -1069,7 +1071,7 @@ function applyCharacterSkins() {
     if (!playerIcon || !cpuIcon) return;
 
     const model = getBattleViewModel();
-    const classes = ['char-chizuru', 'char-mai', 'char-takumi', 'char-akatsuki', 'char-kanna'];
+    const classes = ['char-chizuru', 'char-mai', 'char-takumi', 'char-akatsuki', 'char-kanna', 'char-tsuyoshi', 'char-yuzuki', 'char-ryuta'];
 
     playerIcon.classList.remove(...classes);
     cpuIcon.classList.remove(...classes);

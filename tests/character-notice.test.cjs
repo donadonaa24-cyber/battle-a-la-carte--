@@ -8,7 +8,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const KEY = 'battleAlaCarteCharacterNotice20261004';
 const SHORT = '本作のキャラクターは、フェニチルさんの創作作品『天涯比隣』のキャラクターデザインと名前をお借りした二次創作です。性格・関係性・ストーリー・設定はすべて本作独自のもので、原作とは関係ありません。';
 const LONG = [
-    'Battle à la carte に登場するキャラクター（千鶴・栞那・舞依・拓海・暁・剛）は、フェニチルさんが手がける創作作品『天涯比隣（てんがいひりん）』のキャラクターデザインと名前を、フェニチルさんの許可を得てお借りしています。',
+    'Battle à la carte に登場するキャラクター（千鶴・栞那・舞依・拓海・暁・剛・結月・龍太）は、フェニチルさんが手がける創作作品『天涯比隣（てんがいひりん）』のキャラクターデザインと名前を、フェニチルさんの許可を得てお借りしています。',
     '本作のストーリー、キャラクターの性格・口調・関係性・学校などの設定は、すべて Battle à la carte 独自の二次創作です。原作『天涯比隣』の内容や設定とは関係がなく、原作のキャラクター像を表すものではありません。',
     '『天涯比隣』は現在フェニチルさんの手元にある作品で、まだ公開されていません。',
     '本作についてのお問い合わせは、制作者（あにあに）までお願いします。'
@@ -142,9 +142,9 @@ for (const mobile of [false, true]) {
     test(`${label}: changed asset keys are bumped while 81a audio and 82a data keys are preserved`, () => {
         const html = read(file);
         for (const asset of ['story-adv.css', 'missions.js', mobile ? 'main-sp.js' : 'main.js', 'story-adv.js', 'story-mode.js']) {
-            assert.ok(html.includes(asset + '?v=' + (asset === 'story-adv.js' ? '20261006-icons99e' : asset.startsWith('story-') ? '20261006-icons99e' : asset.startsWith('main') ? '20261006-icons99c' : '20261004-story-viewer1')), asset);
+            assert.ok(html.includes(asset + '?v=' + (asset.startsWith('main') ? '20261007-osananajimi105a' : ['story-adv.js', 'story-adv.css'].includes(asset) ? '20261007-osananajimi105a' : asset.startsWith('story-') ? '20261006-icons99e' : asset.startsWith('main') ? '20261007-osananajimi105a' : '20261004-story-viewer1')), asset);
         }
-        assert.ok(html.includes('audio-pack.js?v=20261004-audio-pack1'));
+        assert.ok(html.includes('audio-pack.js?v=20261006-halloween101b'));
         assert.ok(html.includes('episode10.js?v=20261005-story-poses92b'));
     });
 }

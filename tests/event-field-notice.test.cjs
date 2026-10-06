@@ -248,7 +248,7 @@ test('PC/mobile notice helpers, hints, styles and current asset references stay 
     }
     const marker = '/* Event refusals and first-turn hints shared by PC/mobile. */';
     const css = read('style.css').split(marker)[1];
-    assert.equal(css, read('mobile/style-sp.css').split(marker)[1]);
+    assert.equal(css, read('mobile/style-sp.css').split(marker)[1].replaceAll('../assets/', 'assets/'));
     assert.match(css, /\.field-notice\s*\{[^}]*left: 50%;[^}]*top: 50%;[^}]*pointer-events: none;/);
     assert.match(css, /event-first-turn-locked\s*\{ opacity: \.65;/);
     for (const [file, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
@@ -256,7 +256,7 @@ test('PC/mobile notice helpers, hints, styles and current asset references stay 
         assert.match(html, /id="field-notice"[^>]*role="status"[^>]*aria-live="polite"/);
         assert.match(html, /id="event-first-turn-hint"[^>]*>1ターン目は使用不可</);
         for (const asset of [`style${suffix}.css`, `player${suffix}.js`, `render${suffix}.js`, 'network.js']) {
-            const version = asset.startsWith('style') ? '20261004-menu-back1' : asset.startsWith('player') ? '20261002-ach1' : asset.startsWith('render') ? '20261006-icons99c' : '20261004-selection-ui1';
+            const version = asset.startsWith('style') ? '20261007-osananajimi105a' : asset.startsWith('player') ? '20261002-ach1' : asset.startsWith('render') ? '20261007-osananajimi105a' : '20261007-osananajimi105a';
             assert.ok(html.includes(`${asset}?v=${version}`), asset);
         }
     }

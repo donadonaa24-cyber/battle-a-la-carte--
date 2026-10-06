@@ -444,3 +444,15 @@
     @keyframes adv-intro-fade-in { from { opacity: 0; } to { opacity: 1; } }
     @keyframes adv-intro-fade-out { to { opacity: 0; } }
 }
+
+/* 102b: 結月のオレンジ／ピンクの名前札。 */
+.adv-name[data-speaker="yuzuki"] { --tag-color: #c76250; --tag-ink: #fff5ed; }
+
+/* 105a: 幼馴染編カードと龍太の金／黒。 */
+.story-special-label { display: block; margin-bottom: 4px; color: #f0cd83; font-size: .78em; letter-spacing: .05em; }
+.adv-name[data-speaker="ryuta"] { --tag-color: #d3ac42; --tag-ink: #17130b; }
+.adv-story-card .adv-dialogue, .adv-story-card .adv-portraits { visibility: hidden; }
+.adv-effect.story-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; box-sizing: border-box; text-align: center; background: #000; color: #f4d384; }
+.story-card strong { font-size: clamp(26px, 5vw, 64px); letter-spacing: .07em; }
+.story-card p { font-size: clamp(24px, 4vw, 48px); margin: 0; }
+.story-card small { color: #d7dce5; font-size: 14px; }

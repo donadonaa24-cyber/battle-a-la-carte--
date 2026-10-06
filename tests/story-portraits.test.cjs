@@ -8,7 +8,7 @@ const viewports = [[1440, 900], [1366, 768], [390, 844], [360, 740], [844, 390]]
 const heightOrder = ['tsuyoshi', 'takumi', 'akatsuki', 'kanna', 'chizuru', 'mai'];
 
 test('owner heightRank runs from tallest 1 to shortest 6 and classmates share Chizuru height', () => {
-    for (const [index, id] of heightOrder.entries()) assert.equal(metrics.characters[id].heightRank, index + 1, id);
+    for (const [index, id] of heightOrder.entries()) assert.equal(metrics.characters[id].heightRank, index + 1 + (index > 0 ? 1 : 0), id);
     for (const id of ['classmate1', 'classmate2']) assert.equal(metrics.characters[id].heightRank, metrics.characters.chizuru.heightRank, id);
 });
 
@@ -60,7 +60,8 @@ test('re-measuring original portraits twice is byte-deterministic and current', 
 });
 
 for (const viewport of viewports) for (const arc of [false, true]) test(`${viewport.join('x')} ${arc ? 'six-portrait CLEAR' : 'ADV and viewer'}: same head size, visible hair/chin`, () => {
-    const ids = Object.keys(metrics.characters).filter(id => !arc || !id.startsWith('classmate'));
+    // Legacy full/bust geometry and the six-character festival CLEAR use their portrait masters.
+    const ids = Object.keys(metrics.characters).filter(id => assets.characters[id].portraits.normal && (!arc || !id.startsWith('classmate')));
     const frames = ids.map(id => [id, geometry(id, viewport, { arc })]);
     const sizes = frames.map(([, g]) => g.headHeight), target = sizes[0];
     assert.ok(Math.max(...sizes) / Math.min(...sizes) <= 1.03);
@@ -114,10 +115,10 @@ test('wrapped controls, longer dialogue, viewport changes and source replacement
 test('PC and mobile load metrics before characters with bumped cache keys, and the viewer uses the shared ADV', () => {
     for (const file of ['web.html', 'mobile/mobile.html']) {
         const html = fs.readFileSync(path.join(root, file), 'utf8');
-        const m = html.indexOf('portrait-metrics.js?v=20261005-outline94b'), c = html.indexOf('characters.js?v=20261006-icons99e');
+        const m = html.indexOf('portrait-metrics.js?v=20261007-osananajimi105a'), c = html.indexOf('characters.js?v=20261007-osananajimi105a');
         assert.ok(m >= 0 && m < c);
-        assert.ok(html.includes('story-adv.js?v=20261006-icons99e'));
-        assert.ok(html.includes('story-adv.css?v=20261006-icons99e'));
+        assert.ok(html.includes('story-adv.js?v=20261007-osananajimi105a'));
+        assert.ok(html.includes('story-adv.css?v=20261007-osananajimi105a'));
     }
     const adv = fs.readFileSync(path.join(root, 'story-adv.js'), 'utf8');
     assert.match(adv, /assets\.applyPortraitMetrics\(element, actor\.id, pose\)/);
@@ -200,7 +201,7 @@ for (const viewport of viewports) test(`98b ${viewport.join('x')} bust: large fr
     assert.equal(layout.z.parent, 'auto', 'portrait parent must not trap the speaker behind the dialogue');
     assert.ok(layout.z.speaker > layout.z.dialogue && layout.z.listener < layout.z.dialogue);
     let speakerHead, listenerHead;
-    for (const [id, character] of Object.entries(assets.characters)) for (const pose of Object.keys(character.poses)) {
+    for (const [id, character] of Object.entries(assets.characters).filter(([,c]) => c.portraits.normal)) for (const pose of Object.keys(character.poses)) {
         const speaker = bustGeometry(id, viewport, { pose });
         const listener = bustGeometry(id, viewport, { pose, side: 'right', dimmed: true });
         speakerHead ??= speaker.headHeight; listenerHead ??= listener.headHeight;
@@ -283,6 +284,6 @@ test('94b portrait cache keys cover all 160 replaced expressions and poses in PC
         }
         assert.equal(changed,160);
         for (const file of [...Object.values(a.backgrounds), ...Object.values(a.characters).map(c=>c.standing).filter(Boolean)])
-            assert.equal(a.url(file),new URL('../'+file,base).href + (file.includes('tsuyoshi-standing') ? '?v=20261006-icons99e' : ''),file);
+            assert.equal(a.url(file),new URL('../'+file,base).href + (/(?:tsuyoshi|yuzuki|ryuta)-standing|\/backgrounds\/(?:summer|halloween|kyudo)-|school-gate-evening-sakuraba|big-park-/.test(file) ? '?v=20261007-osananajimi105a' : ''),file);
     }
 });

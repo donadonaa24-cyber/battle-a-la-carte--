@@ -6,7 +6,8 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 function storyEpisodes() {
     const context = vm.createContext({ console, window: {}, document: { currentScript: null }, URL });
     for (const file of ['story-data/portrait-metrics.js', 'story-data/characters.js', 'story-data/registry.js',
-        ...[4,5,6,7,8,9,10].map(n => `story-data/episode${n}.js`)]) vm.runInContext(read(file), context, { filename: file });
+        ...[4,5,6,7,8,9,10].map(n => `story-data/episode${n}.js`),
+        ...['summer','halloween','kyudo','osananajimi-1','osananajimi-2'].map(id => `story-data/episode-special-${id}.js`)]) vm.runInContext(read(file), context, { filename: file });
     const source = read('story-mode.js').match(/const EPISODES = (\[[\s\S]*?\n    \]);/);
     if (!source) throw Error('Tutorial episode data not found');
     const tutorials = vm.runInContext(source[1], context).map(episode => ({
@@ -20,7 +21,9 @@ function storyEpisodes() {
 }
 function firstAppearances(episodes, ids) {
     const locations = {}, eligible = new Set(ids);
-    for (const episode of [...episodes].sort((a,b) => a.number-b.number)) {
+    const specials = ['special-summer', 'special-halloween', 'special-kyudo', 'special-osananajimi-1', 'special-osananajimi-2'];
+    const order = episode => episode.number ?? 11 + specials.indexOf(episode.id);
+    for (const episode of [...episodes].sort((a,b) => order(a)-order(b))) {
         for (const scene of episode.scenes) {
             const shown = new Set();
             scene.lines.forEach((line, index) => {
@@ -38,7 +41,7 @@ function firstAppearances(episodes, ids) {
                 if (speaking) shown.add(line.speaker);
                 if (line.speaker === 'announce') shown.clear();
                 for (const id of shown) if (eligible.has(id) && !locations[id]) {
-                    locations[id] = { episode: episode.number, scene: scene.id, line: index+1 };
+                    locations[id] = { episode: episode.number ?? episode.id, scene: scene.id, line: index+1 };
                 }
             });
         }
@@ -54,7 +57,7 @@ if (require.main === module) {
     const declared = declaredIntros(), computed = firstAppearances(storyEpisodes(), Object.keys(declared));
     if (process.argv.includes('--check')) {
         require('node:assert/strict').deepEqual(Object.fromEntries(Object.entries(declared).map(([id,data]) => [id,data.introAt])), computed);
-        console.log('6 story-wide intro locations checked');
+        console.log(Object.keys(declared).length + ' story-wide intro locations checked');
     } else console.log(JSON.stringify(computed, null, 2));
 }
 module.exports = { storyEpisodes, firstAppearances, declaredIntros };

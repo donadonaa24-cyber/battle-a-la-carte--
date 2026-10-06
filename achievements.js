@@ -44,6 +44,7 @@
     const date = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
     const unique = list => Array.from(new Set(Array.isArray(list) ? list : []));
     const characters = ['chizuru', 'mai', 'takumi', 'akatsuki'];
+    const usageCharacters = [...characters, 'tsuyoshi', 'kanna', 'yuzuki', 'ryuta'];
     const skills = ['lastOrder', 'kitchenInfiltration', 'makanaiSupply', 'foodTrap', 'aceProcurement', 'tasteThief'];
     const recipeNames = () => (root.recipes || []).map(r => r.name);
     let cached = null, syncPending = null, syncAgain = false, toastTimer = null;
@@ -68,13 +69,13 @@
             if (when) value.unlocked[d.id] = when;
         }
         for (const key of Object.keys(value.counters)) if (!['matchRecords', 'characterUses'].includes(key)) value.counters[key] = number(raw.counters?.[key]);
-        for (const id of characters) value.counters.characterUses[id] = number(raw.counters?.characterUses?.[id]);
+        for (const id of usageCharacters) value.counters.characterUses[id] = number(raw.counters?.characterUses?.[id]);
         for (const def of DEFINITIONS) if (!def.progress) value.counters[def.id] = number(raw.counters?.[def.id]);
         for (const [key, entry] of Object.entries(raw.counters?.matchRecords || {})) {
             if (!entry || typeof entry !== 'object' || key === '__proto__' || key === 'constructor') continue;
             value.counters.matchRecords[key] = { dishes: number(entry.dishes), ended: entry.ended === true,
                 newIds: unique(entry.newIds).filter(getDefinition),
-                characterId: characters.includes(entry.characterId) ? entry.characterId : null,
+                characterId: usageCharacters.includes(entry.characterId) ? entry.characterId : null,
                 story: entry.story === true || entry.achievementStory === true || !!entry.storyEpisodeId,
                 characterCounted: entry.characterCounted === true };
         }
@@ -167,12 +168,12 @@
         }
         // Existing profile totals did not retain usage: never infer it from a favourite or a win.
         if (!data.rewardsMigratedAt) {
-            const counts = Object.fromEntries(characters.map(id => [id, 0]));
+            const counts = Object.fromEntries(usageCharacters.map(id => [id, 0]));
             for (const record of Object.values(data.counters.matchRecords)) {
-                if (!record.ended || record.story || !characters.includes(record.characterId)) continue;
+                if (!record.ended || record.story || !usageCharacters.includes(record.characterId)) continue;
                 counts[record.characterId]++; record.characterCounted = true;
             }
-            for (const id of characters) data.counters.characterUses[id] = Math.max(number(data.counters.characterUses[id]),
+            for (const id of usageCharacters) data.counters.characterUses[id] = Math.max(number(data.counters.characterUses[id]),
                 counts[id], number(profile.stats?.characterUses?.[id]));
             completionCounters(data, readJson('balc_missions_v1'), readJson('battleAlaCarteStoryProgressV1'));
             data.rewardsMigratedAt = new Date().toISOString();
@@ -196,7 +197,7 @@
         record.dishes = Math.max(record.dishes, history.length);
         if (history.length >= 8) data.counters.feast8 = 1;
         if (own.battleALaCarteModeActive) data.counters.battleMode = 1;
-        if (state.gameEnded && !record.characterCounted && characters.includes(state.characterIds?.player)) {
+        if (state.gameEnded && !record.characterCounted && usageCharacters.includes(state.characterIds?.player)) {
             record.characterId = state.characterIds.player;
             record.characterCounted = true;
             data.counters.characterUses[record.characterId] = number(data.counters.characterUses[record.characterId]) + 1;
@@ -345,7 +346,7 @@
         if (preview) preview.textContent = displayName(root.getUserProfile?.().name);
         const icon = document.getElementById('achievement-profile-icon');
         if (icon) {
-            for (const id of characters) icon.classList.toggle(`char-${id}`, id === (root.getUserProfile?.().favoriteCharacterId || 'chizuru'));
+            for (const id of usageCharacters) icon.classList.toggle(`char-${id}`, id === (root.getUserProfile?.().favoriteCharacterId || 'chizuru'));
             applyFrame(icon);
         }
     }

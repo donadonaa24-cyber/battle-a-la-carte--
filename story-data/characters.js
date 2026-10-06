@@ -20,6 +20,8 @@
         takumi: { name: '拓海', portraits: portraits('takumi', ["embarrassed","exasperated","flustered","frozen","gentle","happy","laugh","normal","smile","surprised","thinking","troubled"]), standing: 'assets/battle-images/characters/standing/takumi-standing.webp' },
         akatsuki: { name: '暁', portraits: portraits('akatsuki', ["cold","embarrassed","exasperated","frozen","gentle","happy","laugh","normal","sad","serious","smile","smug","surprised","thinking","troubled"]), standing: 'assets/battle-images/characters/standing/akatsuki-standing.webp' },
         tsuyoshi: { name: '剛', portraits: portraits('tsuyoshi', ["happy","laugh","normal","smile","surprised","tired","troubled"]), standing: 'assets/battle-images/characters/standing/tsuyoshi-standing.webp' },
+        yuzuki: { name: '結月', portraits: Object.create(null), standing: 'assets/battle-images/characters/standing/yuzuki-standing.webp' },
+        ryuta: { name: '龍太', portraits: Object.create(null), standing: 'assets/battle-images/characters/standing/ryuta-standing.webp' },
         // Classmates use only their explicitly registered story artwork.
         classmate1: { name: 'クラスメート', portraits: portraits('classmate1', ["normal","sick","smile"]), standing: null },
         classmate2: { name: 'クラスメート2', portraits: portraits('classmate2', ["normal","smile","worried"]), standing: null }
@@ -29,6 +31,20 @@
         if (!id.startsWith('classmate')) character.icons = Object.freeze(Object.assign(Object.create(null),
             Object.fromEntries(['normal', 'smile', 'troubled', 'surprised', 'gentle', 'laugh'].map(cell => [cell, `assets/battle-images/story/icons/${id}-${cell}-alpha.webp`]))));
         if (!id.startsWith('classmate')) character.introStanding = `assets/battle-images/characters/standing/${id}-standing-alpha.webp`;
+        if (['tsuyoshi', 'akatsuki'].includes(id)) character.costumes = Object.freeze({ summer: Object.freeze({
+            name: 'サマービーチ', icons: Object.freeze(Object.fromEntries(['normal', 'smile', 'troubled', 'surprised', 'gentle', 'laugh']
+                .map(cell => [cell, `assets/battle-images/story/icons/${id}-summer-${cell}-alpha.webp`])))
+        }) });
+        if (['kanna', 'chizuru'].includes(id)) character.costumes = Object.freeze({ halloween: Object.freeze({
+            name: id === 'kanna' ? 'ハロウィン・ウィッチ' : 'ハロウィン・ブラックキャット',
+            icons: Object.freeze(Object.fromEntries(['normal', 'smile', 'troubled', 'surprised', 'gentle', 'laugh']
+                .map(cell => [cell, `assets/battle-images/story/icons/${id}-halloween-${cell}-alpha.webp`])))
+        }) });
+        if (['yuzuki', 'takumi', 'mai'].includes(id)) character.costumes = Object.freeze({ ...(character.costumes || {}), kyudo: Object.freeze({
+            introStanding: `assets/battle-images/characters/standing/${id}-kyudo-standing-alpha.webp`,
+            name: '弓道着', icons: Object.freeze(Object.fromEntries(['normal', 'smile', 'troubled', 'surprised', 'gentle', 'laugh']
+                .map(cell => [cell, `assets/battle-images/story/icons/${id}-kyudo-${cell}-alpha.webp`])))
+        }) });
         character.poses = Object.assign(Object.create(null), { default: character.portraits },
             Object.fromEntries((extraPoses[id] || []).map(pose => [pose, portraits(id, Object.keys(character.portraits), pose)])));
         Object.values(character.poses).forEach(Object.freeze);
@@ -78,29 +94,34 @@
     const backgrounds = Object.assign(Object.create(null), Object.fromEntries([
         'festival-classroom', 'festival-kitchen', 'classroom', 'festival-hallway', 'school-gate', 'festival-courtyard',
         'gym-stage', 'cooking-room', 'rooftop', 'shopping-street', 'small-restaurant',
-        'festival-classroom-evening', 'classroom-after-festival', 'school-gate-evening'
+        'festival-classroom-evening', 'classroom-after-festival', 'school-gate-evening',
+        'summer-station-morning', 'summer-beach-day', 'summer-beach-sheet', 'summer-beach-house-evening', 'summer-station-gate-evening',
+        'halloween-cooking-room', 'halloween-hallway-evening', 'kyudo-dojo-afternoon', 'kyudo-rest-area', 'school-gate-evening-sakuraba', 'big-park-evening', 'big-park-bench-evening'
     ].map(key => [key, `assets/battle-images/story/backgrounds/${key}.webp`])));
     const battleAssets = [
         'character-icons/kanna-icons', 'battle-mode-icons/kanna-battle-mode-icon',
-        'skill-cutins/kanna-skill-cutin', 'battle-mode-cutins/kanna-battle-mode-cutin'
+        'skill-cutins/kanna-skill-cutin', 'battle-mode-cutins/kanna-battle-mode-cutin',
+        'battle-mode-icons/yuzuki-battle-mode-icon', 'skill-cutins/yuzuki-skill-cutin', 'battle-mode-cutins/yuzuki-battle-mode-cutin',
+        'battle-mode-icons/ryuta-chef-mode-icon', 'battle-mode-icons/ryuta-battle-mode-icon', 'skill-cutins/ryuta-skill-cutin', 'battle-mode-cutins/ryuta-battle-mode-cutin'
     ].flatMap(key => [`assets/battle-images/${key}.webp`, `assets/images/${key}.png`]);
     battleAssets.push('assets/images/characters/standing/kanna-standing.png');
     const portraitCandidates = (id, expression, pose = 'default') => {
         const character = characters[id];
         return character ? [...new Set([character.poses[resolvePose(id, pose)][expression], character.portraits[expression], character.portraits.normal, character.standing].filter(Boolean))] : [];
     };
-    const iconCandidates = (id, expression = 'normal') => {
+    const iconCandidates = (id, expression = 'normal', costume = 'normal') => {
         const character = characters[id];
         if (!character?.icons) return portraitCandidates(id, expression);
-        return [...new Set([character.icons[iconExpressions[expression]], character.icons.normal].filter(Boolean))];
+        const icons = character.costumes?.[costume]?.icons || character.icons;
+        return [...new Set([icons[iconExpressions[expression]], icons.normal].filter(Boolean))];
     };
     root.BattleStoryAssets = Object.freeze({
         characters: Object.freeze(characters), backgrounds: Object.freeze(backgrounds),
         battleAssets: Object.freeze(battleAssets), portraitCandidates, iconCandidates, iconExpressions, applyPortraitMetrics, portraitMetrics, resolvePose,
-        iconPath: (id, expression) => iconCandidates(id, expression)[0] || null,
+        iconPath: (id, expression, costume = 'normal') => iconCandidates(id, expression, costume)[0] || null,
         portraitPose: (id, file) => Object.entries(characters[id]?.poses || {}).find(([, expressions]) => Object.values(expressions).includes(file))?.[0] || 'default',
         portraitPath: (id, expression, pose = 'default') => portraitCandidates(id, expression, pose)[0] || null,
-        url: file => file ? base + file + (/\/story\/icons\/|-standing-alpha\.webp$|\/characters\/standing\/tsuyoshi-standing\.webp$/.test(file) ? '?v=20261006-icons99e' : refreshedPortrait.test(file) ? '?v=20261005-face95b' : '') : null,
-        paths: () => [...new Set([...Object.values(characters).flatMap(c => [...Object.values(c.poses).flatMap(Object.values), ...Object.values(c.icons || {}), c.standing, c.introStanding].filter(Boolean)), ...Object.values(backgrounds), ...battleAssets])]
+        url: file => file ? base + file + (/\/story\/icons\/|-standing-alpha\.webp$|\/characters\/standing\/(?:tsuyoshi|yuzuki|ryuta)-standing\.webp$|\/story\/backgrounds\/(?:summer|halloween|kyudo)-|school-gate-evening-sakuraba|big-park-/.test(file) ? '?v=20261007-osananajimi105a' : refreshedPortrait.test(file) ? '?v=20261005-face95b' : '') : null,
+        paths: () => [...new Set([...Object.values(characters).flatMap(c => [...Object.values(c.poses).flatMap(Object.values), ...Object.values(c.icons || {}), ...Object.values(c.costumes || {}).flatMap(costume => [...Object.values(costume.icons), costume.introStanding].filter(Boolean)), c.standing, c.introStanding].filter(Boolean)), ...Object.values(backgrounds), ...battleAssets])]
     });
 })(window);

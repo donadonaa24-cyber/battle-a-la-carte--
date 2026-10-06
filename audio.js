@@ -7,8 +7,12 @@ const BGM_TRACKS = {
 };
 
 const CHARACTER_THEME_TRACKS = Object.freeze(Object.fromEntries(
-    ['chizuru', 'mai', 'takumi', 'akatsuki', 'kanna', 'tsuyoshi'].map(id => ['theme-' + id, { name: 'theme-' + id }])
+    [...new Set(['chizuru', 'mai', 'takumi', 'akatsuki', 'kanna', 'tsuyoshi'].map(id => 'theme-' + id)
+        .concat(Object.values(window.CharacterThemes?.tracks || {})))].map(track => [track, { name: track }])
 ));
+
+// Story-only keys can be reused by any seasonal episode.
+const STORY_BGM_TRACKS = Object.freeze({ 'seasonal-halloween': 'seasonal-halloween' });
 
 const LEGACY_BGM_TRACK_ALIAS = {
     variantA: 'miracle'
@@ -90,6 +94,9 @@ function createBgmPlayers() {
     });
     Object.entries({ ...BGM_TRACKS, ...CHARACTER_THEME_TRACKS }).filter(([, track]) => track.name).forEach(([key, track]) => {
         players[`theme:${key}`] = createLoopAudio(track.name, BASE_BGM_VOLUME.story);
+    });
+    Object.entries(STORY_BGM_TRACKS).forEach(([key, name]) => {
+        players[`story:${key}`] = createLoopAudio(name, BASE_BGM_VOLUME.story);
     });
     return players;
 }
@@ -226,9 +233,11 @@ function playTitleBGM() {
     playBgmByKey('title');
 }
 
-function playStoryBGM(characterId) {
+function playStoryBGM(characterId, bgm = 'story') {
+    if (bgm === false) return;
     AudioManager.battleModeLocked = false;
-    playBgmByKey(characterId ? `theme:${window.CharacterThemes?.trackFor(characterId) || 'default'}` : 'story');
+    playBgmByKey(Object.hasOwn(STORY_BGM_TRACKS, bgm) ? `story:${bgm}`
+        : characterId ? `theme:${window.CharacterThemes?.trackFor(characterId) || 'default'}` : 'story');
 }
 
 function previewCharacterTheme(characterId) {
@@ -408,6 +417,7 @@ window.getBgmTrackOptions = getBgmTrackOptions;
         laugh: [[610, 740, 0, .10, .06], [740, 880, .11, .10, .055], [610, 740, .22, .10, .05]],
         idea: [[880, 1320, 0, .12, .055], [1320, 1320, .13, .17, .05]],
         thud: [[115, 48, 0, .19, .085]],
+        impact: [[150, 42, 0, .27, .085], [82, 34, .02, .32, .065]], // ドンッ！！：短い重い衝撃、既存音量／ミュートを共用
         sparkle: [[1047, 1397, 0, .13, .05], [1568, 1760, .14, .17, .04]],
         swish: [[720, 180, 0, .15, .04]]
     });

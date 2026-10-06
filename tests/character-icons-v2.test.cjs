@@ -49,7 +49,7 @@ test('all owner v3 PNG/WebP sheets are registered and PC/mobile use matching fac
         }
     }
     for (const [file,css] of [['web.html','style.css'],['mobile/mobile.html','style-sp.css']]) {
-        assert.ok(read(file).includes(`${css}?v=20261004-menu-back1`));
+        assert.ok(read(file).includes(`${css}?v=20261007-osananajimi105a`));
     }
 });
 test('v2 switching is per-file, includes gallery and mobile URLs, and never changes crops or unrelated icons', () => {

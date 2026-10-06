@@ -7,10 +7,12 @@ const vm = require('node:vm');
 const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 // Owner addendum, 2026-10-04: rank 1 is tallest; classmates share Chizuru's rank.
-const heightRanks = Object.freeze({ tsuyoshi: 1, takumi: 2, akatsuki: 3, kanna: 4, chizuru: 5, mai: 6, classmate1: 5, classmate2: 5 });
+const heightRanks = Object.freeze({ tsuyoshi: 1, ryuta: 2, takumi: 3, akatsuki: 4, kanna: 5, chizuru: 6, mai: 7, yuzuki: 8, classmate1: 6, classmate2: 6 });
 // Owner-approved head-height fractions, 2026-10-04. Kanna -> Chizuru needs 4.1%
 // to preserve the measured eye-line order without changing the artwork/head size.
-const headTopOffsets = Object.freeze([0, .025, .05, .075, .116, .141]);
+// 105a: owner order 剛 > 龍太 > 拓海 > 暁 > 栞那 > 千鶴 > 舞依 > 結月.
+// Insert 龍太 between 剛 and 拓海; retain every existing character head offset.
+const headTopOffsets = Object.freeze([0, .0125, .025, .05, .075, .116, .141, .166]);
 
 // The owner supplies non-interlaced 8-bit RGB/RGBA PNGs. No native/npm dependency.
 function readPng(file) {
@@ -39,7 +41,7 @@ function readPng(file) {
     return { width, height, rgba };
 }
 
-function measure(image) {
+function measure(image, reviewed) {
     const { width: w, height: h, rgba } = image;
     const at = (x, y) => rgba.subarray((y * w + x) * 4, (y * w + x) * 4 + 4);
     const opaque = (x, y) => at(x, y)[3] >= 32;
@@ -72,7 +74,7 @@ function measure(image) {
     }
     pairs.sort((a, b) => b.score - a.score);
     if (!pairs.length) throw Error('Eyes not detected; review replacement artwork');
-    const eyes = pairs[0], eyeY = (eyes.a.y + eyes.b.y) / 2, centerX = (eyes.a.x + eyes.b.x) / 2;
+    const eyes = pairs[0], eyeY = reviewed?.eyeLine ?? (eyes.a.y + eyes.b.y) / 2, centerX = reviewed?.centerX ?? (eyes.a.x + eyes.b.x) / 2;
     // Chin: the dark jaw outline across the central third of the eye separation.
     // Search below the mouth and stop before the shirt; use the lower edge of the V.
     const separation = eyes.b.x - eyes.a.x, candidates = [];
@@ -86,7 +88,7 @@ function measure(image) {
     }
     // The first continuous jaw crossing avoids a later collar/shirt outline.
     const jawStart = candidates.findIndex(c => c.score >= separation * .09);
-    if (jawStart < 0) throw Error('Chin not detected; review replacement artwork');
+    if (jawStart < 0 && !reviewed) throw Error('Chin not detected; review replacement artwork');
     let jawEnd = jawStart;
     while (true) {
         if (candidates[jawEnd + 1]?.score >= separation * .09) { jawEnd++; continue; }
@@ -97,7 +99,7 @@ function measure(image) {
         break;
     }
     // The bottom of the first crossing, including its thin anti-aliased tip.
-    const chinY = candidates[jawEnd].y + 1;
+    const chinY = reviewed?.chin ?? candidates[jawEnd].y + 1;
     let left = w, right = 0;
     // Include hair/accessories beside the cheeks, not just the crown. A hand held
     // against the face may be included in this conservative horizontal envelope.
@@ -122,8 +124,13 @@ function buildMetrics() {
     const characters = {};
     for (const id of Object.keys(context.BattleStoryAssets.characters).sort()) {
         if (!Object.hasOwn(heightRanks, id)) throw Error('Owner height rank required: ' + id);
-        const source = `assets/images/story/portraits/${id}-normal.png`, file = path.join(root, source);
-        characters[id] = { source, sha256: crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'), ...measure(readPng(file)), renderCanvas: webpCanvas(path.join(root, context.BattleStoryAssets.characters[id].portraits.normal)), heightRank: heightRanks[id], headTopOffset: headTopOffsets[heightRanks[id] - 1] };
+        // 102a supplies 結月 as a standing master; she has no legacy portrait sheet.
+        const source = ['yuzuki', 'ryuta'].includes(id) ? `assets/images/characters/standing/${id}-standing-alpha.png`
+            : `assets/images/story/portraits/${id}-normal.png`, file = path.join(root, source);
+        // 103a 龍太 has a tilted face; a central V-jaw detector cannot measure it.
+        // Reviewed source coordinates (eyes / jaw), never changes the artwork.
+        const reviewed = id === 'ryuta' ? { eyeLine: 197, centerX: 538.5, chin: 266 } : undefined;
+        characters[id] = { source, sha256: crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'), ...measure(readPng(file), reviewed), renderCanvas: webpCanvas(path.join(root, context.BattleStoryAssets.characters[id].defaultPortrait)), heightRank: heightRanks[id], headTopOffset: headTopOffsets[heightRanks[id] - 1], ...(reviewed ? { reviewedLandmarks: reviewed } : {}) };
         const poses = {};
         for (const [pose, expressions] of Object.entries(context.BattleStoryAssets.characters[id].poses)) {
             if (pose === 'default') { poses.default = { ...characters[id] }; continue; }
