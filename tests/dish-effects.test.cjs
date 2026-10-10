@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const onlineFixture = require('./helpers/online-character-fixture.cjs');
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const clone = data => JSON.parse(JSON.stringify(data));
@@ -95,6 +96,7 @@ function prepare(r, name = '鮭おにぎり', side = 'player') {
 function installGuest(c) {
     Object.assign(c, { pending: null, revision: 0, stopped: false, started: true, quickConfirm: null, metrics: null,
         status() {}, $: id => c.document.getElementById(id) });
+    onlineFixture.install(c);
     const source = read('network.js');
     vm.runInContext(source.slice(source.indexOf('    function applyView('), source.indexOf('    async function sync(')), c);
 }
@@ -337,7 +339,7 @@ test('points scale aura and winning timings; both pages load the common effect a
         const html = read(file);
         assert.ok(html.includes(`${prefix}dish-effects.js?v=20261006-icons99c`));
         assert.ok(html.includes(`${prefix}dish-effects.css?v=20261002-fx1`));
-        for (const name of ['main', 'render', 'cpu', 'audio']) assert.ok(html.includes(`${name}${suffix}.js?v=${name === 'cpu' ? '20261002-fx1' : name === 'audio' ? '20261007-osananajimi105a' : '20261007-osananajimi105a'}`));
+        for (const name of ['main', 'render', 'cpu', 'audio']) assert.ok(html.includes(`${name}${suffix}.js?v=${name === 'main' ? '20261010-u6b' : name === 'cpu' ? '20261002-fx1' : '20261007-osananajimi105a'}`));
         assert.ok(html.includes('id="menu-settings-button"')); assert.ok(html.includes('id="start-settings-stage"'));
         assert.ok(read(`main${suffix ? '-sp' : ''}.js`.replace('main-sp.js', 'mobile/main-sp.js')).includes("settingsHtml('start-settings')"));
         const render = read(suffix ? 'mobile/render-sp.js' : 'render.js');

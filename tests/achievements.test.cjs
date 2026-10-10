@@ -334,16 +334,17 @@ function worker() {
     c.importScripts = (...files) => files.forEach(file => vm.runInContext(read(file.split('?')[0]), c));
     c.importScripts('battle-engine-worker.js'); return c;
 }
+const joinedInfo = (character, extra = {}) => ({ character, characterRosterVersion: 2, skill: 'lastOrder', ...extra });
 test('online title/frame fields are additive, validated, projected per role and included in real p_info builder; old clients still initialize', async () => {
     const engine = worker();
-    const result = await engine.execute({ kind: 'init', host: { name: 'Host', title: 'win100', frame: 'gold' }, guest: { name: 'Guest', title: 'alien', frame: 'neon' } });
+    const result = await engine.execute({ kind: 'init', host: joinedInfo('chizuru', { name: 'Host', title: 'win100', frame: 'gold' }), guest: joinedInfo('mai', { name: 'Guest', title: 'alien', frame: 'neon' }) });
     assert.equal(result.views.guest.state.players.cpu.title, 'win100'); assert.equal(result.views.guest.state.players.cpu.frame, 'gold');
     assert.equal(result.views.guest.state.players.player.title, ''); assert.equal(result.views.guest.state.players.player.frame, 'none');
     const old = await engine.execute({ kind: 'init', host: { character: 'takumi', skill: 'foodTrap' }, guest: { character: 'mai', skill: 'tasteThief' } });
     assert.equal(old.views.host.state.players.player.selectedSkillKey, 'foodTrap'); assert.equal(old.views.guest.state.players.player.characterId, undefined);
     assert.equal(old.views.guest.state.characterIds.player, 'mai');
     const { c } = runtime();
-    cook(c); c.Achievements.selectTitle('firstDish'); c.$ = () => null;
+    cook(c); c.Achievements.selectTitle('firstDish'); c.$ = () => null; c.protocol = engine.BattleProtocol;
     const source = read('network.js');
     vm.runInContext(source.slice(source.indexOf('    function profileInfo('), source.indexOf('    async function enter(')), c);
     assert.equal(c.profileInfo().title, 'firstDish'); assert.equal(c.profileInfo().frame, 'none');
@@ -353,7 +354,7 @@ test('online title/frame fields are additive, validated, projected per role and 
 test('onlineFirstWin/onlineWin10, general wins and guest dishes consume own real worker projection exactly once including reconnect', async () => {
     const engine = worker(), guest = runtime(), host = runtime();
     for (let match = 0; match < 10; match++) {
-        const initial = await engine.execute({ kind: 'init', firstRole: 'guest' });
+        const initial = await engine.execute({ kind: 'init', firstRole: 'guest', host: joinedInfo('chizuru'), guest: joinedInfo('mai') });
         const snapshot = plain(initial.snapshot), p = snapshot.players.cpu;
         snapshot.turnNumber = 2; snapshot.players.player.score = 9;
         p.hand = Array.from(engine.recipes).find(r => r.name === '爆弾おにぎり').required.map((name, i) => ({ id: 'c' + i, type: 'ingredient', name }));
@@ -381,17 +382,20 @@ test('failed/malformed storage never interrupts play or repeats unlocks during t
 });
 test('guest applyView tracks real own projected wins/dishes, skips replayed revisions and preserves result unlocks on reconnect', async () => {
     const engine = worker(), r = runtime(), { c } = r;
-    let result = await engine.execute({ kind: 'init', firstRole: 'guest' });
+    let result = await engine.execute({ kind: 'init', firstRole: 'guest', host: joinedInfo('chizuru'), guest: joinedInfo('mai') });
     result.snapshot.players.cpu.hand = Array.from(engine.recipes).find(r => r.name === '満腹カレー').required.map((name, i) => ({ id: 'p' + i, name, type: 'ingredient' }));
     result.snapshot.players.cpu.set = [];
     result = await engine.execute({ kind: 'action', role: 'guest', snapshot: result.snapshot, action: { name: 'playerShowRecipeCandidates', args: [] } });
     result = await engine.execute({ kind: 'action', role: 'guest', snapshot: result.snapshot, action: { name: 'playerCookSelectedRecipe', args: ['満腹カレー'] } });
-    Object.assign(c, { $: () => null, controls() {}, status() {}, metrics: null,
+    Object.assign(c, { $: () => null, controls() {}, status() {}, metrics: null, protocol: engine.BattleProtocol,
+        user: { id: 'mock-guest' }, room: { id: 'mock-room', host_id: 'mock-host', guest_id: 'mock-guest',
+            host_info: joinedInfo('chizuru'), guest_info: joinedInfo('mai') }, fail(error) { throw error; },
         sessionStorage: { removeItem() {} }, __battleSafeStartGame() {}, __battleStartBgmOnce() {}, pushMatchExitGuardHistory() {} });
     vm.runInContext(`let pending = null, deadline = null, pendingKey = 'pending', revision = 0, stopped = false,
-        started = true, quickConfirm = null, room = { id: 'mock-room' }; const recordedSurrenders = new Set();`, c);
+        started = true, quickConfirm = null; const recordedSurrenders = new Set();`, c);
     const source = read('network.js');
-    vm.runInContext(source.slice(source.indexOf('    function applyView('), source.indexOf('    async function sync(')), c);
+    vm.runInContext(source.slice(source.indexOf('    function assertCharacterRoom('), source.indexOf('    function profileInfo(')) +
+        source.slice(source.indexOf('    function applyView('), source.indexOf('    async function sync(')), c);
     const row = { revision: 5, payload: plain(result.views.guest) };
     c.applyView(row); c.applyView(row);
     has(c, 'onlineFirstWin', 'manpuku', 'oneShot');
@@ -406,7 +410,7 @@ test('guest applyView tracks real own projected wins/dishes, skips replayed revi
 test('both online roles count a surrender victory once, no opponent dishes; anonymous accounts do not sync', async () => {
     const engine = worker();
     for (const role of ['host', 'guest']) {
-        const initial = await engine.execute({ kind: 'init' });
+        const initial = await engine.execute({ kind: 'init', host: joinedInfo('chizuru'), guest: joinedInfo('mai') });
         const result = await engine.execute({ kind: 'action', role, snapshot: initial.snapshot, action: { name: 'playerSurrender', args: [] } });
         for (const viewer of ['host', 'guest']) {
             const { c } = runtime();
@@ -434,10 +438,10 @@ test('shared mirrors, UI containment, cache versions and account hooks remain wi
     for (const name of ['state', 'rules', 'player', 'main']) assert.equal(read(name + '.js').replaceAll('../assets/', 'assets/'), read('mobile/' + name + '-sp.js').replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
     for (const [file, prefix, suffix] of [['web.html', '', ''], ['mobile/mobile.html', '../', '-sp']]) {
         const html = read(file);
-        for (const module of ['achievements.js', 'network.js']) assert.ok(html.includes(`${prefix}${module}?v=${'20261007-osananajimi105a'}`), file + ': ' + module);
-        for (const module of ['missions.js', 'battle-protocol.js', 'story-mode.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'battle-protocol.js' ? '20261002-ach1' : module === 'story-mode.js' ? '20261006-icons99e' : '20261004-story-viewer1'}`), file + ': ' + module);
+        for (const module of ['achievements.js', 'network.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'network.js' ? '20261010-u6b' : '20261007-osananajimi105a'}`), file + ': ' + module);
+        for (const module of ['missions.js', 'battle-protocol.js', 'story-mode.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'battle-protocol.js' ? '20261010-u6b' : module === 'story-mode.js' ? '20261006-icons99e' : '20261004-story-viewer1'}`), file + ': ' + module);
         for (const module of ['state', 'rules', 'player', 'main', 'render']) {
-            const version = ['main', 'render'].includes(module) ? '20261007-osananajimi105a' : module === 'state' ? '20261003-rewards-bgm1' : '20261002-ach1';
+            const version = module === 'main' ? '20261010-u6b' : module === 'render' ? '20261007-osananajimi105a' : module === 'state' ? '20261003-rewards-bgm1' : '20261002-ach1';
             assert.ok(html.includes(`${module}${suffix}.js?v=${version}`));
         }
         const panel = html.slice(html.indexOf('<div id="start-achievements-stage"'), html.indexOf('<div id="start-user-stage"'));

@@ -4,6 +4,10 @@ const fs = require('node:fs'), path = require('node:path'), vm = require('node:v
 const root = path.resolve(__dirname, '..'), read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const PROFILE = 'battle-a-la-carte:user-profile:v1', PROGRESS = 'battleAlaCarteStoryProgressV1';
 const clone = value => JSON.parse(JSON.stringify(value));
+function onlineProfileRuntime(id) {
+    const c=vm.createContext({$:()=>null,getUserProfile:()=>({favoriteCharacterId:id,favoriteSkillKey:'foodTrap'}),getSkillDefinitionByKey:()=>({})});c.window=c;
+    vm.runInContext(read('battle-protocol.js'),c);c.protocol=c.BattleProtocol;return c;
+}
 for(const mobile of [false,true]) {
     const label=mobile?'phone':'PC';
     test(`101b ${label}: 栞那 remains locked until Halloween CLEAR; every skill and owned wardrobe work after reload/reset`,()=>{
@@ -47,16 +51,16 @@ for(const mobile of [false,true]) {
             for(const costume of ['default','halloween']) assert.ok(fs.existsSync(path.join(root,c.BattleImages.standingPath(id,costume).split('?')[0])));
         }
     });
-    test(`101b ${label}: saved favourite 栞那 defaults to 千鶴 in online preparation without changing favourite`,()=>{
+    test(`101b ${label}: owned favourite 栞那 stays selected online without changing favourite`,()=>{
         const r=runtime(mobile);r.storage.set(PROGRESS,JSON.stringify({'special-halloween':true}));r.c.updateUserBasicSettings({favoriteCharacterId:'kanna'});
-        const select=element();select.value='kanna';r.nodes.set('online-character',select);r.c.resetUnsupportedOnlineCharacter();assert.equal(select.value,'chizuru');assert.equal(r.c.getUserProfile().favoriteCharacterId,'kanna');
+        const select=element();select.value='kanna';r.nodes.set('online-character',select);r.c.resetUnsupportedOnlineCharacter();assert.equal(select.value,'kanna');assert.equal(r.c.getUserProfile().favoriteCharacterId,'kanna');
     });
 }
-test('101b online 栞那 is disabled and profile admission stays on existing four-character fields',()=>{
-    const source=read('network.js');assert.match(source,/<option value="kanna" disabled>栞那：オンライン対戦は今後対応予定<\/option>/);
+test('U6b owned 栞那 online admission declares roster capability',()=>{
+    const source=read('network.js');assert.match(source,/<option value="kanna">栞那<\/option>/);
     const body=source.slice(source.indexOf('    function profileInfo('),source.indexOf('    async function enter('));
-    const c=vm.createContext({$:()=>null,window:{getUserProfile:()=>({favoriteCharacterId:'kanna',favoriteSkillKey:'foodTrap'}),getSkillDefinitionByKey:()=>({})}});vm.runInContext(body,c);
-    assert.equal(c.profileInfo().character,'chizuru');assert.equal(c.profileInfo({character:'kanna'}).character,'chizuru');assert.deepEqual(Object.keys(c.profileInfo()).sort(),['character','name','skill']);
+    const c=onlineProfileRuntime('kanna');vm.runInContext(body,c);
+    assert.equal(c.profileInfo().character,'kanna');assert.equal(c.profileInfo({favoriteCharacterId:'kanna'}).character,'kanna');assert.deepEqual(Object.keys(c.profileInfo({favoriteCharacterId:'chizuru'})).sort(),['character','characterRosterVersion','name','skill']);
 });
 function element() {
     const attrs = {}, classes = new Set();
@@ -80,10 +84,31 @@ function runtime(mobile = false, storage = new Map(), viewer = false) {
     });
     c.window = c;
     const load = file => vm.runInContext(read(file), c, {filename: file});
-    for (const file of ['state.js', 'profile.js', 'battle-images.js', 'story-data/characters.js', 'story-data/registry.js',
+    for (const file of ['battle-protocol.js', 'state.js', 'profile.js', 'battle-images.js', 'story-data/characters.js', 'story-data/registry.js',
         'story-data/episode4.js', 'story-data/episode7.js', 'story-data/episode-special-summer.js', 'story-data/episode-special-halloween.js', mobile ? 'mobile/main-sp.js' : 'main.js']) load(file);
     return {c, nodes, storage, writes, load};
 }
+
+for(const mobile of [false,true])test(`U6b ${mobile?'phone':'PC'}: online selection and admission use real offline ownership for all CLEAR subsets`,()=>{
+    const newIds=['kanna','tsuyoshi','yuzuki','ryuta'],episodes=['special-halloween','special-summer','special-kyudo','special-osananajimi-2'];
+    const ids=['chizuru','mai','takumi','akatsuki',...newIds],source=read('network.js');
+    for(let mask=0;mask<16;mask++){
+        const r=runtime(mobile),{c,nodes,storage}=r;
+        storage.set(PROGRESS,JSON.stringify(Object.fromEntries(episodes.map((ep,i)=>[ep,!!(mask&(1<<i))]))));
+        const select=element();nodes.set('online-character',select);c.protocol=c.BattleProtocol;c.$=id=>nodes.get(id);c.getSkillDefinitionByKey=()=>({});
+        vm.runInContext(source.slice(source.indexOf('    function profileInfo('),source.indexOf('    async function enter(')),c);
+        for(const id of ids){
+            const owned=ids.indexOf(id)<4||!!(mask&(1<<newIds.indexOf(id)));
+            assert.equal(c.isPlayableCharacterUnlocked(id),owned);
+            c.updateUserBasicSettings({favoriteCharacterId:id});const before=storage.get(PROFILE);select.value=id;
+            c.resetUnsupportedOnlineCharacter();assert.equal(select.value,owned?id:'chizuru');assert.equal(storage.get(PROFILE),before);
+            if(owned){const info=c.profileInfo({favoriteCharacterId:id});assert.equal(info.character,id);assert.equal(info.characterRosterVersion,2);assert.equal(info.costume,undefined);assert.equal(info.costumeId,undefined);}
+            else assert.throws(()=>c.profileInfo({favoriteCharacterId:id}),/INVALID_SELECTION/);
+        }
+        select.value='unknown';c.resetUnsupportedOnlineCharacter();assert.equal(select.value,'chizuru');
+        assert.throws(()=>c.profileInfo({favoriteCharacterId:'unknown'}),/INVALID_SELECTION/);
+    }
+});
 
 for (const mobile of [false, true]) test(`104a ${mobile ? 'phone' : 'PC'}: every default/costume card and gallery standing has a background; introductions retain alpha`, () => {
     const {c, nodes, storage, load} = runtime(mobile);
@@ -258,20 +283,20 @@ for (const mobile of [false, true]) {
         assert.equal(v.writes.length, 0);
     });
 }
-test('100c online lobby disables 剛 and defaults a saved favourite to 千鶴 without extra protocol fields', () => {
+test('U6b online lobby allows owned 剛 and preserves original selections with roster capability', () => {
     const source = read('network.js');
-    assert.match(source, /<option value="tsuyoshi" disabled>剛：オンライン対戦は今後対応予定<\/option>/);
+    assert.match(source, /<option value="tsuyoshi">剛<\/option>/);
     const profileInfo = source.slice(source.indexOf('    function profileInfo('), source.indexOf('    async function enter('));
-    const c = vm.createContext({$: () => null, window: {getUserProfile: () => ({favoriteCharacterId: 'tsuyoshi', favoriteSkillKey: 'foodTrap'}), getSkillDefinitionByKey: () => ({})}});
+    const c = onlineProfileRuntime('tsuyoshi');
     vm.runInContext(profileInfo, c);
-    assert.equal(c.profileInfo().character, 'chizuru');
-    assert.equal(c.profileInfo({favoriteCharacterId: 'tsuyoshi'}).character, 'chizuru');
-    assert.deepEqual(Object.keys(c.profileInfo()).sort(), ['character', 'name', 'skill']);
+    assert.equal(c.profileInfo().character, 'tsuyoshi');
+    assert.equal(c.profileInfo({favoriteCharacterId: 'tsuyoshi'}).character, 'tsuyoshi');
+    assert.deepEqual(Object.keys(c.profileInfo({favoriteCharacterId:'chizuru'})).sort(), ['character', 'characterRosterVersion', 'name', 'skill']);
     for (const mobile of [false, true]) {
         const r = runtime(mobile); r.storage.set(PROGRESS, JSON.stringify({'special-summer': true}));
         r.c.updateUserBasicSettings({favoriteCharacterId: 'tsuyoshi'});
         const selection = element(); selection.value = 'akatsuki'; r.nodes.set('online-character', selection);
-        r.c.resetUnsupportedOnlineCharacter(); assert.equal(selection.value, 'chizuru');
+        r.c.resetUnsupportedOnlineCharacter(); assert.equal(selection.value, 'akatsuki');
         assert.equal(r.c.getUserProfile().favoriteCharacterId, 'tsuyoshi');
     }
 });
@@ -325,15 +350,15 @@ for(const mobile of [false,true]) {
             c.selectCharacterCostume(id,'default');c.GameState.storyEpisodeId='special-kyudo';for(const side of ['player','cpu'])assert.match(c.BattleImages.expressionPath(id,'normal','assets/',side),/-kyudo-/);c.GameState.storyEpisodeId=null;
         }
     });
-    test(`102b ${label}: saved favourite 結月 resets only online preparation to 千鶴`,()=>{
+    test(`U6b ${label}: owned favourite 結月 stays selected online`,()=>{
         const {c,storage,nodes}=runtime(mobile);storage.set(PROGRESS,JSON.stringify({'special-kyudo':true}));c.updateUserBasicSettings({favoriteCharacterId:'yuzuki'});
-        const node=element();node.value='yuzuki';nodes.set('online-character',node);c.resetUnsupportedOnlineCharacter();assert.equal(node.value,'chizuru');assert.equal(c.getUserProfile().favoriteCharacterId,'yuzuki');
+        const node=element();node.value='yuzuki';nodes.set('online-character',node);c.resetUnsupportedOnlineCharacter();assert.equal(node.value,'yuzuki');assert.equal(c.getUserProfile().favoriteCharacterId,'yuzuki');
     });
 }
-test('102b online 結月 disabled without new protocol fields; every standing/chef/cutin asset is registered',()=>{
-    const source=read('network.js');assert.match(source,/<option value="yuzuki" disabled>結月：オンライン対戦は今後対応予定<\/option>/);
-    const c=vm.createContext({$:()=>null,window:{getUserProfile:()=>({favoriteCharacterId:'yuzuki',favoriteSkillKey:'foodTrap'}),getSkillDefinitionByKey:()=>({})}});
-    vm.runInContext(source.slice(source.indexOf('    function profileInfo('),source.indexOf('    async function enter(')),c);assert.equal(c.profileInfo().character,'chizuru');assert.equal(c.profileInfo({character:'yuzuki'}).character,'chizuru');assert.deepEqual(Object.keys(c.profileInfo()).sort(),['character','name','skill']);
+test('U6b owned 結月 online enabled with roster capability and no costume field; every standing/chef/cutin asset is registered',()=>{
+    const source=read('network.js');assert.match(source,/<option value="yuzuki">結月<\/option>/);
+    const c=onlineProfileRuntime('yuzuki');
+    vm.runInContext(source.slice(source.indexOf('    function profileInfo('),source.indexOf('    async function enter(')),c);assert.equal(c.profileInfo().character,'yuzuki');assert.equal(c.profileInfo({favoriteCharacterId:'yuzuki'}).character,'yuzuki');assert.deepEqual(Object.keys(c.profileInfo({favoriteCharacterId:'chizuru'})).sort(),['character','characterRosterVersion','name','skill']);
     const r=runtime().c,manifest=JSON.parse(read('assets/battle-images/manifest.json'));
     for(const id of ['yuzuki','takumi','mai'])for(const costume of ['default','kyudo'])assert.ok(fs.existsSync(path.join(root,r.BattleImages.standingPath(id,costume).split('?')[0])));
     for(const folder of ['battle-mode-icons','skill-cutins','battle-mode-cutins'])assert.ok(manifest.some(x=>x.battle.startsWith('assets/battle-images/'+folder+'/yuzuki-')));
@@ -350,14 +375,14 @@ for(const mobile of [false,true])test(`105a ${mobile?'phone':'PC'}: 龍太 locke
     assert.equal(runtime(mobile,storage).c.getUserProfile().favoriteCharacterId,'ryuta');c.resetUserProfile();assert.equal(c.isPlayableCharacterUnlocked('ryuta'),true);assert.equal(c.getSelectedCharacterCostume('ryuta'),'default');assert.equal(storage.get(PROGRESS),before);
     const viewer=runtime(mobile,storage,true);assert.equal(viewer.c.isPlayableCharacterUnlocked('ryuta'),false);assert.equal(viewer.c.selectCharacterCostume('ryuta','default'),false);assert.equal(viewer.writes.length,0);
 });
-for(const mobile of [false,true])test(`105a ${mobile?'phone':'PC'}: 龍太 six aligned frames, own HUD/skill/Mode/result and online favourite fallback`,()=>{
+for(const mobile of [false,true])test(`U6b ${mobile?'phone':'PC'}: 龍太 six aligned frames, own HUD/skill/Mode/result and owned online favourite preserved`,()=>{
     const r=runtime(mobile),{c,nodes,storage}=r;storage.set(PROGRESS,JSON.stringify({'special-osananajimi-2':true}));r.load('story-data/icon-metrics.js');r.load(mobile?'mobile/render-sp.js':'render.js');const p=element(),cpu=element();c.document.querySelector=s=>s==='.player-icon'?p:s==='.cpu-icon'?cpu:null;nodes.set('result-summary',element());c.GameState.characterIds={player:'ryuta',cpu:'akatsuki'};c.getBattleViewModel=()=>({me:{score:0,characterId:'ryuta',set:[]},opponent:{score:0,characterId:'akatsuki',set:[]},winner:'me',online:false});
     for(const cell of c.BattleImages.expressionCells){const frame=element();c.BattleImages.applyExpression(frame,'ryuta',cell,'assets/','player');assert.match(frame.children[0].getAttribute('src'),new RegExp('ryuta-'+cell+'-alpha'));const expected={style:{}};c.BattleStoryIconMetrics.apply(expected,'ryuta',cell);for(const prop of ['width','left','top'])assert.equal(frame.children[0].style[prop],expected.style[prop]);}
     c.updateCharacterFaces();assert.match(p.children[0].getAttribute('src'),/ryuta-normal-alpha/);assert.match(c.getSkillCutinImagePathForSide('player'),/ryuta-smile-alpha/);assert.match(c.getBattleModeCutinImagePathForSide('player'),/ryuta-laugh-alpha/);c.renderMatchResultSummary();const files=n=>n.children.flatMap(child=>[child.getAttribute?.('src'),...files(child)]).filter(Boolean);assert.ok(files(nodes.get('result-summary')).some(f=>f.includes('ryuta-gentle-alpha')));
-    c.updateUserBasicSettings({favoriteCharacterId:'ryuta'});const selection=element();selection.value='ryuta';nodes.set('online-character',selection);c.resetUnsupportedOnlineCharacter();assert.equal(selection.value,'chizuru');assert.equal(c.getUserProfile().favoriteCharacterId,'ryuta');
+    c.updateUserBasicSettings({favoriteCharacterId:'ryuta'});const selection=element();selection.value='ryuta';nodes.set('online-character',selection);c.resetUnsupportedOnlineCharacter();assert.equal(selection.value,'ryuta');assert.equal(c.getUserProfile().favoriteCharacterId,'ryuta');
 });
-test('105a 龍太 online disabled without new profile fields; standing/chef/battle/cutins reuse 103a assets',()=>{
-    const source=read('network.js');assert.match(source,/<option value="ryuta" disabled>龍太：オンライン対戦は今後対応予定<\/option>/);const c=vm.createContext({$:()=>null,window:{getUserProfile:()=>({favoriteCharacterId:'ryuta',favoriteSkillKey:'foodTrap'}),getSkillDefinitionByKey:()=>({})}});vm.runInNewContext(source.slice(source.indexOf('    function profileInfo('),source.indexOf('    async function enter(')),c);assert.equal(c.profileInfo().character,'chizuru');assert.equal(c.profileInfo({character:'ryuta'}).character,'chizuru');assert.deepEqual(Object.keys(c.profileInfo()).sort(),['character','name','skill']);
+test('U6b owned 龍太 online enabled with roster capability and no costume field; standing/chef/battle/cutins reuse 103a assets',()=>{
+    const source=read('network.js');assert.match(source,/<option value="ryuta">龍太<\/option>/);const c=onlineProfileRuntime('ryuta');vm.runInNewContext(source.slice(source.indexOf('    function profileInfo('),source.indexOf('    async function enter(')),c);assert.equal(c.profileInfo().character,'ryuta');assert.equal(c.profileInfo({favoriteCharacterId:'ryuta'}).character,'ryuta');assert.deepEqual(Object.keys(c.profileInfo({favoriteCharacterId:'chizuru'})).sort(),['character','characterRosterVersion','name','skill']);
     for(const suffix of ['battle-mode-icons/ryuta-chef-mode-icon','battle-mode-icons/ryuta-battle-mode-icon','skill-cutins/ryuta-skill-cutin','battle-mode-cutins/ryuta-battle-mode-cutin','characters/standing/ryuta-standing','characters/standing/ryuta-standing-alpha'])for(const [folder,ext]of [['images','png'],['battle-images','webp']])assert.ok(fs.existsSync(path.join(root,'assets/'+folder+'/'+suffix+'.'+ext)));
 });
 

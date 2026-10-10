@@ -76,7 +76,17 @@
 
             <ul class="news-list">
                 <li class="news-row news-new">
-                    <p class="news-date"><time datetime="2026-09-29">2026.09.29</time><span class="news-tag">Web版</span><span class="news-tag news-tag-new">NEW</span></p>
+                    <p class="news-date"><time datetime="2026-10-11">2026.10.11</time><span class="news-tag">Web版・Unity版</span><span class="news-tag news-tag-new">NEW</span></p>
+                    <h3 class="news-title">ストーリー特別編と新キャラクター4人が登場</h3>
+                    <button class="news-open" type="button" data-open-dialog="news-20261011-story">詳しく見る</button>
+                </li>
+                <li class="news-row news-new">
+                    <p class="news-date"><time datetime="2026-10-11">2026.10.11</time><span class="news-tag">Unity版</span><span class="news-tag news-tag-new">NEW</span></p>
+                    <h3 class="news-title">Unity版（3D版）v0.6.0 を公開</h3>
+                    <button class="news-open" type="button" data-open-dialog="news-20261011-unity">詳しく見る</button>
+                </li>
+                <li class="news-row">
+                    <p class="news-date"><time datetime="2026-09-29">2026.09.29</time><span class="news-tag">Web版</span></p>
                     <h3 class="news-title">ミッションとカードスリーブを追加</h3>
                     <button class="news-open" type="button" data-open-dialog="news-20260929-missions">詳しく見る</button>
                 </li>
@@ -101,6 +111,38 @@
                     <button class="news-open" type="button" data-open-dialog="news-plan">詳しく見る</button>
                 </li>
             </ul>
+
+            <dialog class="home-dialog news-dialog" id="news-20261011-story" aria-labelledby="news-20261011-story-title">
+                <div class="dialog-head">
+                    <p class="news-date"><time datetime="2026-10-11">2026.10.11</time><span class="news-tag">Web版・Unity版</span></p>
+                    <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+                </div>
+                <h3 id="news-20261011-story-title">ストーリー特別編と新キャラクター4人が登場</h3>
+                <ul>
+                    <li>ストーリーに特別編（夏休み編・ハロウィン編・弓道編・幼馴染編 前編／後編）を追加しました。出会い・文化祭編（第4〜10話）をすべてクリアすると遊べます（幼馴染編は、第1〜10話とほかの特別編のクリアも必要です）</li>
+                    <li>会話はキャラクターのアイコンつきの表示になり、キャラクターが初めて登場するときは紹介カットインが入ります</li>
+                    <li>特別編をクリアすると、新しいキャラクター（剛・栞那・結月・龍太）が使えるようになります</li>
+                    <li>着せ替え（夏服・ハロウィン・弓道着）を追加しました。着せ替えは自分の画面だけに表示されます</li>
+                    <li>アチーブメント（称号）、キャラクターごとのテーマ曲、文化祭編クリアのごほうびを追加しました</li>
+                    <li>新しい4人も通信対戦で使えます（自分の端末で使えるようにしたキャラクターのみ）。古いUnity版（v0.5.0以前）では、新しい4人がいる部屋には入れません</li>
+                </ul>
+                <p class="news-note">※ Unity版の特別編（夏休み編・弓道編・幼馴染編）は、Web版とは一部の場面が違うUnity版だけの内容です。</p>
+                <p class="fan-work-note">本作のキャラクターは、フェニチルさんの創作作品『天涯比隣』のキャラクターデザインと名前をお借りした二次創作です。性格・関係性・ストーリー・設定はすべて本作独自のもので、原作とは関係ありません。</p>
+            </dialog>
+
+            <dialog class="home-dialog news-dialog" id="news-20261011-unity" aria-labelledby="news-20261011-unity-title">
+                <div class="dialog-head">
+                    <p class="news-date"><time datetime="2026-10-11">2026.10.11</time><span class="news-tag">Unity版</span></p>
+                    <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+                </div>
+                <h3 id="news-20261011-unity-title">Unity版（3D版）v0.6.0 を公開</h3>
+                <ul>
+                    <li>ストーリーモードが全15話になりました（再会編・出会い・文化祭編・特別編）</li>
+                    <li>新しいキャラクター4人と着せ替え、アチーブメント（称号）、テーマ曲を追加しました</li>
+                    <li>通信対戦で新しい4人を使えるようになり、通信の安定性も上げました</li>
+                    <li>Windows版・Android版（試験版）をUnity版のページからダウンロードできます</li>
+                </ul>
+            </dialog>
 
             <dialog class="home-dialog news-dialog mission-dialog" id="news-20260929-missions" aria-labelledby="news-20260929-missions-title">
                 <div class="dialog-head">
@@ -174,8 +216,7 @@
                 </div>
                 <h3 id="news-plan-title">準備中・追加予定のメニュー</h3>
                 <ul>
-                    <li>Unity版（3D版）v0.5.0 を準備中です。公開日は決まりしだいお知らせします</li>
-                    <li>ミッションのクリア記録を、あにあにアカウントに保存できるよう準備中です</li>
+                    <li>Unity版（3D版）の Mac版・iPhone版を準備中です。公開時期は決まりしだいお知らせします</li>
                 </ul>
                 <p class="news-note">※ 予定の内容は変更になる場合があります。</p>
             </dialog>
@@ -389,13 +430,13 @@
                     <img class="course-visual course-visual-cpu" src="assets/images/home/mode-cpu-full.jpg" alt="" width="800" height="1000" loading="lazy">
                     <p class="course-number">01</p>
                     <h3>CPU対戦</h3>
-                    <p>料理をどんどん完成させて、先に10点！ 相手をおなかいっぱいにして勝利しよう。千鶴・舞依・拓海・暁の4人から自分のキャラを選んで、CPUとすぐに1戦。CPUの性格や速度も設定できます。</p>
+                    <p>料理をどんどん完成させて、先に10点！ 相手をおなかいっぱいにして勝利しよう。千鶴・舞依・拓海・暁から自分のキャラを選んで、CPUとすぐに1戦。ストーリーの特別編をクリアすると、剛・栞那・結月・龍太も選べます。CPUの性格や速度も設定できます。</p>
                 </article>
                 <article class="course-card">
                     <img class="course-visual course-visual-story" src="assets/images/home/mode-story-study.jpg" alt="" width="800" height="1000" loading="lazy">
                     <p class="course-number">02</p>
                     <h3>ストーリー・ミッション</h3>
-                    <p>六人が出会う「出会い・文化祭編」（第4〜10話）と、ルールを覚えられるチュートリアル「再会編」（第1〜3話）。背景と立ち絵つきの会話で物語が進みます。第1話をクリアすると、縛りつきの「ミッション」にも挑戦できます。</p>
+                    <p>ルールを覚えられるチュートリアル「再会編」（第1〜3話）、六人が出会う「出会い・文化祭編」（第4〜10話）、夏休み・ハロウィン・弓道・幼馴染の「特別編」。キャラクターのアイコンつきの会話で物語が進みます。第1話をクリアすると、縛りつきの「ミッション」にも挑戦できます。</p>
                     <p class="fan-work-note">※キャラクターはフェニチルさんの創作作品『天涯比隣』のキャラクターデザインと名前をお借りした二次創作です。性格・関係性・ストーリー・設定はすべて本作独自のもので、原作とは関係ありません。</p>
                 </article>
                 <article class="course-card">
@@ -730,7 +771,7 @@
 
                 <a class="link-card unity-link" href="https://donadonaa24-cyber.github.io/battle-a-la-carte-3d/" target="_blank" rel="noopener noreferrer">
                     <span class="link-title">Unity版（3D版）</span>
-                    <span class="link-text">Windows / Android 向け。v0.4.0 公開中・v0.5.0 準備中。導入方法と通信対戦の参加手順はこちら</span>
+                    <span class="link-text">Windows / Android 向け。v0.6.0 公開中。導入方法と通信対戦の参加手順はこちら</span>
                 </a>
 
                 <a class="link-card" href="https://donadonaa24-cyber.github.io/aniani-asobiba/">

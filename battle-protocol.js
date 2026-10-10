@@ -1,5 +1,25 @@
 (function (root) {
     'use strict';
+    // U6b: owned characters are enabled in both versions; capability guards remain independent.
+    const newOnlineCharactersEnabled = true;
+    const characterNames = Object.freeze({ chizuru: '千鶴', mai: '舞依', takumi: '拓海', akatsuki: '暁',
+        kanna: '栞那', tsuyoshi: '剛', yuzuki: '結月', ryuta: '龍太' });
+    const originalCharacters = Object.freeze(['chizuru', 'mai', 'takumi', 'akatsuki']);
+    const knownCharacter = id => typeof id === 'string' && Object.prototype.hasOwnProperty.call(characterNames, id);
+    const onlineAllowed = id => knownCharacter(id) && (newOnlineCharactersEnabled || originalCharacters.includes(id));
+    const supportsEight = info => Number.isSafeInteger(info?.characterRosterVersion) && info.characterRosterVersion >= 2;
+    function roomCharacterError(host, guest, selecting = false) {
+        if (!knownCharacter(host?.character) || (guest && !knownCharacter(guest.character))) return 'CHARACTER_UPDATE_REQUIRED';
+        const needsEight = !originalCharacters.includes(host.character) || (guest && !originalCharacters.includes(guest.character));
+        if (needsEight && (!supportsEight(host) || (guest && !supportsEight(guest)))) return 'CHARACTER_UPDATE_REQUIRED';
+        if (selecting && (!onlineAllowed(host.character) || (guest && !onlineAllowed(guest.character)))) return 'INVALID_SELECTION';
+        return null;
+    }
+    const viewCharacterError = state => ['player', 'cpu'].every(side => knownCharacter(state?.characterIds?.[side]))
+        ? null : 'CHARACTER_UPDATE_REQUIRED';
+    const characters = Object.freeze({ version: 2, newOnlineCharactersEnabled, names: characterNames,
+        original: originalCharacters, known: knownCharacter, onlineAllowed, supportsEight,
+        roomError: roomCharacterError, viewError: viewCharacterError });
     const actions = Object.freeze([
         'playerSurrender', 'playerSetCard', 'confirmSetCard', 'cancelSetCard', 'viewSetCard', 'closeSetCardView',
         'openIngredientAction', 'closeIngredientAction', 'showIngredientCombinations',
@@ -74,5 +94,5 @@
             action.args.every(arg => (typeof arg === 'string' && arg.length <= 160) ||
                 (typeof arg === 'number' && Number.isSafeInteger(arg)));
     }
-    root.BattleProtocol = Object.freeze({ version: 1, actions, clone, swap, view, validAction, randomUUID });
+    root.BattleProtocol = Object.freeze({ version: 1, characters, actions, clone, swap, view, validAction, randomUUID });
 })(typeof window === 'undefined' ? globalThis : window);

@@ -155,10 +155,10 @@ test('both HTML entry points bump only the four changed scripts and retain chara
     for (const [file, prefix, suffix] of [['web.html', '', ''], ['mobile/mobile.html', '../', '-sp']]) {
         const html = read(file);
         for (const script of ['battle-images.js', 'dish-effects.js', `main${suffix}.js`, `render${suffix}.js`]) {
-            const version = script === 'battle-images.js' ? '20261007-osananajimi105a' : script === 'dish-effects.js' ? '20261006-icons99c' : '20261007-osananajimi105a';
+            const version = script === 'battle-images.js' ? '20261007-osananajimi105a' : script === 'dish-effects.js' ? '20261006-icons99c' : script.startsWith('main') ? '20261010-u6b' : '20261007-osananajimi105a';
             assert.ok(html.includes(`${['battle-images.js', 'dish-effects.js'].includes(script) ? prefix : ''}${script}?v=${version}`));
         }
-        assert.ok(html.includes('network.js?v=20261007-osananajimi105a'));
+        assert.ok(html.includes('network.js?v=20261010-u6b'));
     }
     for (const file of ['main.js', 'mobile/main-sp.js']) assert.match(read(file), /BattleImages\.standingPath/);
     for (const id of ids) assert.ok(fs.existsSync(path.join(root, `assets/battle-images/character-icons/${id}-icons.webp`)));

@@ -1,6 +1,6 @@
 // HOST-only worker. Reuses the actual game rules without rendering or local coin rewards.
 self.window = self;
-importScripts('battle-protocol.js?v=20261002-ach1', 'achievements.js?v=20261003-rewards-bgm1', 'cards.js?v=20260929-board1', 'state.js?v=20261003-rewards-bgm1', 'rules.js?v=20261002-ach1', 'player.js?v=20261002-ach1');
+importScripts('battle-protocol.js?v=20261010-u6b', 'achievements.js?v=20261003-rewards-bgm1', 'cards.js?v=20260929-board1', 'state.js?v=20261003-rewards-bgm1', 'rules.js?v=20261002-ach1', 'player.js?v=20261002-ach1');
 // Rule timers only schedule presentation; deliver those cues with the committed action.
 self.setTimeout = callback => { callback(); return 0; };
 let effects = [], logs = [];
@@ -27,14 +27,19 @@ self.endGame = winner => {
     GameState.pendingSkillContext = null;
 };
 function loadSnapshot(snapshot) {
+    const error = BattleProtocol.characters.viewError(snapshot);
+    if (error) throw new Error(error);
     for (const key of Object.keys(GameState)) delete GameState[key];
     Object.assign(GameState, BattleProtocol.clone(snapshot));
 }
-const names = { chizuru: '千鶴', mai: '舞依', takumi: '拓海', akatsuki: '暁' };
+const names = BattleProtocol.characters.names;
 async function execute(request) {
     effects = []; logs = [];
     let actor = request.role || 'host';
     if (request.kind === 'init') {
+        if (!request.host || !request.guest) throw new Error('CHARACTER_UPDATE_REQUIRED');
+        const error = BattleProtocol.characters.roomError(request.host, request.guest, true);
+        if (error) throw new Error(error);
         initGame();
         GameState.currentTurn = request.firstRole === 'guest' ? 'cpu' : 'player';
         // Original sequential IDs identify card names; replace IDs, not cards or rules.
@@ -43,7 +48,7 @@ async function execute(request) {
         }
         for (const [key, role] of [['player', 'host'], ['cpu', 'guest']]) {
             const info = request[role] || {};
-            const id = Object.prototype.hasOwnProperty.call(names, info.character) ? info.character : 'chizuru';
+            const id = info.character;
             GameState.characterIds[key] = id;
             GameState.characterNames[key] = names[id];
             setPlayerSelectedSkill(GameState.players[key], info.skill);

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const onlineFixture = require('./helpers/online-character-fixture.cjs');
 
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
@@ -208,7 +209,8 @@ function workerRuntime() {
 test('host rejects either opening player with a private notice; PC/mobile guests render the host response', async () => {
     const worker = workerRuntime();
     for (const role of ['host', 'guest']) {
-        const initial = await worker.execute({ kind: 'init', firstRole: role });
+        const initial = await worker.execute({ kind: 'init', firstRole: role,
+            host: onlineFixture.info('chizuru'), guest: onlineFixture.info('mai') });
         const snapshot = clone(initial.snapshot);
         snapshot.players[role === 'host' ? 'player' : 'cpu'].events = [eventCard()];
         const result = await worker.execute({ kind: 'action', role, snapshot,
@@ -224,6 +226,7 @@ test('host rejects either opening player with a private notice; PC/mobile guests
                 revision: 0, stopped: false, started: true, status() {}, quickConfirm: null, metrics: null,
                 $: id => nodes[id] || null });
             const network = read('network.js');
+            onlineFixture.install(c, role);
             vm.runInContext(network.slice(network.indexOf('    function applyView('), network.indexOf('    async function sync(')), c);
             c.applyView({ revision: 1, payload: { ...clone(result.views[role]), request: 'request' } });
             assertNotice(r, firstNotice);
@@ -256,10 +259,10 @@ test('PC/mobile notice helpers, hints, styles and current asset references stay 
         assert.match(html, /id="field-notice"[^>]*role="status"[^>]*aria-live="polite"/);
         assert.match(html, /id="event-first-turn-hint"[^>]*>1ターン目は使用不可</);
         for (const asset of [`style${suffix}.css`, `player${suffix}.js`, `render${suffix}.js`, 'network.js']) {
-            const version = asset.startsWith('style') ? '20261007-osananajimi105a' : asset.startsWith('player') ? '20261002-ach1' : asset.startsWith('render') ? '20261007-osananajimi105a' : '20261007-osananajimi105a';
+            const version = asset === 'network.js' ? '20261010-u6b' : asset.startsWith('player') ? '20261002-ach1' : '20261007-osananajimi105a';
             assert.ok(html.includes(`${asset}?v=${version}`), asset);
         }
     }
-    assert.match(read('network.js'), /battle-engine-worker\.js\?v=20261003-rewards-bgm1/);
+    assert.match(read('network.js'), /battle-engine-worker\.js\?v=20261010-u6b/);
     assert.match(read('battle-engine-worker.js'), /player\.js\?v=20261002-ach1/);
 });

@@ -19,8 +19,9 @@ test('Web and mobile card motion, direct pile view and pack shop stay usable', {
         });
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-    const browser = await chromium.launch({ headless: true, channel: 'msedge' });
+    let browser;
     try {
+        browser = await chromium.launch({ headless: true, channel: 'msedge' });
         for (const [index, file] of ['web.html', 'mobile/mobile.html'].entries()) {
             const page = await browser.newPage({ viewport: index ? { width: 390, height: 844 } : { width: 1280, height: 800 } });
             await page.goto(`http://127.0.0.1:${server.address().port}/${file}`);
@@ -181,7 +182,7 @@ test('Web and mobile card motion, direct pile view and pack shop stay usable', {
             await page.close();
         }
     } finally {
-        await browser.close();
+        if (browser) await browser.close();
         await new Promise(resolve => server.close(resolve));
     }
 });

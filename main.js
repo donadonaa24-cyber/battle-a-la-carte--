@@ -508,7 +508,8 @@ function getFriendSetupHintMessage() {
 function resetUnsupportedOnlineCharacter() {
     if (window.FriendBattle?.isActive?.()) return;
     const selection = document.getElementById('online-character');
-    if (selection && (['tsuyoshi', 'kanna', 'yuzuki', 'ryuta'].includes(selection.value) || ['tsuyoshi', 'kanna', 'yuzuki', 'ryuta'].includes(window.getUserProfile?.().favoriteCharacterId))) {
+    if (selection && (!window.BattleProtocol?.characters?.onlineAllowed(selection.value) ||
+        (window.isPlayableCharacterUnlocked && !window.isPlayableCharacterUnlocked(selection.value)))) {
         selection.value = 'chizuru';
     }
 }

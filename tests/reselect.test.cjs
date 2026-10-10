@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const onlineFixture = require('./helpers/online-character-fixture.cjs');
 
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
@@ -106,7 +107,7 @@ async function action(c, snapshot, role, id) {
 for (const role of ['host', 'guest']) {
     test(`worker ${role}: one full-selection toggle replaces, deselect-then-select also works`, async () => {
         const c = worker();
-        let state = (await c.execute({ kind: 'init' })).snapshot;
+        let state = (await c.execute({ kind: 'init', host: onlineFixture.info('chizuru'), guest: onlineFixture.info('mai') })).snapshot;
         state.currentTurn = role === 'host' ? 'player' : 'cpu';
         state.selectionMode = 'event-target';
         state.pendingEventContext = {

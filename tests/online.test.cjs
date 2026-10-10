@@ -144,7 +144,8 @@ test('online surrender loss is recorded once across projections and reloads; win
     const storage = new Map();
     let losses = 0;
     const c = vm.createContext({pending: null, stopped: false, started: true, revision: 0, metrics: null,
-        GameState: {}, room: {id: 'test-room'}, recordedSurrenders: new Set(),
+        GameState: {}, room: {id: 'test-room',host_id:'host'}, user:{id:'host'}, recordedSurrenders: new Set(),
+        assertCharacterRoom() {}, assertCharacterState() {},
         localStorage: {getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value)},
         $: () => null, status() {}, window: {updateUI() {}, addLog() {}, prepareMatchFinale() {},
             recordMatchResult(win, options) { assert.equal(win, false); assert.equal(options.noCoins, true); losses++; }}});
@@ -522,7 +523,7 @@ test('next human chooses Battle Mode discard pickup after turn handoff', async (
 
 test('server-selected GUEST first is projected correctly without changing CPU initialization', async () => {
     const c=runtime();
-    const r=await c.execute({kind:'init', firstRole:'guest'});
+    const r=await c.execute({kind:'init', firstRole:'guest',host:{character:'chizuru',skill:'lastOrder'},guest:{character:'mai',skill:'foodTrap'}});
     assert.equal(r.snapshot.currentTurn,'cpu');
     assert.equal(r.views.host.state.currentTurn,'cpu');
     assert.equal(r.views.guest.state.currentTurn,'player');

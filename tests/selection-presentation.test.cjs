@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const onlineFixture = require('./helpers/online-character-fixture.cjs');
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
@@ -279,8 +280,9 @@ for (const mobile of [false, true]) {
         const source = read('network.js');
         Object.assign(c, { pending: null, revision: 0, stopped: false, started: true, metrics: null,
             quickConfirm: null, status() {}, $: id => c.document.getElementById(id) });
+        onlineFixture.install(c);
         vm.runInContext(source.slice(source.indexOf('    function applyView('), source.indexOf('    async function sync(')), c);
-        const row = { revision: 1, payload: { state: { selectionMode: 'event-target', pendingEventContext: {
+        const row = { revision: 1, payload: { state: { characterIds: { ...c.GameState.characterIds }, selectionMode: 'event-target', pendingEventContext: {
             actor: 'player', source: 'event', eventCardId: 'evt', eventName: '創作料理',
             options: [{ id: 'a', label: 'ごはん' }], minSelect: 1, maxSelect: 1 }, selectedTargetIds: [] },
             effects: [{ name: 'showSpotlightEventCard', args: [{ name: '創作料理' }] }] } };

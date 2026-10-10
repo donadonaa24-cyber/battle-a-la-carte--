@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const onlineFixture = require('./helpers/online-character-fixture.cjs');
 
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
@@ -79,6 +80,7 @@ function prepareRecipe(c, side = 'player') {
 function installGuest(c) {
     Object.assign(c, { pending: null, revision: 0, stopped: false, started: true, quickConfirm: null, metrics: null,
         status() {}, $: id => c.document.getElementById(id) });
+    onlineFixture.install(c);
     const source = read('network.js');
     vm.runInContext(source.slice(source.indexOf('    function applyView('), source.indexOf('    async function sync(')), c);
 }
@@ -325,7 +327,7 @@ test('host special-dish completion emits exactly one cook cue for the guest', as
     c.importScripts = (...files) => files.forEach(file => vm.runInContext(read(file.split('?')[0]), c));
     c.importScripts('battle-engine-worker.js');
     for (const dish of ['緊急料理', '創作料理']) {
-        let result = await c.execute({ kind: 'init' });
+        let result = await c.execute({ kind: 'init', host: onlineFixture.info('chizuru'), guest: onlineFixture.info('mai') });
         const snapshot = clone(result.snapshot);
         snapshot.turnNumber = 2;
         snapshot.players.player.hand = ['牛肉', '豚肉'].map((name, i) => ({ id: `ingredient-${i}`, name, type: 'ingredient' }));
@@ -356,10 +358,10 @@ test('cook sound modules and lifecycle mirrors match and updated assets are load
     for (const name of ['player', 'cpu', 'main']) assert.equal(read(`${name}.js`), read(`mobile/${name}-sp.js`).replaceAll('../assets/', 'assets/').replace("window.location.href = '../index.html'", "window.location.href = 'index.html'"));
     for (const [html, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
         assert.ok(read(html).includes(`audio${suffix}.js?v=20261007-osananajimi105a`));
-        assert.ok(read(html).includes(`main${suffix}.js?v=20261007-osananajimi105a`));
+        assert.ok(read(html).includes(`main${suffix}.js?v=20261010-u6b`));
         assert.ok(read(html).includes(`player${suffix}.js?v=20261002-ach1`));
-        assert.ok(read(html).includes('network.js?v=20261007-osananajimi105a'));
+        assert.ok(read(html).includes('network.js?v=20261010-u6b'));
     }
-    assert.ok(read('network.js').includes('battle-engine-worker.js?v=20261003-rewards-bgm1'));
+    assert.ok(read('network.js').includes('battle-engine-worker.js?v=20261010-u6b'));
     assert.ok(read('battle-engine-worker.js').includes('player.js?v=20261002-ach1'));
 });

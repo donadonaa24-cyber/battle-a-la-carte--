@@ -104,23 +104,30 @@ test('quick mode leaves skill, pack and surrender confirmations alone', async ()
 test('online client dispatches the matching follow-up only after the host confirms the initiating request', () => {
     const q = quick().api; q.setMode('quick');
     const network = source('network.js');
+    const guards = network.slice(network.indexOf('    function assertCharacterRoom('), network.indexOf('    function profileInfo('));
     const apply = network.slice(network.indexOf('    function applyView('), network.indexOf('    async function sync('));
     const dispatch = network.slice(network.indexOf('    function dispatch('), network.indexOf('    async function resume('));
+    const host = { character: 'takumi', characterRosterVersion: 2, skill: 'lastOrder' };
+    const guest = { character: 'akatsuki', characterRosterVersion: 2, skill: 'foodTrap' };
     let serial = 0; const sent = [];
-    const c = vm.createContext({room: {id: 'room', status: 'playing'}, stopped: false, busy: false,
+    const c = vm.createContext({room: {id: 'room', status: 'playing', host_id: 'player', guest_id: 'opponent', host_info: host, guest_info: guest}, stopped: false, busy: false,
         pending: null, connected: true, peerPresent: true, GameState: {gameEnded: false},
         getBattleViewModel: () => ({turn: 'me'}),
-        protocol: {randomUUID: () => `request-${++serial}`, validAction: () => true},
+        crypto: require('node:crypto').webcrypto,
         user: {id: 'player'}, revision: 0, fastMode: false, pendingKey: 'pending', deadline: null,
         quickConfirm: null, started: true, metrics: null, recordedSurrenders: new Set(),
         sessionStorage: {setItem() {}, removeItem() {}},
-        window: {QuickConfirm: q, updateUI() {}, addLog() {}},
+        QuickConfirm: q, updateUI() {}, addLog() {},
         $: () => null, controls() {}, status() {}, clearTimeout() {}, setTimeout: () => 0,
-        resend() { sent.push(c.pending.action.name); }, message() {}});
-    vm.runInContext(`${apply}\n${dispatch}`, c);
+        resend() { sent.push(c.pending.action.name); }, message() {}, fail(error) { throw error; }});
+    c.window = c;
+    vm.runInContext(source('battle-protocol.js'), c);
+    c.protocol = { ...c.BattleProtocol, randomUUID: () => `request-${++serial}` };
+    vm.runInContext(`${guards}\n${apply}\n${dispatch}`, c);
     const acknowledge = state => {
         const request = c.pending.id;
-        c.applyView({revision: c.revision + 1, payload: {request, state}});
+        c.applyView({revision: c.revision + 1, payload: {request, state: { ...state,
+            characterIds: { player: host.character, cpu: guest.character } }}});
     };
     c.dispatch('playerSetCard', ['card-a']);
     assert.deepEqual(sent, ['playerSetCard']);

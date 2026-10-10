@@ -228,6 +228,6 @@ test('PC/mobile share setup logic, overlay markup and CSS and load the updated f
     for (const [html, style, main] of [['web.html', 'style.css', 'main.js'], ['mobile/mobile.html', 'style-sp.css', 'main-sp.js']]) {
         const version = '20261007-osananajimi105a';
         assert.ok(read(html).includes(`${style}?v=${version}`));
-        assert.ok(read(html).includes(`${main}?v=20261007-osananajimi105a`));
+        assert.ok(read(html).includes(`${main}?v=20261010-u6b`));
     }
 });

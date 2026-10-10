@@ -201,7 +201,7 @@ test('standing art stays in setup, field/profile icons and both entry-page cache
     for (const file of ['style.css', 'mobile/style-sp.css']) assert.ok(read(file).includes('assets/battle-images/character-icons/' + icon));
     for (const [file, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
         for (const asset of [`style${suffix}.css`, `render${suffix}.js`, `main${suffix}.js`, 'battle-images.js']) {
-            const version = asset === 'battle-images.js' ? '20261007-osananajimi105a' : '20261007-osananajimi105a';
+            const version = asset.startsWith('main') ? '20261010-u6b' : '20261007-osananajimi105a';
             assert.ok(read(file).includes(`${asset}?v=${version}`), `${file}: ${asset}`);
         }
         assert.doesNotMatch(read(file), /standing-src|standing\.png/);

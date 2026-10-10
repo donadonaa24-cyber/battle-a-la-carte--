@@ -1,5 +1,12 @@
 # Battle à la carte 通信対戦の設定手順
 
+## U6aキャラ表示互換SQL（2026-10-10、本番適用済み・U6b候補ON）
+
+オーナーが2026-10-10に`supabase/battle-character-compat.sql`を本番SQL Editorで適用し、Success. No rows returnedを確認済みです。旧版拒否の実表示とON新4人・元4人互換はClaudeがLIVEで確認します。追加triggerはprivate／publicの部屋作成・参加に共通で、残高・報酬・既存部屋を削除しません。繰り返し適用可能です。両者の整数characterRosterVersion>=2がなければ新IDの入室を拒否し、旧Webが認識するENGINE_ERROR（再読込／更新案内）と日本語detailsを返します。Unity migration006と同一内容です。
+
+PGliteで`tests/sql.test.cjs`／`tests/online-character-sql.test.cjs`は2 PASS／skip 0。両版候補スイッチはU6bでON、OFF舞依LIVEはPASS済みです。ON新4ID／mobile HOSTと旧Unity v0.5.0／cached Webの実更新案内は公開前にClaudeが確認します。rollback時は両スイッチをOFFに戻し、このSQLガードは残します。キー／token／sessionを結果へ記録しないでください。
+
+
 ## 現在の状態
 
 2026-09-12: 既存Web版・スマホ版にオンライン対戦の初版を組み込みました。

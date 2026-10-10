@@ -136,8 +136,8 @@ test('PC/mobile artwork matches apart from the relative image URL and only chang
     assert.equal(block(read('style.css')), block(read('mobile/style-sp.css')).replaceAll('../assets/', 'assets/'));
     for (const [file, suffix] of [['web.html', ''], ['mobile/mobile.html', '-sp']]) {
         const html = read(file);
-        for (const name of [`style${suffix}.css`, `main${suffix}.js`]) assert.ok(html.includes(`${name}?v=${name.startsWith('main') ? '20261007-osananajimi105a' : '20261007-osananajimi105a'}`));
-        for (const name of [`render${suffix}.js`, 'network.js']) assert.ok(html.includes(`${name}?v=${name.startsWith('render') ? '20261007-osananajimi105a' : '20261007-osananajimi105a'}`));
+        for (const name of [`style${suffix}.css`, `main${suffix}.js`]) assert.ok(html.includes(`${name}?v=${name.startsWith('main') ? '20261010-u6b' : '20261007-osananajimi105a'}`));
+        for (const name of [`render${suffix}.js`, 'network.js']) assert.ok(html.includes(`${name}?v=${name === 'network.js' ? '20261010-u6b' : '20261007-osananajimi105a'}`));
         assert.ok(html.includes('profile.js?v=20261007-osananajimi105a'));
         assert.ok(html.includes('missions.js?v=20261004-story-viewer1'));
         assert.ok(html.includes('story-adv.js?v=20261007-osananajimi105a'));

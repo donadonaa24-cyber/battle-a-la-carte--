@@ -1955,7 +1955,7 @@ test('episodes1–3 mechanics, tutorial setup, HUD, objectives and guards are un
     assert.match(read('achievements.js'), /if \(state\.achievementStory \|\| state\.storyEpisodeId\) return \[\]/);
 });
 
-test('101b adds unlockable 剛 and 栞那 while classmates stay outside selection and all stay outside online protocol', async () => {
+test('101b adds unlockable 剛 and 栞那; U6b enables their online IDs while classmates stay outside selection and protocol', async () => {
     for (const file of ['main.js', 'mobile/main-sp.js']) {
         const source = read(file);
         for (const name of ['START_CHARACTER_OPTIONS', 'START_GALLERY_CHARACTER_OPTIONS']) {
@@ -1967,7 +1967,12 @@ test('101b adds unlockable 剛 and 栞那 while classmates stay outside selectio
     }
     for (const file of ['profile.js', 'achievements.js', 'network.js']) assert.doesNotMatch(read(file), /classmate/, file);
     assert.doesNotMatch(read('battle-engine-worker.js'), /kanna|tsuyoshi|classmate/);
-    assert.match(read('network.js'), /value="tsuyoshi" disabled/);
+    const protocolContext = { window: {} }; vm.runInNewContext(read('battle-protocol.js'), protocolContext);
+    const roster = protocolContext.window.BattleProtocol.characters;
+    assert.equal(roster.newOnlineCharactersEnabled, true);
+    for (const id of ['tsuyoshi', 'kanna']) assert.equal(roster.onlineAllowed(id), true);
+    for (const id of ['classmate1', 'classmate2']) assert.equal(roster.known(id), false);
+    assert.match(read('network.js'), /option\.disabled = !known \|\| !allowed \|\| !unlocked/);
     const imageContext = { window: {} }; vm.runInNewContext(read('battle-images.js'), imageContext);
     assert.deepEqual(Object.keys(imageContext.window.BattleImages.standingPaths), ['chizuru', 'mai', 'takumi', 'akatsuki', 'tsuyoshi', 'kanna', 'yuzuki', 'ryuta']);
     for (const file of ['web.html', 'mobile/mobile.html']) assert.doesNotMatch(read(file), /value="(?:kanna|tsuyoshi|classmate1|classmate2)"/);
@@ -3651,7 +3656,7 @@ test('100b entry pages load special after episode10 and bump changed script keys
         const html = read(page), special = html.indexOf(prefix + SUMMER_FILE + '?v=20261007-osananajimi105a');
         assert.ok(special > html.indexOf('story-data/episode10.js?v=')); assert.ok(special < html.indexOf('story-adv.js?v='));
         for (const script of ['story-data/characters.js', 'story-data/registry.js', 'story-data/episode7.js', 'story-viewer.js', 'story-adv.js', 'battle-images.js']) assert.ok(html.includes(prefix + script + '?v=' + (script === 'battle-images.js' ? '20261007-osananajimi105a' : ['story-data/characters.js', 'story-adv.js', 'story-data/registry.js'].includes(script) ? '20261007-osananajimi105a' : script === 'story-data/episode7.js' ? '20261006-summer100b' : '20261007-osananajimi105a')));
-        assert.ok(html.includes(main + '?v=20261007-osananajimi105a'));
+        assert.ok(html.includes(main + '?v=20261010-u6b'));
     }
     const manifest = JSON.parse(read('assets/audio-pack/manifest.json'));
     assert.ok(manifest.tracks['theme-tsuyoshi']);

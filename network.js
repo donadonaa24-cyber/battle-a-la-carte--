@@ -34,6 +34,8 @@
     const sessionRoomKey = 'aniani:battle:room:v1';
     const pendingKey = 'aniani:battle:pending:v1';
     const errors = {
+        CHARACTER_UPDATE_REQUIRED: 'キャラクター表示に対応した最新版に更新してください。Web版はページを再読み込みしてください。',
+        ENGINE_ERROR: 'キャラクター表示に対応した最新版に更新してください。Web版はページを再読み込みしてください。',
         LOGIN_REQUIRED: 'あにあに共通アカウントでログインしてください。',
         'Anonymous sign-ins are disabled': 'Supabaseでゲスト接続の許可が必要です。管理者向け手順書の「匿名ログイン」を確認してください。',
         ROOM_NOT_FOUND: '参加できる部屋が見つかりません。合言葉と有効期限を確認してください。',
@@ -116,6 +118,7 @@
     function controls() {
         if ($('online-rematch')) $('online-rematch').hidden = !fastMode || !started || !GameState.gameEnded;
         const available = !busy && !room;
+        if (!room) refreshCharacterOptions();
         for (const id of ['friend-create-button', 'friend-join-button', 'friend-search-public-button']) if ($(id)) $(id).disabled = !available;
         for (const id of ['friend-create-button', 'friend-join-button']) if ($(id)) $(id).setAttribute('aria-busy', String(busy));
         for (const id of ['online-character', 'online-skill']) if ($(id)) $(id).disabled = !available;
@@ -267,16 +270,40 @@
         if (error) throw error;
         return data;
     }
+    function assertCharacterRoom(value) {
+        const error = protocol.characters?.roomError(value?.host_info, value?.guest_info);
+        if (!protocol.characters || error) throw new Error(error || 'CHARACTER_UPDATE_REQUIRED');
+    }
+    function refreshCharacterOptions() {
+        for (const option of $('online-character')?.options || []) {
+            const known = protocol.characters?.known(option.value);
+            const allowed = protocol.characters?.onlineAllowed(option.value);
+            const unlocked = !window.isPlayableCharacterUnlocked || window.isPlayableCharacterUnlocked(option.value);
+            option.disabled = !known || !allowed || !unlocked;
+            if (known) option.textContent = protocol.characters.names[option.value] +
+                (!allowed ? '：オンライン対戦は今後対応予定' : !unlocked ? '：ストーリーCLEARで解放' : '');
+        }
+    }
+    function assertCharacterState(state, role) {
+        const error = protocol.characters?.viewError(state);
+        if (!protocol.characters || error) throw new Error(error || 'CHARACTER_UPDATE_REQUIRED');
+        const me = role === 'host' ? room.host_info : room.guest_info;
+        const foe = role === 'host' ? room.guest_info : room.host_info;
+        if (state.characterIds.player !== me?.character || state.characterIds.cpu !== foe?.character)
+            throw new Error('CHARACTER_UPDATE_REQUIRED');
+    }
     function profileInfo(options = {}) {
         const profile = window.getUserProfile?.() || {};
         const info = {
             name: String(options.userName || profile.name || 'プレイヤー').slice(0, 24),
             character: options.favoriteCharacterId || $('online-character')?.value || profile.favoriteCharacterId || 'chizuru',
+            characterRosterVersion: protocol.characters?.version,
             skill: options.favoriteSkillKey || $('online-skill')?.value || profile.favoriteSkillKey || 'lastOrder',
             ...window.Achievements?.selectedCosmetics()
         };
-        if (['tsuyoshi', 'kanna', 'yuzuki', 'ryuta'].includes(info.character)) info.character = 'chizuru';
-        if (!['chizuru', 'mai', 'takumi', 'akatsuki'].includes(info.character) ||
+        if (!protocol.characters) throw new Error('CHARACTER_UPDATE_REQUIRED');
+        if (!protocol.characters.onlineAllowed(info.character) ||
+            (window.isPlayableCharacterUnlocked && !window.isPlayableCharacterUnlocked(info.character)) ||
             !window.getSkillDefinitionByKey?.(info.skill)) throw new Error('INVALID_SELECTION');
         return info;
     }
@@ -311,7 +338,7 @@
     }
     function engine(request) {
         if (!worker) {
-            worker = new Worker(new URL('battle-engine-worker.js?v=20261003-rewards-bgm1', base));
+            worker = new Worker(new URL('battle-engine-worker.js?v=20261010-u6b', base));
             worker.onmessage = ({ data }) => {
                 const job = workerRequests.get(data.id);
                 if (!job) return;
@@ -336,6 +363,12 @@
             pending = null; clearTimeout(deadline); sessionStorage.removeItem(pendingKey); controls();
         }
         if (!row || row.revision < revision || (row.revision === revision && !acknowledgement) || stopped) return;
+        try {
+            assertCharacterRoom(room);
+            assertCharacterState(row.payload?.state, room.host_id === user.id ? 'host' : 'guest');
+        } catch (error) {
+            stopped = true; connected = false; controls(); fail(error); return;
+        }
         if (!started) {
             window.__battleSafeStartGame();
             started = true;
@@ -404,6 +437,7 @@
                 const fresh = await select('battle_rooms', { id: currentId }, true);
                 if (!fresh) throw new Error('ROOM_NOT_FOUND');
                 if (!room || room.id !== currentId || stopped) return;
+                assertCharacterRoom(fresh);
                 room = fresh;
                 const peerId = room.host_id === user.id ? room.guest_id : room.host_id;
                 peerPresent = !!peerId && !!channel?.presenceState()[peerId]?.length;
@@ -487,8 +521,10 @@
         if (result !== 'ok') throw new Error('BROADCAST_SEND_ERROR');
     }
     async function sendLatest(id, request = null, trace = null, presentation = false) {
+        if (room) assertCharacterRoom(room);
         if (!latestResult || !room) return;
         const role = id === room.host_id ? 'host' : 'guest';
+        assertCharacterState(latestResult.views[role]?.state, role);
         const row = { room: room.id, revision, payload: { ...latestResult.views[role],
             logs: presentation ? latestResult.views[role].logs : [], effects: presentation ? latestResult.views[role].effects : [], request, trace } };
         if (id === user.id) applyView(row);
@@ -573,6 +609,7 @@
         const id = room.id;
         const [fresh, ownView] = await Promise.all([select('battle_rooms', { id }, true), select('battle_views', { room_id: id, user_id: user.id }, true)]);
         if (!fresh || room?.id !== id || stopped) return;
+        assertCharacterRoom(fresh);
         room = fresh;
         await ensureStreams();
         const peer = room.host_id === user.id ? room.guest_id : room.host_id;
@@ -647,6 +684,7 @@
         if (client) await Promise.all(oldChannels.map(old => client.removeChannel(old)));
     }
     async function attach(value) {
+        assertCharacterRoom(value);
         const sameRoom = room?.id === value.id;
         let joinNoticeSent = false;
         await detach();
@@ -812,7 +850,7 @@
         const selection = document.createElement('div');
         selection.className = 'online-account-box';
         selection.id = 'online-selection';
-        selection.innerHTML = '<label>対戦キャラクター<select id="online-character"><option value="chizuru">千鶴</option><option value="mai">舞依</option><option value="takumi">拓海</option><option value="akatsuki">暁</option><option value="tsuyoshi" disabled>剛：オンライン対戦は今後対応予定</option><option value="kanna" disabled>栞那：オンライン対戦は今後対応予定</option><option value="yuzuki" disabled>結月：オンライン対戦は今後対応予定</option><option value="ryuta" disabled>龍太：オンライン対戦は今後対応予定</option></select></label><label>対戦スキル<select id="online-skill" aria-describedby="online-skill-details"></select></label><p class="skill-recommendation">★はおすすめ度（多いほど扱いやすい）</p><p>着せ替えは自分の画面だけに反映されます。相手には通常衣装で表示されます。</p><div id="online-skill-details" class="online-skill-details" aria-live="polite"></div>';
+        selection.innerHTML = '<label>対戦キャラクター<select id="online-character"><option value="chizuru">千鶴</option><option value="mai">舞依</option><option value="takumi">拓海</option><option value="akatsuki">暁</option><option value="tsuyoshi">剛</option><option value="kanna">栞那</option><option value="yuzuki">結月</option><option value="ryuta">龍太</option></select></label><label>対戦スキル<select id="online-skill" aria-describedby="online-skill-details"></select></label><p class="skill-recommendation">★はおすすめ度（多いほど扱いやすい）</p><p>着せ替えは自分の画面だけに反映されます。相手には通常衣装で表示されます。</p><div id="online-skill-details" class="online-skill-details" aria-live="polite"></div>';
         lobby.insertBefore(selection, lobby.querySelector('.start-user-form'));
         const hint = document.createElement('p'); hint.id = 'online-selection-hint';
         selection.appendChild(hint);
@@ -821,7 +859,9 @@
             selection.querySelector('#online-skill').appendChild(option);
         }
         const profile = window.getUserProfile?.() || {};
-        $('online-character').value = ['chizuru', 'mai', 'takumi', 'akatsuki'].includes(profile.favoriteCharacterId) ? profile.favoriteCharacterId : 'chizuru';
+        refreshCharacterOptions();
+        $('online-character').value = protocol.characters?.onlineAllowed(profile.favoriteCharacterId) &&
+            (!window.isPlayableCharacterUnlocked || window.isPlayableCharacterUnlocked(profile.favoriteCharacterId)) ? profile.favoriteCharacterId : 'chizuru';
         $('online-skill').value = window.getSkillDefinitionByKey?.(profile.favoriteSkillKey) ? profile.favoriteSkillKey : 'lastOrder';
         $('online-skill').addEventListener('change', updateSkillDetails);
         updateSkillDetails();
