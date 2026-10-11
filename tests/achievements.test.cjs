@@ -441,7 +441,7 @@ test('shared mirrors, UI containment, cache versions and account hooks remain wi
         for (const module of ['achievements.js', 'network.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'network.js' ? '20261010-u6b' : '20261007-osananajimi105a'}`), file + ': ' + module);
         for (const module of ['missions.js', 'battle-protocol.js', 'story-mode.js']) assert.ok(html.includes(`${prefix}${module}?v=${module === 'battle-protocol.js' ? '20261010-u6b' : module === 'story-mode.js' ? '20261006-icons99e' : '20261004-story-viewer1'}`), file + ': ' + module);
         for (const module of ['state', 'rules', 'player', 'main', 'render']) {
-            const version = module === 'main' ? '20261010-u6b' : module === 'render' ? '20261007-osananajimi105a' : module === 'state' ? '20261003-rewards-bgm1' : '20261002-ach1';
+            const version = ['main', 'render'].includes(module) ? '20261011-cutinfix' : module === 'state' ? '20261003-rewards-bgm1' : '20261002-ach1';
             assert.ok(html.includes(`${module}${suffix}.js?v=${version}`));
         }
         const panel = html.slice(html.indexOf('<div id="start-achievements-stage"'), html.indexOf('<div id="start-user-stage"'));

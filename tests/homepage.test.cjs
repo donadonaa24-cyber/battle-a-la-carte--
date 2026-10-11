@@ -53,7 +53,7 @@ test('news details and extra demos open in dialogs', () => {
     for (const match of html.matchAll(/data-open-dialog="([^"]+)"/g)) {
         assert.match(html, new RegExp(`<dialog [^>]*id="${match[1]}"`), `dialog ${match[1]}`);
     }
-    assert.equal((html.match(/class="news-row/g) || []).length, 5);
+    assert.ok((html.match(/class="news-row/g) || []).length >= 5, "news list keeps its rows (it grows with each release)");
     // Missions shipped on 2026-09-29: no longer listed as "planned", all six sleeves shown.
     assert.doesNotMatch(html, /カードスリーブを追加予定/);
     assert.equal((html.match(/sleeves\/sleeve-[a-z-]+\.webp/g) || []).length, 6);
@@ -76,8 +76,8 @@ test('play modes and rules use the in-game style illustrations', () => {
     assert.match(html, /mode-online-vs\.jpg/);
     // The owner removed the turn-flow illustration from the rules section.
     assert.doesNotMatch(html, /flow-figure|system-flow/);
-    // In CPU battles the four characters are the player's own pick, not the opponent.
-    assert.match(html, /4人から自分のキャラを選んで/);
+    // In CPU battles the characters are the player's own pick, not the opponent.
+    assert.match(html, /から自分のキャラを選んで/);
 });
 
 test('homepage assets referenced by index.html exist', () => {

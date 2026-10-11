@@ -2318,13 +2318,11 @@ function getCharacterNameForSide(side) {
 
 function getSkillCutinImagePathForSide(side) {
     const characterId = getCharacterIdForSide(side);
-    if (BattleImages.expressionPath) return BattleImages.expressionPath(characterId, 'smile', 'assets/', side);
     return BattleImages.lightPath(SKILL_CUTIN_IMAGE_PATHS[characterId] || SKILL_CUTIN_IMAGE_PATHS.chizuru);
 }
 
 function getBattleModeCutinImagePathForSide(side) {
     const characterId = getCharacterIdForSide(side);
-    if (BattleImages.expressionPath) return BattleImages.expressionPath(characterId, 'laugh', 'assets/', side);
     return BattleImages.lightPath(BATTLE_MODE_CUTIN_IMAGE_PATHS[characterId] || BATTLE_MODE_CUTIN_IMAGE_PATHS.chizuru);
 }
 
@@ -2406,8 +2404,10 @@ function showSpotlightCard({ badge, name, sub, imagePath, kind, durationMs }) {
     badgeEl.textContent = badge || '';
     nameEl.textContent = name || '';
     subEl.textContent = sub || '';
+    // Hide any retained face layer before restoring the dedicated card/cut-in artwork.
+    window.BattleImages?.applyExpressionPath?.(artEl, null);
+    artEl.style.backgroundColor = '';
     artEl.style.backgroundImage = imagePath ? `url("${imagePath}")` : 'none';
-    window.BattleImages?.applyExpressionPath?.(artEl, imagePath);
 
     spotlightHideAt = Date.now() + waitMs;
     spotlightTimer = setTimeout(() => {

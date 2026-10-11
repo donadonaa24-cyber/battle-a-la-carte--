@@ -1044,8 +1044,18 @@ function updateCharacterFaces() {
     cf = reacting('cpu', model.opponent, cf);
     p.classList.add(pf);
     c.classList.add(cf);
-    window.BattleImages?.applyExpression?.(p, model.me.characterId, pf.slice(5), '../assets/', 'player');
-    window.BattleImages?.applyExpression?.(c, model.opponent.characterId || 'mai', cf.slice(5), '../assets/', 'cpu');
+    const applyFace = (icon, characterId, face, side) => {
+        if (icon.classList.contains('battle-mode-chef')) {
+            window.BattleImages?.applyExpressionPath?.(icon, null);
+            // Let the existing chef CSS show through the previous face's inline background.
+            icon.style.backgroundImage = '';
+            icon.style.backgroundColor = '';
+        } else {
+            window.BattleImages?.applyExpression?.(icon, characterId, face.slice(5), '../assets/', side);
+        }
+    };
+    applyFace(p, model.me.characterId, pf, 'player');
+    applyFace(c, model.opponent.characterId || 'mai', cf, 'cpu');
 }
 
 function applyCharacterSkins() {

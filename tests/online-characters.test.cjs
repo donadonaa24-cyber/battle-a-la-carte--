@@ -90,7 +90,7 @@ test('profile selection, UI gates and cache URLs use one ON switch for PC/mobile
     for(const id of ids){const i=c.profileInfo({favoriteCharacterId:id});assert.equal(i.character,id);assert.equal(i.characterRosterVersion,2);assert.equal(i.costume,undefined);assert.equal(i.costumeId,undefined);c.isPlayableCharacterUnlocked=()=>false;assert.throws(()=>c.profileInfo({favoriteCharacterId:id}),/INVALID_SELECTION/);c.isPlayableCharacterUnlocked=()=>true;}
     c.isPlayableCharacterUnlocked=()=>false;assert.throws(()=>c.profileInfo({favoriteCharacterId:'mai'}),/INVALID_SELECTION/);
     for(const f of ['main.js','mobile/main-sp.js'])assert.match(read(f),/function resetUnsupportedOnlineCharacter[\s\S]*?characters\?\.onlineAllowed\(selection.value\)/);
-    for(const f of ['web.html','mobile/mobile.html'])for(const script of ['battle-protocol','network',f==='web.html'?'main':'main-sp'])assert.match(read(f),new RegExp(script+'\\.js\\?v=20261010-u6b'));
+    for(const f of ['web.html','mobile/mobile.html'])for(const script of ['battle-protocol','network',f==='web.html'?'main':'main-sp'])assert.match(read(f),new RegExp(script+'\\.js\\?v='+(script.startsWith('main')?'20261011-cutinfix':'20261010-u6b')));
     assert.match(source,/battle-engine-worker\.js\?v=20261010-u6b/);
     assert.match(source,/assertCharacterRoom\(fresh\);/);assert.match(source,/assertCharacterState\(latestResult.views\[role\]\?\.state, role\)/);
 });

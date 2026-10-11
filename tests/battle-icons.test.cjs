@@ -6,7 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
-const ids = ['chizuru', 'mai', 'takumi', 'akatsuki', 'kanna'];
+const ids = ['chizuru', 'mai', 'takumi', 'akatsuki', 'kanna', 'tsuyoshi', 'yuzuki', 'ryuta'];
 const cells = ['normal', 'smile', 'troubled', 'surprised', 'gentle', 'laugh'];
 
 function element() {
@@ -59,6 +59,14 @@ function imageCell(node, id, cell, mobile = false) {
     assert.equal(image.hidden, false);
     return image;
 }
+function chefIcon(node, id) {
+    assert.ok(node.classList.contains('battle-mode-chef'));
+    assert.ok(node.classList.contains(`char-${id}`));
+    assert.equal(node.children.filter(child => child.getAttribute('src')?.includes('/story/icons/') && !child.hidden).length, 0,
+        'chef icon has no visible face overlay');
+    assert.equal(node.style.backgroundImage, '', 'inline background-image must yield to chef CSS');
+    assert.equal(node.style.backgroundColor, '', 'inline face color must yield to chef CSS');
+}
 
 for (const mobile of [false, true]) for (const id of ids) {
     const label = `${mobile ? 'phone' : 'PC'} ${id}`;
@@ -91,7 +99,9 @@ for (const mobile of [false, true]) for (const id of ids) {
         }
         c.GameState.players.player.battleALaCarteModeActive = true;
         c.applyCharacterSkins(); c.updateCharacterFaces();
-        assert.ok(player.classList.contains('battle-mode-chef')); imageCell(player, id, 'normal', mobile);
+        chefIcon(player, id); imageCell(opponent, id, 'normal', mobile);
+        c.GameState.players.player.battleALaCarteModeActive = false;
+        c.applyCharacterSkins(); c.updateCharacterFaces(); imageCell(player, id, 'normal', mobile);
         c.GameState.players.cpu.set = [{ trapLocked: true }]; c.updateCharacterFaces();
         imageCell(opponent, id, 'surprised', mobile);
         c.GameState.players.cpu.set = []; c.updateCharacterFaces(); imageCell(opponent, id, 'normal', mobile);
@@ -108,8 +118,86 @@ for (const mobile of [false, true]) for (const id of ids) {
             c.renderMatchResultSummary();
             imageCell(nodes.get('result-summary').children[1].children[0], id, winner === 'player' ? 'gentle' : 'troubled', mobile);
         }
-        assert.equal(c.getSkillCutinImagePathForSide('cpu'), c.BattleImages.expressionPath(id, 'smile', mobile ? '../assets/' : 'assets/'));
-        assert.equal(c.getBattleModeCutinImagePathForSide('player'), c.BattleImages.expressionPath(id, 'laugh', mobile ? '../assets/' : 'assets/'));
+    });
+    test(`${label}: both sides use existing dedicated skill/Mode WebP cutins, including costumes and online opponents`, () => {
+        const prefix = mobile ? '../assets/' : 'assets/';
+        for (const online of [false, true]) {
+            const { c, nodes } = runtime(mobile, online);
+            for (const name of ['overlay', 'badge', 'card', 'art', 'name', 'sub']) nodes.set(`spotlight-${name}`, element());
+            const art = nodes.get('spotlight-art');
+            c.getSelectedCharacterCostume = () => 'halloween';
+            for (const story of [false, true]) {
+                c.GameState.storyEpisodeId = story ? 'costume-test' : null;
+                c.BattleStoryData = { get: () => ({ costumes: { [id]: 'halloween' } }) };
+                for (const side of ['player', 'cpu']) {
+                    const other = id === 'mai' ? 'takumi' : 'mai';
+                    c.GameState.characterIds = { player: other, cpu: other };
+                    c.GameState.characterIds[side] = id;
+                    for (const [getter, folder, suffix, kind] of [
+                        ['getSkillCutinImagePathForSide', 'skill-cutins', 'skill-cutin', 'skill'],
+                        ['getBattleModeCutinImagePathForSide', 'battle-mode-cutins', 'battle-mode-cutin', 'battle-mode']
+                    ]) {
+                        const expected = `${prefix}battle-images/${folder}/${id}-${suffix}.webp`;
+                        const file = c[getter](side);
+                        assert.equal(file, expected);
+                        assert.ok(fs.existsSync(path.resolve(root, mobile ? 'mobile' : '.', file)));
+                        // Reproduce a face layer and inline background retained by the old cutin.
+                        c.BattleImages.applyExpression(art, id, 'smile', prefix, side);
+                        assert.equal(art.children[0].hidden, false);
+                        assert.equal(art.style.backgroundImage, 'none');
+                        c.showSpotlightCard({ imagePath: file, kind });
+                        assert.equal(art.style.backgroundImage, `url("${expected}")`);
+                        assert.equal(art.style.backgroundColor, '');
+                        assert.ok(art.children.every(child => child.hidden), 'retained face image cannot cover the dedicated artwork');
+                        c.hideSpotlightCard();
+                    }
+                }
+            }
+        }
+    });
+    for (const online of [false, true]) test(`${label}: ${online ? 'online' : 'CPU'} chef icons survive reactions and restore normal faces after Mode or a new match`, () => {
+        const fresh = runtime(mobile, online);
+        fresh.c.GameState.characterIds = { player: id, cpu: id };
+        fresh.c.GameState.players.player.battleALaCarteModeActive = true;
+        fresh.c.GameState.players.cpu.battleALaCarteModeActive = true;
+        fresh.c.applyCharacterSkins(); fresh.c.updateCharacterFaces();
+        chefIcon(fresh.player, id); chefIcon(fresh.opponent, id);
+        assert.equal(fresh.player.children.length, 0); assert.equal(fresh.opponent.children.length, 0);
+        const { c, player, opponent } = runtime(mobile, online);
+        c.GameState.characterIds = { player: id, cpu: id };
+        c.applyCharacterSkins(); c.updateCharacterFaces();
+        const playerFace = imageCell(player, id, 'normal', mobile);
+        const opponentFace = imageCell(opponent, id, 'normal', mobile);
+        const css = read(mobile ? 'mobile/style-sp.css' : 'style.css');
+        const rule = css.match(new RegExp(`\\.character-icon\\.battle-mode-chef\\.char-${id}\\s*\\{([^}]+)\\}`));
+        assert.ok(rule, 'existing chef CSS is registered');
+        const chefFile = rule[1].match(/background-image:\s*url\("([^"?]+)(?:\?[^"\s]*)?"\)/)?.[1];
+        assert.ok(chefFile); assert.ok(fs.existsSync(path.resolve(root, mobile ? 'mobile' : '.', chefFile)));
+        for (const [playerMode, cpuMode] of [[true, false], [false, true], [true, true]]) {
+            c.GameState.players.player.battleALaCarteModeActive = playerMode;
+            c.GameState.players.cpu.battleALaCarteModeActive = cpuMode;
+            c.applyCharacterSkins(); c.updateCharacterFaces();
+            const before = JSON.stringify(c.GameState);
+            const check = () => {
+                if (playerMode) chefIcon(player, id);
+                else assert.equal(playerFace.hidden, false);
+                if (cpuMode) chefIcon(opponent, id);
+                else assert.equal(opponentFace.hidden, false);
+            };
+            check();
+            c.setBattleCookingFace('player', 'laugh', 'chef-cooking'); check();
+            c.setBattleCookingFace('cpu', 'smile', 'chef-cooking'); check();
+            c.clearBattleCookingFace('chef-cooking'); check();
+            assert.equal(JSON.stringify(c.GameState), before, 'presentation preserves rule state');
+        }
+        c.GameState.matchStartedAt++;
+        c.GameState.players.player.battleALaCarteModeActive = false;
+        c.GameState.players.cpu.battleALaCarteModeActive = false;
+        c.applyCharacterSkins(); c.updateCharacterFaces();
+        assert.equal(player.classList.contains('battle-mode-chef'), false);
+        assert.equal(opponent.classList.contains('battle-mode-chef'), false);
+        assert.equal(imageCell(player, id, 'normal', mobile), playerFace);
+        assert.equal(imageCell(opponent, id, 'normal', mobile), opponentFace);
     });
 }
 
@@ -139,7 +227,7 @@ test('online portrait rendering never reads hidden hands/events and does not cha
     assert.doesNotThrow(() => { c.applyCharacterSkins(); c.updateCharacterFaces(); });
 });
 
-test('cutin cover images are reused and hidden when an event/recipe replaces the portrait', () => {
+test('expression images are reused and hidden when an event/recipe replaces the portrait', () => {
     const { c } = runtime();
     const frame = element(); Object.assign(frame.style, { width: '300px', height: '480px' });
     c.BattleImages.applyExpressionPath(frame, c.BattleImages.expressionPath('mai', 'smile'));
@@ -151,15 +239,16 @@ test('cutin cover images are reused and hidden when an event/recipe replaces the
     c.BattleImages.applyExpressionPath(frame, null); assert.equal(image.hidden, true);
 });
 
-test('both HTML entry points bump only the four changed scripts and retain character select standing art', () => {
+test('both HTML entry points version the changed cutin scripts and retain other script versions and standing art', () => {
     for (const [file, prefix, suffix] of [['web.html', '', ''], ['mobile/mobile.html', '../', '-sp']]) {
         const html = read(file);
         for (const script of ['battle-images.js', 'dish-effects.js', `main${suffix}.js`, `render${suffix}.js`]) {
-            const version = script === 'battle-images.js' ? '20261007-osananajimi105a' : script === 'dish-effects.js' ? '20261006-icons99c' : script.startsWith('main') ? '20261010-u6b' : '20261007-osananajimi105a';
+            const version = script === 'battle-images.js' ? '20261007-osananajimi105a' : script === 'dish-effects.js' ? '20261006-icons99c' : '20261011-cutinfix';
             assert.ok(html.includes(`${['battle-images.js', 'dish-effects.js'].includes(script) ? prefix : ''}${script}?v=${version}`));
         }
         assert.ok(html.includes('network.js?v=20261010-u6b'));
     }
     for (const file of ['main.js', 'mobile/main-sp.js']) assert.match(read(file), /BattleImages\.standingPath/);
-    for (const id of ids) assert.ok(fs.existsSync(path.join(root, `assets/battle-images/character-icons/${id}-icons.webp`)));
+    for (const id of ids) assert.ok(fs.existsSync(path.join(root, `assets/battle-images/characters/standing/${id}-standing.webp`)));
+    for (const id of ids.slice(0, 5)) assert.ok(fs.existsSync(path.join(root, `assets/battle-images/character-icons/${id}-icons.webp`)));
 });

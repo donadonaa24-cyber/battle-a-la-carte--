@@ -32,7 +32,7 @@ for(const mobile of [false,true]) {
         c.console={warn(){}};c.localStorage.setItem=()=>{throw Error('quota');};assert.equal(c.selectCharacterCostume('kanna','halloween'),true);assert.equal(c.getSelectedCharacterCostume('kanna'),'halloween');
         const viewer=runtime(mobile,storage,true);assert.equal(viewer.c.isPlayableCharacterUnlocked('kanna'),false);assert.equal(viewer.c.selectCharacterCostume('kanna','halloween'),false);assert.equal(viewer.writes.length,0);
     });
-    test(`101b ${label}: six Halloween frames align, own HUD/skill/Mode/result use wardrobe; CPU keeps default and story overrides`,()=>{
+    test(`101b ${label}: six Halloween frames/HUD/result use wardrobe; dedicated cutins and CPU keep default, story overrides faces`,()=>{
         const r=runtime(mobile),{c,nodes,storage,load}=r;storage.set(PROGRESS,JSON.stringify({'special-halloween':true}));load(mobile?'mobile/render-sp.js':'render.js');
         const prefix=mobile?'../assets/':'assets/',p=element(),cpu=element();c.document.querySelector=s=>s==='.player-icon'?p:s==='.cpu-icon'?cpu:null;nodes.set('result-summary',element());
         const metrics=[];c.BattleStoryIconMetrics={apply:(_img,id,cell)=>metrics.push([id,cell])};
@@ -42,7 +42,7 @@ for(const mobile of [false,true]) {
                 c.FriendBattle={isActive:()=>online};
                 for(const cell of c.BattleImages.expressionCells) {const frame=element();c.BattleImages.applyExpression(frame,id,cell,prefix,'player');assert.match(frame.children[0].getAttribute('src'),new RegExp(`${id}-halloween-${cell}-alpha`));assert.deepEqual(metrics.at(-1),[id,cell]);assert.doesNotMatch(c.BattleImages.expressionPath(id,cell,prefix,'cpu'),/-halloween-/);}
                 c.updateCharacterFaces();assert.match(p.children[0].getAttribute('src'),/-halloween-/);assert.doesNotMatch(cpu.children[0].getAttribute('src'),/-halloween-/);
-                assert.match(c.getSkillCutinImagePathForSide('player'),/-halloween-smile-/);assert.match(c.getBattleModeCutinImagePathForSide('player'),/-halloween-laugh-/);
+                assert.equal(c.getSkillCutinImagePathForSide('player'),`${prefix}battle-images/skill-cutins/${id}-skill-cutin.webp`);assert.equal(c.getBattleModeCutinImagePathForSide('player'),`${prefix}battle-images/battle-mode-cutins/${id}-battle-mode-cutin.webp`);
                 c.renderMatchResultSummary();const files=n=>n.children.flatMap(child=>[child.getAttribute?.('src'),...files(child)]).filter(Boolean);assert.ok(files(nodes.get('result-summary')).some(file=>file.includes('-halloween-gentle-')));
             }
             c.GameState.storyEpisodeId='episode4';assert.doesNotMatch(c.BattleImages.expressionPath(id,'normal',prefix,'player'),/-halloween-/);
@@ -232,7 +232,7 @@ for (const mobile of [false, true]) {
         assert.ok(gallery.some(item => item.characterId === 'tsuyoshi' && !item.costume));
         c.setCharacterChoice('mai'); assert.equal(nodes.get('start-costume-wrap').classList.contains('hidden'), true);
     });
-    test(`100c ${label}: all six battle frames/cutins/result follow own costume; same-character CPU and online opponent keep default`, () => {
+    test(`100c ${label}: six battle frames/result follow own costume; dedicated cutins and same-character CPU/online opponent keep default`, () => {
         const {c, nodes, storage, load} = runtime(mobile);
         storage.set(PROGRESS, JSON.stringify({'special-summer': true}));
         load(mobile ? 'mobile/render-sp.js' : 'render.js');
@@ -254,8 +254,8 @@ for (const mobile of [false, true]) {
                 c.updateCharacterFaces();
                 assert.match(p.children[0].getAttribute('src'), /-summer-/);
                 assert.doesNotMatch(cpu.children[0].getAttribute('src'), /-summer-/);
-                assert.match(c.getSkillCutinImagePathForSide('player'), /-summer-smile-/);
-                assert.match(c.getBattleModeCutinImagePathForSide('player'), /-summer-laugh-/);
+                assert.equal(c.getSkillCutinImagePathForSide('player'), `${prefix}battle-images/skill-cutins/${id}-skill-cutin.webp`);
+                assert.equal(c.getBattleModeCutinImagePathForSide('player'), `${prefix}battle-images/battle-mode-cutins/${id}-battle-mode-cutin.webp`);
                 assert.doesNotMatch(c.getSkillCutinImagePathForSide('cpu'), /-summer-/);
                 const stateBefore = clone(c.GameState); c.renderMatchResultSummary();
                 assert.deepEqual(clone(c.GameState), stateBefore);
@@ -337,14 +337,14 @@ for(const mobile of [false,true]) {
         c.console={warn(){}};c.localStorage.setItem=()=>{throw Error('quota')};assert.equal(c.selectCharacterCostume('yuzuki','kyudo'),true);assert.equal(c.getSelectedCharacterCostume('yuzuki'),'kyudo');
         const viewer=runtime(mobile,storage,true);assert.equal(viewer.c.isPlayableCharacterUnlocked('yuzuki'),false);assert.equal(viewer.c.selectCharacterCostume('yuzuki','kyudo'),false);assert.equal(viewer.writes.length,0);
     });
-    test(`102b ${label}: kyudo HUD/skill/Mode/result uses measured costume frames; CPU default and story priority are retained`,()=>{
+    test(`102b ${label}: kyudo HUD/result uses measured costume frames; dedicated cutins, CPU default and story priority are retained`,()=>{
         const r=runtime(mobile),{c,nodes,storage}=r;r.load('story-data/episode-special-kyudo.js');r.load('story-data/icon-metrics.js');r.load(mobile?'mobile/render-sp.js':'render.js');
         storage.set(PROGRESS,JSON.stringify({'special-kyudo':true}));const p=element(),cpu=element();c.document.querySelector=s=>s==='.player-icon'?p:s==='.cpu-icon'?cpu:null;nodes.set('result-summary',element());
         for(const id of ['yuzuki','takumi','mai']) {
             c.selectCharacterCostume(id,'kyudo');c.GameState.characterIds={player:id,cpu:id};c.getBattleViewModel=()=>({me:{score:0,characterId:id,set:[]},opponent:{score:0,characterId:id,set:[]},winner:'me',online:false});
             for(const cell of c.BattleImages.expressionCells){const frame=element();c.BattleImages.applyExpression(frame,id,cell,'assets/','player');assert.match(frame.children[0].getAttribute('src'),new RegExp(id+'-kyudo-'+cell+'-alpha'));const expected={style:{}};c.BattleStoryIconMetrics.apply(expected,id,cell,'kyudo');for(const prop of ['width','left','top'])assert.equal(frame.children[0].style[prop],expected.style[prop]);}
             c.updateCharacterFaces();assert.match(p.children[0].getAttribute('src'),/-kyudo-/);assert.doesNotMatch(cpu.children[0].getAttribute('src'),/-kyudo-/);
-            assert.match(c.getSkillCutinImagePathForSide('player'),/-kyudo-smile/);assert.match(c.getBattleModeCutinImagePathForSide('player'),/-kyudo-laugh/);
+            const prefix=mobile?'../assets/':'assets/';assert.equal(c.getSkillCutinImagePathForSide('player'),`${prefix}battle-images/skill-cutins/${id}-skill-cutin.webp`);assert.equal(c.getBattleModeCutinImagePathForSide('player'),`${prefix}battle-images/battle-mode-cutins/${id}-battle-mode-cutin.webp`);
             c.renderMatchResultSummary();const files=n=>n.children.flatMap(child=>[child.getAttribute?.('src'),...files(child)]).filter(Boolean);assert.ok(files(nodes.get('result-summary')).some(f=>f.includes('-kyudo-gentle-')));
             c.GameState.storyEpisodeId='episode4';assert.doesNotMatch(c.BattleImages.expressionPath(id,'normal','assets/','player'),/-kyudo-/);
             c.selectCharacterCostume(id,'default');c.GameState.storyEpisodeId='special-kyudo';for(const side of ['player','cpu'])assert.match(c.BattleImages.expressionPath(id,'normal','assets/',side),/-kyudo-/);c.GameState.storyEpisodeId=null;
@@ -375,10 +375,10 @@ for(const mobile of [false,true])test(`105a ${mobile?'phone':'PC'}: 龍太 locke
     assert.equal(runtime(mobile,storage).c.getUserProfile().favoriteCharacterId,'ryuta');c.resetUserProfile();assert.equal(c.isPlayableCharacterUnlocked('ryuta'),true);assert.equal(c.getSelectedCharacterCostume('ryuta'),'default');assert.equal(storage.get(PROGRESS),before);
     const viewer=runtime(mobile,storage,true);assert.equal(viewer.c.isPlayableCharacterUnlocked('ryuta'),false);assert.equal(viewer.c.selectCharacterCostume('ryuta','default'),false);assert.equal(viewer.writes.length,0);
 });
-for(const mobile of [false,true])test(`U6b ${mobile?'phone':'PC'}: 龍太 six aligned frames, own HUD/skill/Mode/result and owned online favourite preserved`,()=>{
+for(const mobile of [false,true])test(`U6b ${mobile?'phone':'PC'}: 龍太 six aligned frames, own HUD/result, dedicated cutins and owned online favourite preserved`,()=>{
     const r=runtime(mobile),{c,nodes,storage}=r;storage.set(PROGRESS,JSON.stringify({'special-osananajimi-2':true}));r.load('story-data/icon-metrics.js');r.load(mobile?'mobile/render-sp.js':'render.js');const p=element(),cpu=element();c.document.querySelector=s=>s==='.player-icon'?p:s==='.cpu-icon'?cpu:null;nodes.set('result-summary',element());c.GameState.characterIds={player:'ryuta',cpu:'akatsuki'};c.getBattleViewModel=()=>({me:{score:0,characterId:'ryuta',set:[]},opponent:{score:0,characterId:'akatsuki',set:[]},winner:'me',online:false});
     for(const cell of c.BattleImages.expressionCells){const frame=element();c.BattleImages.applyExpression(frame,'ryuta',cell,'assets/','player');assert.match(frame.children[0].getAttribute('src'),new RegExp('ryuta-'+cell+'-alpha'));const expected={style:{}};c.BattleStoryIconMetrics.apply(expected,'ryuta',cell);for(const prop of ['width','left','top'])assert.equal(frame.children[0].style[prop],expected.style[prop]);}
-    c.updateCharacterFaces();assert.match(p.children[0].getAttribute('src'),/ryuta-normal-alpha/);assert.match(c.getSkillCutinImagePathForSide('player'),/ryuta-smile-alpha/);assert.match(c.getBattleModeCutinImagePathForSide('player'),/ryuta-laugh-alpha/);c.renderMatchResultSummary();const files=n=>n.children.flatMap(child=>[child.getAttribute?.('src'),...files(child)]).filter(Boolean);assert.ok(files(nodes.get('result-summary')).some(f=>f.includes('ryuta-gentle-alpha')));
+    c.updateCharacterFaces();assert.match(p.children[0].getAttribute('src'),/ryuta-normal-alpha/);const prefix=mobile?'../assets/':'assets/';assert.equal(c.getSkillCutinImagePathForSide('player'),`${prefix}battle-images/skill-cutins/ryuta-skill-cutin.webp`);assert.equal(c.getBattleModeCutinImagePathForSide('player'),`${prefix}battle-images/battle-mode-cutins/ryuta-battle-mode-cutin.webp`);c.renderMatchResultSummary();const files=n=>n.children.flatMap(child=>[child.getAttribute?.('src'),...files(child)]).filter(Boolean);assert.ok(files(nodes.get('result-summary')).some(f=>f.includes('ryuta-gentle-alpha')));
     c.updateUserBasicSettings({favoriteCharacterId:'ryuta'});const selection=element();selection.value='ryuta';nodes.set('online-character',selection);c.resetUnsupportedOnlineCharacter();assert.equal(selection.value,'ryuta');assert.equal(c.getUserProfile().favoriteCharacterId,'ryuta');
 });
 test('U6b owned 龍太 online enabled with roster capability and no costume field; standing/chef/battle/cutins reuse 103a assets',()=>{

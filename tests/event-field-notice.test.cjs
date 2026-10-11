@@ -259,7 +259,7 @@ test('PC/mobile notice helpers, hints, styles and current asset references stay 
         assert.match(html, /id="field-notice"[^>]*role="status"[^>]*aria-live="polite"/);
         assert.match(html, /id="event-first-turn-hint"[^>]*>1ターン目は使用不可</);
         for (const asset of [`style${suffix}.css`, `player${suffix}.js`, `render${suffix}.js`, 'network.js']) {
-            const version = asset === 'network.js' ? '20261010-u6b' : asset.startsWith('player') ? '20261002-ach1' : '20261007-osananajimi105a';
+            const version = asset.startsWith('render') ? '20261011-cutinfix' : asset === 'network.js' ? '20261010-u6b' : asset.startsWith('player') ? '20261002-ach1' : '20261007-osananajimi105a';
             assert.ok(html.includes(`${asset}?v=${version}`), asset);
         }
     }

@@ -2437,8 +2437,8 @@ for (const mobile of [false, true]) {
             assert.ok(['makanaiSupply', 'aceProcurement'].includes(c.GameState.players.cpu.selectedSkillKey));
             assert.equal(c.GameState.settings.cpuPersonality, 'default'); assert.equal(c.shouldAutosaveCurrentMatch(), false);
             for (const [side, id] of [['player', player], ['cpu', cpu]]) {
-                assert.ok(c.getSkillCutinImagePathForSide(side).endsWith(`/story/icons/${id}-smile-alpha.webp?v=20261007-osananajimi105a`));
-                assert.ok(c.getBattleModeCutinImagePathForSide(side).endsWith(`/story/icons/${id}-laugh-alpha.webp?v=20261007-osananajimi105a`));
+                assert.ok(c.getSkillCutinImagePathForSide(side).endsWith(`/skill-cutins/${id}-skill-cutin.webp`));
+                assert.ok(c.getBattleModeCutinImagePathForSide(side).endsWith(`/battle-mode-cutins/${id}-battle-mode-cutin.webp`));
             }
             load(mobile ? 'mobile/render-sp.js' : 'render.js');
             const playerIcon = new Element(), cpuIcon = new Element(); playerIcon.className = 'char-chizuru'; cpuIcon.className = 'char-mai';
@@ -3426,8 +3426,8 @@ for (const mobile of [false,true]) {
         for(const [side,id,icon] of [['player','kanna',playerIcon],['cpu','chizuru',cpuIcon]]) {
             c.applyCharacterSkins(); c.updateCharacterFaces();
             assert.match(icon.children[0].getAttribute('src'), /-halloween-normal-alpha.webp/);
-            assert.ok(c.getSkillCutinImagePathForSide(side).includes(`${id}-halloween-smile-`));
-            assert.ok(c.getBattleModeCutinImagePathForSide(side).includes(`${id}-halloween-laugh-`));
+            assert.ok(c.getSkillCutinImagePathForSide(side).endsWith(`/skill-cutins/${id}-skill-cutin.webp`));
+            assert.ok(c.getBattleModeCutinImagePathForSide(side).endsWith(`/battle-mode-cutins/${id}-battle-mode-cutin.webp`));
         }
         c.endGame(winner); assert.equal(c.StoryAdv.finishBattleReturn(),true);await tick(0);
         assert.deepEqual(c.lastStoryBgm,{character:'kanna',bgm:'seasonal-halloween'});
@@ -3445,7 +3445,7 @@ for (const mobile of [false,true]) {
         const again=halloweenRuntime({mobile,main:true,save:Object.fromEntries(r.store)});again.load('profile.js');
         assert.equal(again.c.getPreferredStartCharacterId(),'kanna');assert.equal(again.c.getSelectedCharacterCostume('kanna'),'halloween');
         again.c.setCharacterChoice('kanna');again.c.beginMatchByRole('先攻');assert.equal(again.c.GameState.characterIds.player,'kanna');
-        assert.equal(again.c.GameState.storyEpisodeId,null);assert.match(again.c.getSkillCutinImagePathForSide('player'),/kanna-halloween-smile/);
+        assert.equal(again.c.GameState.storyEpisodeId,null);assert.match(again.c.getSkillCutinImagePathForSide('player'),/kanna-skill-cutin\.webp$/);
     });
     for(const route of ['win','lose','skip']) test(`101b ${label}: viewer ${route} lists both specials and reads Halloween with no unlock/storage/battle`,async()=>{
         const r=halloweenRuntime({mobile,viewer:true,main:true}),{c,elements}=r;r.load('profile.js');const before=[...r.store];
@@ -3612,8 +3612,8 @@ for (const mobile of [false, true]) {
         c.document.querySelector = selector => selector === '.player-icon' ? playerIcon : selector === '.cpu-icon' ? cpuIcon : null;
         c.applyCharacterSkins(); c.updateCharacterFaces();
         for (const [side, id, icon] of [['player', 'tsuyoshi', playerIcon], ['cpu', 'akatsuki', cpuIcon]]) {
-            assert.ok(c.getSkillCutinImagePathForSide(side).includes(`${id}-summer-smile-alpha.webp`));
-            assert.ok(c.getBattleModeCutinImagePathForSide(side).includes(`${id}-summer-laugh-alpha.webp`));
+            assert.ok(c.getSkillCutinImagePathForSide(side).endsWith(`/skill-cutins/${id}-skill-cutin.webp`));
+            assert.ok(c.getBattleModeCutinImagePathForSide(side).endsWith(`/battle-mode-cutins/${id}-battle-mode-cutin.webp`));
             assert.ok(icon.children[0].getAttribute('src').includes(`${id}-summer-normal-alpha.webp`));
         }
         c.endGame(winner); assert.equal(c.__advTest.S.pending.stage, winner === 'player' ? 'post' : 'lose');
@@ -3656,7 +3656,7 @@ test('100b entry pages load special after episode10 and bump changed script keys
         const html = read(page), special = html.indexOf(prefix + SUMMER_FILE + '?v=20261007-osananajimi105a');
         assert.ok(special > html.indexOf('story-data/episode10.js?v=')); assert.ok(special < html.indexOf('story-adv.js?v='));
         for (const script of ['story-data/characters.js', 'story-data/registry.js', 'story-data/episode7.js', 'story-viewer.js', 'story-adv.js', 'battle-images.js']) assert.ok(html.includes(prefix + script + '?v=' + (script === 'battle-images.js' ? '20261007-osananajimi105a' : ['story-data/characters.js', 'story-adv.js', 'story-data/registry.js'].includes(script) ? '20261007-osananajimi105a' : script === 'story-data/episode7.js' ? '20261006-summer100b' : '20261007-osananajimi105a')));
-        assert.ok(html.includes(main + '?v=20261010-u6b'));
+        assert.ok(html.includes(main + '?v=20261011-cutinfix'));
     }
     const manifest = JSON.parse(read('assets/audio-pack/manifest.json'));
     assert.ok(manifest.tracks['theme-tsuyoshi']);
@@ -3689,7 +3689,7 @@ for (const mobile of [false, true]) for (const viewer of [false, true]) test(`10
             const participant = again.c.GameState.players[side];
             assert.equal(again.c.getCurrentTotalHandCount(participant), again.c.getTargetTotalHandSize(participant));
         }
-        assert.match(again.c.getSkillCutinImagePathForSide('player'), /tsuyoshi-summer-smile/);
+        assert.match(again.c.getSkillCutinImagePathForSide('player'), /tsuyoshi-skill-cutin\.webp$/);
         assert.doesNotMatch(again.c.getSkillCutinImagePathForSide('cpu'), /-summer-/);
     }
 });
@@ -3781,7 +3781,7 @@ for(const mobile of [false,true]) {
         const p=new Element(),cpu=new Element(),board=new Element();elements.set('game-container',board);
         c.document.querySelector=s=>s==='.player-icon'?p:s==='.cpu-icon'?cpu:null;c.applyBackgroundDesign('default');assert.match(board.style['--bg-design-image'],/kyudo-rest-area/);
         c.applyCharacterSkins();c.updateCharacterFaces();
-        for(const [side,id,icon]of [['player','yuzuki',p],['cpu','mai',cpu]]){assert.match(icon.children[0].getAttribute('src'),new RegExp(id+'-kyudo-normal-alpha'));assert.match(c.getSkillCutinImagePathForSide(side),new RegExp(id+'-kyudo-smile'));assert.match(c.getBattleModeCutinImagePathForSide(side),new RegExp(id+'-kyudo-laugh'));}
+        for(const [side,id,icon]of [['player','yuzuki',p],['cpu','mai',cpu]]){assert.match(icon.children[0].getAttribute('src'),new RegExp(id+'-kyudo-normal-alpha'));assert.ok(c.getSkillCutinImagePathForSide(side).endsWith(`/skill-cutins/${id}-skill-cutin.webp`));assert.ok(c.getBattleModeCutinImagePathForSide(side).endsWith(`/battle-mode-cutins/${id}-battle-mode-cutin.webp`));}
         c.endGame(winner);assert.equal(c.StoryAdv.finishBattleReturn(),true);await tick(0);assert.deepEqual(c.lastStoryBgm,{character:'yuzuki',bgm:'story'});
         if(winner==='cpu'){
             await viewerSkip(r);assert.deepEqual(elements.get('adv-ending').children.map(n=>n.textContent),['もう一度挑戦','勝ったことにして進める','ストーリー選択へ戻る']);
@@ -3793,7 +3793,7 @@ for(const mobile of [false,true]) {
         c.updateUserBasicSettings({favoriteCharacterId:'yuzuki'});const again=kyudoRuntime({mobile,main:true,save:Object.fromEntries(r.store)});again.load('profile.js');
         assert.equal(again.c.getPreferredStartCharacterId(),'yuzuki');assert.equal(again.c.getSelectedCharacterCostume('yuzuki'),'kyudo');
         again.c.setCharacterChoice('yuzuki');again.c.beginMatchByRole('先攻');assert.equal(again.c.GameState.characterIds.player,'yuzuki');assert.equal(again.c.GameState.storyEpisodeId,null);
-        assert.match(again.c.getSkillCutinImagePathForSide('player'),/yuzuki-kyudo-smile/);assert.doesNotMatch(again.c.getSkillCutinImagePathForSide('cpu'),/-kyudo-/);
+        assert.match(again.c.getSkillCutinImagePathForSide('player'),/yuzuki-skill-cutin\.webp$/);assert.doesNotMatch(again.c.getSkillCutinImagePathForSide('cpu'),/-kyudo-/);
     });
     for(const route of ['win','lose','skip'])test(`102b ${label}: viewer ${route} includes three specials; reads kyudo without unlock, storage or a battle`,async()=>{
         const r=kyudoRuntime({mobile,viewer:true,main:true}),{c,elements}=r;r.load('profile.js');const before=[...r.store];
@@ -3916,7 +3916,7 @@ for(const mobile of [false,true]){
     for(const winner of ['player','cpu'])test(`105a ${label}: real 龍太 vs 暁 CPU, bench background, ${winner}, retry/bypass, WINNER and playable CLEAR`,async()=>{
         const r=osananaRuntime({mobile,main:true,save:{[PROGRESS_KEY]:JSON.stringify({'special-osananajimi-1':true})}}),{c,elements,tick,Element}=r,t=c.__advTest;r.load('profile.js');await c.StoryAdv.start('special-osananajimi-2');await viewerSkip(r);c.choice.onStart('foodTrap');
         assert.deepEqual(clone(c.GameState.characterIds),{player:'ryuta',cpu:'akatsuki'});assert.equal(c.GameState.players.player.selectedSkillKey,'foodTrap');r.load(mobile?'mobile/render-sp.js':'render.js');c.updateUI=()=>{};
-        const p=new Element(),cpu=new Element(),board=new Element();elements.set('game-container',board);c.document.querySelector=s=>s==='.player-icon'?p:s==='.cpu-icon'?cpu:null;c.applyBackgroundDesign('default');assert.match(board.style['--bg-design-image'],/big-park-bench-evening/);c.applyCharacterSkins();c.updateCharacterFaces();assert.match(p.children[0].getAttribute('src'),/ryuta-normal-alpha/);assert.match(c.getSkillCutinImagePathForSide('player'),/ryuta-smile-alpha/);assert.match(c.getBattleModeCutinImagePathForSide('player'),/ryuta-laugh-alpha/);
+        const p=new Element(),cpu=new Element(),board=new Element();elements.set('game-container',board);c.document.querySelector=s=>s==='.player-icon'?p:s==='.cpu-icon'?cpu:null;c.applyBackgroundDesign('default');assert.match(board.style['--bg-design-image'],/big-park-bench-evening/);c.applyCharacterSkins();c.updateCharacterFaces();assert.match(p.children[0].getAttribute('src'),/ryuta-normal-alpha/);assert.match(c.getSkillCutinImagePathForSide('player'),/ryuta-skill-cutin\.webp$/);assert.match(c.getBattleModeCutinImagePathForSide('player'),/ryuta-battle-mode-cutin\.webp$/);
         c.endGame(winner);assert.equal(c.StoryAdv.finishBattleReturn(),true);await tick(0);
         if(winner==='cpu'){await viewerSkip(r);assert.deepEqual(elements.get('adv-ending').children.map(n=>n.textContent),['もう一度挑戦','勝ったことにして進める','ストーリー選択へ戻る']);elements.get('adv-ending').children[0].onclick();await tick(0);c.choice.onStart('foodTrap');c.endGame('cpu');c.StoryAdv.finishBattleReturn();await tick(0);await viewerSkip(r);elements.get('adv-ending').children[1].onclick();await tick(0);assert.equal(t.S.continuedAsWin,true);}
         assert.equal(t.S.sceneId,'win');assert.equal(elements.get('adv-effect').children[1].textContent,'WINNER 龍太');t.advance();await tick(0);assert.equal(elements.get('adv-effect').className,'adv-effect');await viewerSkip(r);assert.equal(t.S.stage,'clear');assert.equal(c.isPlayableCharacterUnlocked('ryuta'),true);
