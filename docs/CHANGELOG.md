@@ -1,5 +1,13 @@
 # 変更履歴
 
+## 2026-10-24 Android軽量版の試験公開
+
+- 所有者の追加公開依頼に従い、画質優先のASTC 4×4候補を別名 `BattleALaCarte-3D-Android-v0.6.0-optimized-astc4-preview.apk` でv0.6.0 Releaseへ追加。429,054,098 bytes、従来498,203,614 bytesから69.150MB／13.8798%減。従来版とWindows配布物は保持。
+- 全15話・画像原寸・表情／衣装・音楽・ゲームコード／保存形式を維持。署名検査成功、従来と署名・ID・0.6.0/code 5・ARM64・SDK／Manifest端末要件が一致。ASTC必須GPU条件の追加なし。PC Editorの画像比較は以前に実施、APK署名・互換性を今回再検査。
+- Android実機の起動・画質・更新／保存引継ぎ・タッチ・復帰・長時間性能・メモリ、ASTC非対応GPUでの動作は未検証と明記。実通信・実ログイン・実聴も未検証。試験公開のみで通常Androidビルド設定はRGBA32を維持。
+- Unity紹介ページ／公式ホームページのお知らせと案内／ポータル作品一覧・詳細・新公式記事へ軽量版と従来版の選択肢を掲載。Webゲーム・他作品・認証・保存機能は変更なし。以下の「Android候補未公開」は今回追加依頼以前の履歴。
+
+
 ## 2026-10-24 Battle à la carte Unity版のWindows軽量化版
 
 - 所有者のpush・公開依頼に従い、検証済みWindows ZIPを別名 `BattleALaCarte-3D-Windows-v0.6.0-optimized.zip` でv0.6.0 Releaseへ追加。旧Windows ZIP・Android APK・元素材を保持。
@@ -394,4 +402,5 @@
 ### 注記
 
 - 初期作成日を確定できるGit履歴が現在の公開用チェックアウトにないため、日付は推測していません。
+
 
