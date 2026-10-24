@@ -76,6 +76,11 @@
 
             <ul class="news-list">
                 <li class="news-row news-new">
+                    <p class="news-date"><time datetime="2026-10-24">2026.10.24</time><span class="news-tag">Unity版</span><span class="news-tag news-tag-new">NEW</span></p>
+                    <h3 class="news-title">Windows版を約17%軽量化、約412MBに</h3>
+                    <button class="news-open" type="button" data-open-dialog="news-20261024-size">詳しく見る</button>
+                </li>
+                <li class="news-row news-new">
                     <p class="news-date"><time datetime="2026-10-11">2026.10.11</time><span class="news-tag">Web版・Unity版</span><span class="news-tag news-tag-new">NEW</span></p>
                     <h3 class="news-title">ストーリー特別編と新キャラクター4人が登場</h3>
                     <button class="news-open" type="button" data-open-dialog="news-20261011-story">詳しく見る</button>
@@ -111,6 +116,18 @@
                     <button class="news-open" type="button" data-open-dialog="news-plan">詳しく見る</button>
                 </li>
             </ul>
+
+            <dialog class="home-dialog news-dialog" id="news-20261024-size" aria-labelledby="news-20261024-size-title">
+                <div class="dialog-head">
+                    <p class="news-date"><time datetime="2026-10-24">2026.10.24</time><span class="news-tag">Unity版</span></p>
+                    <button class="dialog-close" type="button" data-close-dialog aria-label="閉じる">×</button>
+                </div>
+                <h3 id="news-20261024-size-title">Windows版を約17%軽量化、約412MBに</h3>
+                <p>Unity版v0.6.0のWindows ZIPが約499MBから約412MBへ、約87MB（17.36%）小さくなりました。展開後も約1,063MBから約759MBへ削減しています。</p>
+                <p>全15話のストーリー・キャラクターの表情と着せ替え・BGMをそのままに、画像の解像度を変えずに圧縮設定を調整しました。原寸の画像比較とWindowsの自動動作検証を完了しています。</p>
+                <p>Android公開版は約498MBを維持。圧縮候補は実機未検証のため未公開です。今回の実通信・実アカウントログイン・実聴は未検証です。</p>
+                <p><a href="https://donadonaa24-cyber.github.io/battle-a-la-carte-3d/#optimization" target="_blank" rel="noopener noreferrer">軽量化版のダウンロード・詳しい容量比較</a></p>
+            </dialog>
 
             <dialog class="home-dialog news-dialog" id="news-20261011-story" aria-labelledby="news-20261011-story-title">
                 <div class="dialog-head">
@@ -771,7 +788,7 @@
 
                 <a class="link-card unity-link" href="https://donadonaa24-cyber.github.io/battle-a-la-carte-3d/" target="_blank" rel="noopener noreferrer">
                     <span class="link-title">Unity版（3D版）</span>
-                    <span class="link-text">Windows ZIP（約499MB）/ Android APK（約498MB）。v0.6.0 公開中。導入方法と通信対戦の参加手順はこちら</span>
+                    <span class="link-text">Windows軽量化版 ZIP（約412MB・17.36%削減）/ Android APK（約498MB）。v0.6.0 公開中。容量比較・導入方法・通信対戦の参加手順はこちら</span>
                 </a>
 
                 <a class="link-card" href="https://donadonaa24-cyber.github.io/aniani-asobiba/">
@@ -801,3 +818,4 @@
     </footer>
 </body>
 </html>
+
